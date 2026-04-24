@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `alumni_profiles` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`linkedinUrl` varchar(500),\n\t`company` varchar(255),\n\t`jobTitle` varchar(255),\n\t`graduationYear` int,\n\t`isVisible` boolean NOT NULL DEFAULT true,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `alumni_profiles_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `alumni_profiles_userId_unique` UNIQUE(`userId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute CREATE TABLE `alumni_profiles` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`linkedinUrl` varchar(500),\n\t`company` varchar(255),\n\t`jobTitle` varchar(255),\n\t`graduationYear` int,\n\t`isVisible` boolean NOT NULL DEFAULT true,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `alumni_profiles_id` PRIMARY KEY(`id`),\n\tCONSTRAINT `alumni_profiles_userId_unique` UNIQUE(`userId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1038
+}

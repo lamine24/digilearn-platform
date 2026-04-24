@@ -1,22 +1,17 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal } from "drizzle-orm/mysql-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
+// ─── Users ──────────────────────────────────────────────────────
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["admin", "formateur", "apprenant", "alumni", "prospect"]).default("prospect").notNull(),
+  bio: text("bio"),
+  phone: varchar("phone", { length: 32 }),
+  avatarUrl: text("avatarUrl"),
+  lastActiveAt: timestamp("lastActiveAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -25,4 +20,149 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+// ─── Categories ─────────────────────────────────────────────────
+export const categories = mysqlTable("categories", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  iconName: varchar("iconName", { length: 64 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── Courses ────────────────────────────────────────────────────
+export const courses = mysqlTable("courses", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  slug: varchar("slug", { length: 500 }).notNull().unique(),
+  description: text("description"),
+  shortDescription: text("shortDescription"),
+  thumbnailUrl: text("thumbnailUrl"),
+  categoryId: int("categoryId"),
+  formateurId: int("formateurId"),
+  price: decimal("price", { precision: 10, scale: 2 }).default("0.00").notNull(),
+  currency: varchar("currency", { length: 10 }).default("XOF").notNull(),
+  level: mysqlEnum("level", ["debutant", "intermediaire", "avance"]).default("debutant").notNull(),
+  duration: int("duration").default(0),
+  status: mysqlEnum("status", ["brouillon", "publie", "archive"]).default("brouillon").notNull(),
+  maxStudents: int("maxStudents"),
+  tags: text("tags"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+// ─── Modules (micro-learning units 5-10 min) ───────────────────
+export const modules = mysqlTable("modules", {
+  id: int("id").autoincrement().primaryKey(),
+  courseId: int("courseId").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  contentType: mysqlEnum("contentType", ["video", "texte", "quiz", "exercice", "pdf"]).default("video").notNull(),
+  contentUrl: text("contentUrl"),
+  contentBody: text("contentBody"),
+  duration: int("duration").default(5),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  isPreview: boolean("isPreview").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+// ─── Enrollments ────────────────────────────────────────────────
+export const enrollments = mysqlTable("enrollments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: int("courseId").notNull(),
+  status: mysqlEnum("status", ["en_attente", "actif", "complete", "abandonne"]).default("en_attente").notNull(),
+  progress: int("progress").default(0).notNull(),
+  enrolledAt: timestamp("enrolledAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  lastAccessedAt: timestamp("lastAccessedAt"),
+});
+
+// ─── Module Progress ────────────────────────────────────────────
+export const moduleProgress = mysqlTable("module_progress", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  moduleId: int("moduleId").notNull(),
+  courseId: int("courseId").notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  score: int("score"),
+  timeSpent: int("timeSpent").default(0),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── Payments ───────────────────────────────────────────────────
+export const payments = mysqlTable("payments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: int("courseId").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).default("XOF").notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 64 }).default("paytech"),
+  transactionRef: varchar("transactionRef", { length: 255 }),
+  paytechToken: varchar("paytechToken", { length: 500 }),
+  status: mysqlEnum("status", ["en_attente", "reussi", "echoue", "rembourse"]).default("en_attente").notNull(),
+  paidAt: timestamp("paidAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── Certificates ───────────────────────────────────────────────
+export const certificates = mysqlTable("certificates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  courseId: int("courseId").notNull(),
+  enrollmentId: int("enrollmentId").notNull(),
+  certificateCode: varchar("certificateCode", { length: 64 }).notNull().unique(),
+  pdfUrl: text("pdfUrl"),
+  pdfKey: text("pdfKey"),
+  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  verifiedCount: int("verifiedCount").default(0),
+});
+
+// ─── Chat Messages (chatbot) ────────────────────────────────────
+export const chatMessages = mysqlTable("chat_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  sessionId: varchar("sessionId", { length: 128 }).notNull(),
+  role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
+  content: text("content").notNull(),
+  needsHuman: boolean("needsHuman").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── Notifications ──────────────────────────────────────────────
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["inactivite", "inscription", "rappel_session", "certification", "general"]).notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  message: text("message"),
+  isRead: boolean("isRead").default(false).notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ─── Alumni Profiles ────────────────────────────────────────────
+export const alumniProfiles = mysqlTable("alumni_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  company: varchar("company", { length: 255 }),
+  jobTitle: varchar("jobTitle", { length: 255 }),
+  graduationYear: int("graduationYear"),
+  isVisible: boolean("isVisible").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+// ─── Quiz Questions ─────────────────────────────────────────────
+export const quizQuestions = mysqlTable("quiz_questions", {
+  id: int("id").autoincrement().primaryKey(),
+  moduleId: int("moduleId").notNull(),
+  question: text("question").notNull(),
+  options: text("options").notNull(),
+  correctAnswer: int("correctAnswer").notNull(),
+  explanation: text("explanation"),
+  sortOrder: int("sortOrder").default(0).notNull(),
+});

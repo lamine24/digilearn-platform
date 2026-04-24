@@ -5,34 +5,46 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import CourseDetail from "./pages/CourseDetail";
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import FormateurDashboard from "./pages/FormateurDashboard";
+import Learn from "./pages/Learn";
+import VerifyCertificate from "./pages/VerifyCertificate";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+import Alumni from "./pages/Alumni";
+import ChatWidget from "./components/ChatWidget";
+import Onboarding from "./pages/Onboarding";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      <Route path="/" component={Home} />
+      <Route path="/course/:slug" component={CourseDetail} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/formateur" component={FormateurDashboard} />
+      <Route path="/learn/:slug" component={Learn} />
+      <Route path="/verify-certificate" component={VerifyCertificate} />
+      <Route path="/payment/success" component={PaymentSuccess} />
+      <Route path="/payment/cancel" component={PaymentCancel} />
+      <Route path="/alumni" component={Alumni} />
+      <Route path="/onboarding" component={Onboarding} />
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />
+          <ChatWidget />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
