@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import {
-  GraduationCap, BookOpen, Users, Plus, LogOut, Edit, Eye, BarChart3
+  GraduationCap, BookOpen, Users, Plus, LogOut, Edit, Eye, BarChart3, Pencil
 } from "lucide-react";
 import { useState } from "react";
 import { getLoginUrl } from "@/const";
@@ -157,6 +157,9 @@ export default function FormateurDashboard() {
                       <h3 className="font-semibold mb-2">{item.course.title}</h3>
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{item.course.shortDescription}</p>
                       <div className="flex gap-2 flex-wrap">
+                        <Link href={`/edit-course/${item.course.slug}`}>
+                          <Button size="sm" variant="outline"><Pencil className="mr-1 h-3 w-3" /> Éditer</Button>
+                        </Link>
                         <Button size="sm" variant="outline" onClick={() => setSelectedCourseId(item.course.id)}>
                           <Users className="mr-1 h-3 w-3" /> Apprenants
                         </Button>
