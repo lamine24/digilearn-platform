@@ -39,6 +39,48 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
 
+  // File upload endpoint
+  app.post("/api/upload", async (req, res) => {
+    try {
+      const { storagePut } = await import("../storage");
+      const { createContext } = await import("./context");
+      
+      // Get file from request
+      let fileBuffer: Buffer | null = null;
+      let fileName = "file";
+      let mimeType = "application/octet-stream";
+      
+      // Handle multipart/form-data (if using FormData from frontend)
+      if (req.headers["content-type"]?.includes("application/json")) {
+        const { file, filename, mimetype } = req.body;
+        if (typeof file === "string") {
+          fileBuffer = Buffer.from(file, "base64");
+        }
+        fileName = filename || "file";
+        mimeType = mimetype || "application/octet-stream";
+      } else {
+        // Fallback: treat entire body as file
+        fileBuffer = req.body;
+      }
+      
+      if (!fileBuffer || fileBuffer.length === 0) {
+        return res.status(400).json({ error: "No file provided" });
+      }
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const fileKey = `modules/${timestamp}-${fileName}`;
+      
+      // Upload to S3
+      const { url, key } = await storagePut(fileKey, fileBuffer, mimeType);
+      
+      res.json({ url, key, success: true });
+    } catch (error) {
+      console.error("[Upload] Error:", error);
+      res.status(500).json({ error: "Upload failed" });
+    }
+  });
+
   // PayTech IPN (Instant Payment Notification) endpoint
   app.post("/api/paytech/ipn", async (req, res) => {
     try {

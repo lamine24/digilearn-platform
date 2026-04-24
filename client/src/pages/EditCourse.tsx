@@ -35,6 +35,7 @@ export default function EditCourse() {
 
   const [showAddModule, setShowAddModule] = useState(false);
   const [editingModuleId, setEditingModuleId] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [newModule, setNewModule] = useState<{
     title: string;
     description: string;
@@ -85,6 +86,45 @@ export default function EditCourse() {
     },
     onError: (err) => toast.error(err.message),
   });
+
+  const handleFileUpload = async (file: File, type: "video" | "resource") => {
+    if (!file) return;
+    setUploading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const base64 = (e.target?.result as string)?.split(",")[1];
+          if (!base64) throw new Error("Failed to read file");
+
+          const response = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              file: base64,
+              filename: file.name,
+              mimetype: file.type,
+            }),
+          });
+
+          if (!response.ok) throw new Error("Upload failed");
+          const data = await response.json();
+          
+          setNewModule({ ...newModule, contentUrl: data.url });
+          toast.success(type === "video" ? "Vidéo uploadée" : "Ressource uploadée");
+        } catch (err) {
+          toast.error("Erreur lors de l'upload");
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      toast.error("Erreur lors de la lecture du fichier");
+      setUploading(false);
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
   if (!isAuthenticated) {
@@ -152,33 +192,6 @@ export default function EditCourse() {
       zoomTime: mod.zoomTime,
     });
     setShowAddModule(true);
-  };
-
-  const handleFileUpload = async (file: File, type: "video" | "resource") => {
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-      const data = await response.json();
-      
-      if (type === "video") {
-        setNewModule({ ...newModule, contentUrl: data.url });
-        toast.success("Vidéo uploadée");
-      } else {
-        setNewModule({ ...newModule, contentUrl: data.url });
-        toast.success("Ressource uploadée");
-      }
-    } catch (err) {
-      toast.error("Erreur lors de l'upload");
-    }
   };
 
   return (
@@ -295,10 +308,11 @@ export default function EditCourse() {
                             onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "video")}
                             className="hidden"
                             id="video-upload"
+                            disabled={uploading}
                           />
                           <label htmlFor="video-upload" className="cursor-pointer flex items-center gap-2">
                             <Upload className="h-4 w-4" />
-                            <span className="text-sm">Cliquez pour télécharger une vidéo</span>
+                            <span className="text-sm">{uploading ? "Upload en cours..." : "Cliquez pour télécharger une vidéo"}</span>
                           </label>
                         </div>
                       </div>
@@ -371,10 +385,11 @@ export default function EditCourse() {
                             onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "resource")}
                             className="hidden"
                             id="pdf-upload"
+                            disabled={uploading}
                           />
                           <label htmlFor="pdf-upload" className="cursor-pointer flex items-center gap-2">
                             <Upload className="h-4 w-4" />
-                            <span className="text-sm">Cliquez pour télécharger un PDF</span>
+                            <span className="text-sm">{uploading ? "Upload en cours..." : "Cliquez pour télécharger un PDF"}</span>
                           </label>
                         </div>
                       </div>
@@ -401,10 +416,11 @@ export default function EditCourse() {
                             onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "resource")}
                             className="hidden"
                             id="exercise-upload"
+                            disabled={uploading}
                           />
                           <label htmlFor="exercise-upload" className="cursor-pointer flex items-center gap-2">
                             <Upload className="h-4 w-4" />
-                            <span className="text-sm">Télécharger un fichier (template, données, etc.)</span>
+                            <span className="text-sm">{uploading ? "Upload en cours..." : "Télécharger un fichier (template, données, etc.)"}</span>
                           </label>
                         </div>
                       </div>
@@ -425,7 +441,7 @@ export default function EditCourse() {
                   <Button 
                     className="w-full" 
                     onClick={handleAddModule} 
-                    disabled={createModuleMutation.isPending || updateModuleMutation.isPending}
+                    disabled={createModuleMutation.isPending || updateModuleMutation.isPending || uploading}
                   >
                     {createModuleMutation.isPending || updateModuleMutation.isPending 
                       ? "Traitement..." 
@@ -462,7 +478,7 @@ export default function EditCourse() {
                         </div>
                         <h3 className="font-medium">{mod.title}</h3>
                         <p className="text-sm text-muted-foreground line-clamp-1">{mod.description}</p>
-                        {(mod.contentType as string) === "zoom" && (mod as any).zoomDate && (
+                        {(mod.contentType as string) === "video" && (mod as any).zoomDate && (
                           <div className="flex items-center gap-2 text-xs text-blue-600 mt-1">
                             <Calendar className="h-3 w-3" />
                             {(mod as any).zoomDate} {(mod as any).zoomTime && `à ${(mod as any).zoomTime}`}

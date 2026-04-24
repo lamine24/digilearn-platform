@@ -18,12 +18,12 @@
 
 ## Gestion des Modules (PRIORITAIRE)
 - [x] Création de modules (tous types)
-- [ ] Modification de modules (éditer, mettre à jour)
+- [x] Modification de modules (éditer, mettre à jour)
 - [x] Suppression de modules
-- [ ] Support Zoom/Visioconférence (lien, date/heure)
-- [ ] Upload de vidéos (S3 streaming)
-- [ ] Upload de ressources (PDF, documents)
-- [ ] Aperçu des modules pour formateurs
+- [x] Support Zoom/Visioconférence (lien, date/heure)
+- [x] Upload de vidéos (S3 streaming)
+- [x] Upload de ressources (PDF, documents)
+- [x] Aperçu des modules pour formateurs
 - [ ] Réorganisation des modules (drag & drop)
 
 ## Tableaux de Bord
