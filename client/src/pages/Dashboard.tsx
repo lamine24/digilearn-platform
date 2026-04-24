@@ -11,7 +11,7 @@ import {
   LogOut, BarChart3, CheckCircle2, Download
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -38,8 +38,10 @@ export default function Dashboard() {
     return null;
   }
 
-  if (user?.role === "admin") { navigate("/admin"); return null; }
-  if (user?.role === "formateur") { navigate("/formateur"); return null; }
+  useEffect(() => {
+    if (user?.role === "admin") navigate("/admin");
+    else if (user?.role === "formateur") navigate("/formateur");
+  }, [user?.role, navigate]);
 
   const activeEnrollments = enrollments?.filter(e => e.enrollment.status === "actif") || [];
   const completedEnrollments = enrollments?.filter(e => e.enrollment.status === "complete") || [];
