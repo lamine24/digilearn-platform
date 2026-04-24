@@ -21,8 +21,8 @@
 - [x] Modification de modules (éditer, mettre à jour)
 - [x] Suppression de modules
 - [x] Support Zoom/Visioconférence (lien, date/heure)
-- [x] Upload de vidéos (S3 streaming)
-- [x] Upload de ressources (PDF, documents)
+- [x] Upload de vidéos (S3 streaming) - endpoint /api/upload implémenté
+- [x] Upload de ressources (PDF, documents) - endpoint /api/upload implémenté
 - [x] Aperçu des modules pour formateurs
 - [ ] Réorganisation des modules (drag & drop)
 

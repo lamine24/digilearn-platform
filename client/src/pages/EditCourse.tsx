@@ -10,17 +10,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
-import { GraduationCap, Plus, Trash2, Edit, ArrowLeft, Video, FileText, HelpCircle, PenTool, Link2, Calendar, Clock, Upload } from "lucide-react";
-import { useState } from "react";
+import { GraduationCap, Plus, Trash2, Edit, ArrowLeft, Video, FileText, HelpCircle, PenTool, Link2, Calendar, Clock, Upload, Download, File, Music, Image as ImageIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 import { getLoginUrl } from "@/const";
 
-const contentTypeIcon: Record<string, any> = {
+const resourceTypeIcon: Record<string, any> = {
   video: Video,
-  texte: FileText,
-  quiz: HelpCircle,
-  exercice: PenTool,
   pdf: FileText,
-  zoom: Link2,
+  document: FileText,
+  image: ImageIcon,
+  audio: Music,
+  lien: Link2,
+  autre: File,
+};
+
+const resourceTypeLabel: Record<string, string> = {
+  video: "Vidéo",
+  pdf: "PDF",
+  document: "Document",
+  image: "Image",
+  audio: "Audio",
+  lien: "Lien",
+  autre: "Autre",
 };
 
 export default function EditCourse() {
@@ -33,20 +44,21 @@ export default function EditCourse() {
     { enabled: !!courseData?.course?.id }
   );
 
+  const [activeModuleId, setActiveModuleId] = useState<number | null>(null);
   const [showAddModule, setShowAddModule] = useState(false);
   const [editingModuleId, setEditingModuleId] = useState<number | null>(null);
+  const [showAddResource, setShowAddResource] = useState(false);
+  const [editingResourceId, setEditingResourceId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+
   const [newModule, setNewModule] = useState<{
     title: string;
     description: string;
-    contentType: "video" | "texte" | "quiz" | "exercice" | "pdf" | "zoom";
+    contentType: "video" | "texte" | "quiz" | "exercice" | "pdf";
     contentUrl: string;
     contentBody: string;
     duration: number;
     isPreview: boolean;
-    zoomLink?: string;
-    zoomDate?: string;
-    zoomTime?: string;
   }>({
     title: "",
     description: "",
@@ -56,6 +68,32 @@ export default function EditCourse() {
     duration: 5,
     isPreview: false,
   });
+
+  const [newResource, setNewResource] = useState<{
+    title: string;
+    description: string;
+    resourceType: "video" | "pdf" | "document" | "image" | "audio" | "lien" | "autre";
+    fileUrl: string;
+    mimeType: string;
+  }>({
+    title: "",
+    description: "",
+    resourceType: "video",
+    fileUrl: "",
+    mimeType: "",
+  });
+
+  const [moduleResources, setModuleResources] = useState<any[]>([]);
+  const { data: resourcesData, refetch: refetchResources } = trpc.moduleResources.byModule.useQuery(
+    { moduleId: activeModuleId || 0 },
+    { enabled: !!activeModuleId }
+  );
+
+  useEffect(() => {
+    if (resourcesData) {
+      setModuleResources(resourcesData);
+    }
+  }, [resourcesData]);
 
   const createModuleMutation = trpc.modules.create.useMutation({
     onSuccess: () => {
@@ -82,12 +120,43 @@ export default function EditCourse() {
   const deleteModuleMutation = trpc.modules.delete.useMutation({
     onSuccess: () => {
       toast.success("Module supprimé");
+      setActiveModuleId(null);
       refetchModules();
     },
     onError: (err) => toast.error(err.message),
   });
 
-  const handleFileUpload = async (file: File, type: "video" | "resource") => {
+  const createResourceMutation = trpc.moduleResources.create.useMutation({
+    onSuccess: () => {
+      toast.success(editingResourceId ? "Ressource mise à jour" : "Ressource créée");
+      setShowAddResource(false);
+      setEditingResourceId(null);
+      setNewResource({ title: "", description: "", resourceType: "video", fileUrl: "", mimeType: "" });
+      refetchResources();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateResourceMutation = trpc.moduleResources.update.useMutation({
+    onSuccess: () => {
+      toast.success("Ressource mise à jour");
+      setShowAddResource(false);
+      setEditingResourceId(null);
+      setNewResource({ title: "", description: "", resourceType: "video", fileUrl: "", mimeType: "" });
+      refetchResources();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteResourceMutation = trpc.moduleResources.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Ressource supprimée");
+      refetchResources();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleFileUpload = async (file: File) => {
     if (!file) return;
     setUploading(true);
 
@@ -111,8 +180,8 @@ export default function EditCourse() {
           if (!response.ok) throw new Error("Upload failed");
           const data = await response.json();
           
-          setNewModule({ ...newModule, contentUrl: data.url });
-          toast.success(type === "video" ? "Vidéo uploadée" : "Ressource uploadée");
+          setNewResource({ ...newResource, fileUrl: data.url, mimeType: file.type });
+          toast.success("Fichier uploadé");
         } catch (err) {
           toast.error("Erreur lors de l'upload");
         } finally {
@@ -124,6 +193,94 @@ export default function EditCourse() {
       toast.error("Erreur lors de la lecture du fichier");
       setUploading(false);
     }
+  };
+
+  const handleAddResource = () => {
+    if (!newResource.title) {
+      toast.error("Le titre de la ressource est requis");
+      return;
+    }
+    if (!newResource.fileUrl) {
+      toast.error("Veuillez télécharger ou fournir une URL");
+      return;
+    }
+
+    if (editingResourceId) {
+      updateResourceMutation.mutate({
+        id: editingResourceId,
+        title: newResource.title,
+        description: newResource.description,
+        resourceType: newResource.resourceType,
+        fileUrl: newResource.fileUrl,
+        mimeType: newResource.mimeType,
+      });
+    } else {
+      createResourceMutation.mutate({
+        moduleId: activeModuleId!,
+        title: newResource.title,
+        description: newResource.description,
+        resourceType: newResource.resourceType,
+        fileUrl: newResource.fileUrl,
+        mimeType: newResource.mimeType,
+      });
+    }
+  };
+
+  const handleAddModule = () => {
+    if (!newModule.title) {
+      toast.error("Le titre du module est requis");
+      return;
+    }
+
+    if (editingModuleId) {
+      updateModuleMutation.mutate({
+        id: editingModuleId,
+        title: newModule.title,
+        description: newModule.description,
+        contentType: newModule.contentType,
+        contentUrl: newModule.contentUrl,
+        contentBody: newModule.contentBody,
+        duration: newModule.duration,
+        isPreview: newModule.isPreview,
+      });
+    } else {
+      createModuleMutation.mutate({
+        courseId: courseData?.course?.id!,
+        title: newModule.title,
+        description: newModule.description,
+        contentType: newModule.contentType,
+        contentUrl: newModule.contentUrl,
+        contentBody: newModule.contentBody,
+        duration: newModule.duration,
+        isPreview: newModule.isPreview,
+      });
+    }
+  };
+
+  const handleEditModule = (mod: any) => {
+    setEditingModuleId(mod.id);
+    setNewModule({
+      title: mod.title,
+      description: mod.description || "",
+      contentType: mod.contentType,
+      contentUrl: mod.contentUrl || "",
+      contentBody: mod.contentBody || "",
+      duration: mod.duration,
+      isPreview: mod.isPreview,
+    });
+    setShowAddModule(true);
+  };
+
+  const handleEditResource = (resource: any) => {
+    setEditingResourceId(resource.id);
+    setNewResource({
+      title: resource.title,
+      description: resource.description || "",
+      resourceType: resource.resourceType,
+      fileUrl: resource.fileUrl || "",
+      mimeType: resource.mimeType || "",
+    });
+    setShowAddResource(true);
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
@@ -141,58 +298,6 @@ export default function EditCourse() {
     navigate("/dashboard");
     return null;
   }
-
-  const handleAddModule = () => {
-    if (!newModule.title) {
-      toast.error("Le titre du module est requis");
-      return;
-    }
-
-    const contentType = (newModule.contentType === "zoom" ? "video" : newModule.contentType) as any;
-    const contentUrl = newModule.contentType === "zoom" ? newModule.zoomLink : newModule.contentUrl;
-    const contentBody = newModule.contentType === "zoom" ? JSON.stringify({ zoomLink: newModule.zoomLink, zoomDate: newModule.zoomDate, zoomTime: newModule.zoomTime }) : newModule.contentBody;
-
-    if (editingModuleId) {
-      updateModuleMutation.mutate({
-        id: editingModuleId,
-        title: newModule.title,
-        description: newModule.description,
-        contentType,
-        contentUrl,
-        contentBody,
-        duration: newModule.duration,
-        isPreview: newModule.isPreview,
-      });
-    } else {
-      createModuleMutation.mutate({
-        courseId: course.id,
-        title: newModule.title,
-        description: newModule.description,
-        contentType,
-        contentUrl,
-        contentBody,
-        duration: newModule.duration,
-        isPreview: newModule.isPreview,
-      });
-    }
-  };
-
-  const handleEditModule = (mod: any) => {
-    setEditingModuleId(mod.id);
-    setNewModule({
-      title: mod.title,
-      description: mod.description || "",
-      contentType: mod.contentType,
-      contentUrl: mod.contentUrl || "",
-      contentBody: mod.contentBody || "",
-      duration: mod.duration,
-      isPreview: mod.isPreview,
-      zoomLink: mod.contentUrl,
-      zoomDate: mod.zoomDate,
-      zoomTime: mod.zoomTime,
-    });
-    setShowAddModule(true);
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,293 +329,209 @@ export default function EditCourse() {
           <p className="text-muted-foreground">{course.description}</p>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Modules ({modules?.length || 0})</h2>
-            <Dialog open={showAddModule} onOpenChange={(open) => {
-              setShowAddModule(open);
-              if (!open) {
-                setEditingModuleId(null);
-                setNewModule({ title: "", description: "", contentType: "video", contentUrl: "", contentBody: "", duration: 5, isPreview: false });
-              }
-            }}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-1 h-4 w-4" /> {editingModuleId ? "Modifier" : "Ajouter un module"}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingModuleId ? "Modifier le module" : "Créer un module"}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Titre du module *</Label>
-                    <Input
-                      value={newModule.title}
-                      onChange={(e) => setNewModule({ ...newModule, title: e.target.value })}
-                      placeholder="Ex: Introduction aux bases"
-                    />
-                  </div>
-                  <div>
-                    <Label>Description</Label>
-                    <Textarea
-                      value={newModule.description}
-                      onChange={(e) => setNewModule({ ...newModule, description: e.target.value })}
-                      placeholder="Décrivez le contenu du module"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Type de contenu</Label>
-                      <Select value={newModule.contentType} onValueChange={(v: any) => setNewModule({ ...newModule, contentType: v })}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="video">Vidéo</SelectItem>
-                          <SelectItem value="texte">Texte</SelectItem>
-                          <SelectItem value="quiz">Quiz</SelectItem>
-                          <SelectItem value="exercice">Exercice</SelectItem>
-                          <SelectItem value="pdf">PDF</SelectItem>
-                          <SelectItem value="zoom">Zoom/Visioconférence</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Durée (minutes)</Label>
-                      <Input
-                        type="number"
-                        value={newModule.duration}
-                        onChange={(e) => setNewModule({ ...newModule, duration: Number(e.target.value) })}
-                        min="1"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Vidéo */}
-                  {(newModule.contentType as string) === "video" && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label>URL de la vidéo</Label>
-                        <Input
-                          value={newModule.contentUrl}
-                          onChange={(e) => setNewModule({ ...newModule, contentUrl: e.target.value })}
-                          placeholder="https://youtube.com/watch?v=... ou https://vimeo.com/..."
-                        />
-                      </div>
-                      <div>
-                        <Label>Ou télécharger une vidéo</Label>
-                        <div className="border-2 border-dashed rounded-lg p-4">
-                          <input
-                            type="file"
-                            accept="video/*"
-                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "video")}
-                            className="hidden"
-                            id="video-upload"
-                            disabled={uploading}
-                          />
-                          <label htmlFor="video-upload" className="cursor-pointer flex items-center gap-2">
-                            <Upload className="h-4 w-4" />
-                            <span className="text-sm">{uploading ? "Upload en cours..." : "Cliquez pour télécharger une vidéo"}</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Zoom */}
-                  {(newModule.contentType as string) === "zoom" && (
-                    <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
-                      <div>
-                        <Label>Lien Zoom</Label>
-                        <Input
-                          value={newModule.zoomLink || ""}
-                          onChange={(e) => setNewModule({ ...newModule, zoomLink: e.target.value })}
-                          placeholder="https://zoom.us/j/..."
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Date de la session</Label>
-                          <Input
-                            type="date"
-                            value={newModule.zoomDate || ""}
-                            onChange={(e) => setNewModule({ ...newModule, zoomDate: e.target.value })}
-                          />
-                        </div>
-                        <div>
-                          <Label>Heure de la session</Label>
-                          <Input
-                            type="time"
-                            value={newModule.zoomTime || ""}
-                            onChange={(e) => setNewModule({ ...newModule, zoomTime: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Les apprenants verront le lien et la date/heure de la session Zoom</p>
-                    </div>
-                  )}
-
-                  {/* Texte ou Quiz */}
-                  {((newModule.contentType as string) === "texte" || (newModule.contentType as string) === "quiz") && (
-                    <div>
-                      <Label>Contenu</Label>
-                      <Textarea
-                        value={newModule.contentBody}
-                        onChange={(e) => setNewModule({ ...newModule, contentBody: e.target.value })}
-                        placeholder="Entrez le contenu du module (Markdown supporté)"
-                        rows={8}
-                      />
-                    </div>
-                  )}
-
-                  {/* PDF */}
-                  {(newModule.contentType as string) === "pdf" && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label>URL du PDF</Label>
-                        <Input
-                          value={newModule.contentUrl}
-                          onChange={(e) => setNewModule({ ...newModule, contentUrl: e.target.value })}
-                          placeholder="https://example.com/document.pdf"
-                        />
-                      </div>
-                      <div>
-                        <Label>Ou télécharger un PDF</Label>
-                        <div className="border-2 border-dashed rounded-lg p-4">
-                          <input
-                            type="file"
-                            accept=".pdf"
-                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "resource")}
-                            className="hidden"
-                            id="pdf-upload"
-                            disabled={uploading}
-                          />
-                          <label htmlFor="pdf-upload" className="cursor-pointer flex items-center gap-2">
-                            <Upload className="h-4 w-4" />
-                            <span className="text-sm">{uploading ? "Upload en cours..." : "Cliquez pour télécharger un PDF"}</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Exercice */}
-                  {(newModule.contentType as string) === "exercice" && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label>Description de l'exercice</Label>
-                        <Textarea
-                          value={newModule.contentBody}
-                          onChange={(e) => setNewModule({ ...newModule, contentBody: e.target.value })}
-                          placeholder="Décrivez l'exercice et les instructions"
-                          rows={6}
-                        />
-                      </div>
-                      <div>
-                        <Label>Ressource d'exercice (optionnel)</Label>
-                        <div className="border-2 border-dashed rounded-lg p-4">
-                          <input
-                            type="file"
-                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], "resource")}
-                            className="hidden"
-                            id="exercise-upload"
-                            disabled={uploading}
-                          />
-                          <label htmlFor="exercise-upload" className="cursor-pointer flex items-center gap-2">
-                            <Upload className="h-4 w-4" />
-                            <span className="text-sm">{uploading ? "Upload en cours..." : "Télécharger un fichier (template, données, etc.)"}</span>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2 pt-2">
-                    <input
-                      type="checkbox"
-                      id="isPreview"
-                      checked={newModule.isPreview}
-                      onChange={(e) => setNewModule({ ...newModule, isPreview: e.target.checked })}
-                      className="h-4 w-4"
-                    />
-                    <Label htmlFor="isPreview" className="cursor-pointer">Aperçu gratuit (visible sans inscription)</Label>
-                  </div>
-
-                  <Button 
-                    className="w-full" 
-                    onClick={handleAddModule} 
-                    disabled={createModuleMutation.isPending || updateModuleMutation.isPending || uploading}
-                  >
-                    {createModuleMutation.isPending || updateModuleMutation.isPending 
-                      ? "Traitement..." 
-                      : editingModuleId ? "Mettre à jour le module" : "Créer le module"}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Modules List */}
+          <div className="lg:col-span-1">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Modules ({modules?.length || 0})</h2>
+              <Dialog open={showAddModule} onOpenChange={(open) => {
+                setShowAddModule(open);
+                if (!open) {
+                  setEditingModuleId(null);
+                  setNewModule({ title: "", description: "", contentType: "video", contentUrl: "", contentBody: "", duration: 5, isPreview: false });
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <Plus className="h-3 w-3" />
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingModuleId ? "Modifier" : "Créer"} un module</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Titre *</Label>
+                      <Input value={newModule.title} onChange={(e) => setNewModule({ ...newModule, title: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea value={newModule.description} onChange={(e) => setNewModule({ ...newModule, description: e.target.value })} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label>Type</Label>
+                        <Select value={newModule.contentType} onValueChange={(v: any) => setNewModule({ ...newModule, contentType: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="video">Vidéo</SelectItem>
+                            <SelectItem value="texte">Texte</SelectItem>
+                            <SelectItem value="quiz">Quiz</SelectItem>
+                            <SelectItem value="exercice">Exercice</SelectItem>
+                            <SelectItem value="pdf">PDF</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Durée (min)</Label>
+                        <Input type="number" value={newModule.duration} onChange={(e) => setNewModule({ ...newModule, duration: Number(e.target.value) })} min="1" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" id="isPreview" checked={newModule.isPreview} onChange={(e) => setNewModule({ ...newModule, isPreview: e.target.checked })} />
+                      <Label htmlFor="isPreview" className="cursor-pointer">Aperçu gratuit</Label>
+                    </div>
+                    <Button className="w-full" onClick={handleAddModule} disabled={createModuleMutation.isPending || updateModuleMutation.isPending}>
+                      {createModuleMutation.isPending || updateModuleMutation.isPending ? "..." : editingModuleId ? "Mettre à jour" : "Créer"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-          {!modules || modules.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="font-semibold mb-1">Aucun module</h3>
-                <p className="text-sm text-muted-foreground">Créez votre premier module pour cette formation.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {modules.map((mod, idx) => {
-                const Icon = contentTypeIcon[mod.contentType] || FileText;
-                return (
-                  <Card key={mod.id} className="border-border/50 hover:border-primary/50 transition-colors">
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <Icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Module {idx + 1}</span>
-                          {mod.isPreview && <Badge variant="secondary" className="text-xs">Aperçu</Badge>}
-                          <Badge variant="outline" className="text-xs">{mod.contentType}</Badge>
+            <div className="space-y-2">
+              {!modules || modules.length === 0 ? (
+                <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">Aucun module</CardContent></Card>
+              ) : (
+                modules.map((mod, idx) => (
+                  <Card key={mod.id} className={`cursor-pointer border transition-colors ${activeModuleId === mod.id ? "border-primary bg-primary/5" : "border-border/50 hover:border-primary/50"}`} onClick={() => setActiveModuleId(mod.id)}>
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-muted-foreground">Module {idx + 1}</div>
+                          <h3 className="font-medium text-sm line-clamp-1">{mod.title}</h3>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{mod.description}</p>
                         </div>
-                        <h3 className="font-medium">{mod.title}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-1">{mod.description}</p>
-                        {(mod.contentType as string) === "video" && (mod as any).zoomDate && (
-                          <div className="flex items-center gap-2 text-xs text-blue-600 mt-1">
-                            <Calendar className="h-3 w-3" />
-                            {(mod as any).zoomDate} {(mod as any).zoomTime && `à ${(mod as any).zoomTime}`}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {mod.duration} min
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEditModule(mod)}
-                        >
-                          <Edit className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteModuleMutation.mutate({ id: mod.id })}
-                          disabled={deleteModuleMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditModule(mod); }}>
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); deleteModuleMutation.mutate({ id: mod.id }); }}>
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
+                ))
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Resources for Active Module */}
+          <div className="lg:col-span-2">
+            {activeModuleId ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold">Ressources ({moduleResources.length})</h2>
+                  <Dialog open={showAddResource} onOpenChange={(open) => {
+                    setShowAddResource(open);
+                    if (!open) {
+                      setEditingResourceId(null);
+                      setNewResource({ title: "", description: "", resourceType: "video", fileUrl: "", mimeType: "" });
+                    }
+                  }}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="h-3 w-3 mr-1" /> Ressource
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>{editingResourceId ? "Modifier" : "Ajouter"} une ressource</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Titre *</Label>
+                          <Input value={newResource.title} onChange={(e) => setNewResource({ ...newResource, title: e.target.value })} placeholder="Ex: Vidéo d'introduction" />
+                        </div>
+                        <div>
+                          <Label>Description</Label>
+                          <Textarea value={newResource.description} onChange={(e) => setNewResource({ ...newResource, description: e.target.value })} placeholder="Décrivez la ressource" />
+                        </div>
+                        <div>
+                          <Label>Type de ressource</Label>
+                          <Select value={newResource.resourceType} onValueChange={(v: any) => setNewResource({ ...newResource, resourceType: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="video">Vidéo</SelectItem>
+                              <SelectItem value="pdf">PDF</SelectItem>
+                              <SelectItem value="document">Document</SelectItem>
+                              <SelectItem value="image">Image</SelectItem>
+                              <SelectItem value="audio">Audio</SelectItem>
+                              <SelectItem value="lien">Lien externe</SelectItem>
+                              <SelectItem value="autre">Autre</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>URL ou lien</Label>
+                          <Input value={newResource.fileUrl} onChange={(e) => setNewResource({ ...newResource, fileUrl: e.target.value })} placeholder="https://..." />
+                        </div>
+                        <div>
+                          <Label>Ou télécharger un fichier</Label>
+                          <div className="border-2 border-dashed rounded-lg p-4">
+                            <input type="file" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])} className="hidden" id="resource-upload" disabled={uploading} />
+                            <label htmlFor="resource-upload" className="cursor-pointer flex items-center gap-2">
+                              <Upload className="h-4 w-4" />
+                              <span className="text-sm">{uploading ? "Upload..." : "Cliquez pour télécharger"}</span>
+                            </label>
+                          </div>
+                        </div>
+                        <Button className="w-full" onClick={handleAddResource} disabled={createResourceMutation.isPending || updateResourceMutation.isPending || uploading}>
+                          {createResourceMutation.isPending || updateResourceMutation.isPending ? "..." : editingResourceId ? "Mettre à jour" : "Ajouter"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                <div className="space-y-3">
+                  {moduleResources.length === 0 ? (
+                    <Card><CardContent className="p-8 text-center text-muted-foreground">Aucune ressource. Ajoutez-en une pour ce module.</CardContent></Card>
+                  ) : (
+                    moduleResources.map((res) => {
+                      const Icon = resourceTypeIcon[res.resourceType] || File;
+                      return (
+                        <Card key={res.id} className="border-border/50 hover:border-primary/50 transition-colors">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <Icon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">{resourceTypeLabel[res.resourceType]}</Badge>
+                              </div>
+                              <h3 className="font-medium">{res.title}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-1">{res.description}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {res.fileUrl && (
+                                <a href={res.fileUrl} target="_blank" rel="noopener noreferrer">
+                                  <Button size="sm" variant="ghost">
+                                    <Download className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                </a>
+                              )}
+                              <Button size="sm" variant="ghost" onClick={() => handleEditResource(res)}>
+                                <Edit className="h-4 w-4 text-blue-600" />
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => deleteResourceMutation.mutate({ id: res.id })} disabled={deleteResourceMutation.isPending}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            ) : (
+              <Card><CardContent className="p-8 text-center text-muted-foreground">Sélectionnez un module pour gérer ses ressources</CardContent></Card>
+            )}
+          </div>
         </div>
       </div>
     </div>

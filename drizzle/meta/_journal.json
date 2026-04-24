@@ -15,6 +15,13 @@
       "when": 1777036228021,
       "tag": "0001_windy_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1777073832556,
+      "tag": "0002_cultured_angel",
+      "breakpoints": true
     }
   ]
 }

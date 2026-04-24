@@ -67,6 +67,24 @@ export const modules = mysqlTable("modules", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+// ─── Module Resources ───────────────────────────────────────────
+export const moduleResources = mysqlTable("module_resources", {
+  id: int("id").autoincrement().primaryKey(),
+  moduleId: int("moduleId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  resourceType: mysqlEnum("resourceType", ["video", "pdf", "document", "image", "audio", "lien", "autre"]).notNull(),
+  fileUrl: text("fileUrl"),
+  fileSize: int("fileSize"), // en bytes
+  mimeType: varchar("mimeType", { length: 100 }),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ModuleResource = typeof moduleResources.$inferSelect;
+export type InsertModuleResource = typeof moduleResources.$inferInsert;
+
 // ─── Enrollments ────────────────────────────────────────────────
 export const enrollments = mysqlTable("enrollments", {
   id: int("id").autoincrement().primaryKey(),

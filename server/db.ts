@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, courses, categories, modules, enrollments,
   moduleProgress, payments, certificates, chatMessages, notifications,
-  alumniProfiles, quizQuestions
+  alumniProfiles, quizQuestions, moduleResources, InsertModuleResource, ModuleResource
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -471,4 +471,41 @@ export async function createCategory(data: typeof categories.$inferInsert) {
   if (!db) throw new Error("DB not available");
   const result = await db.insert(categories).values(data);
   return result[0].insertId;
+}
+
+
+// ─── Module Resources ───────────────────────────────────────────
+export async function createModuleResource(data: InsertModuleResource) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(moduleResources).values(data);
+  return result[0].insertId;
+}
+
+export async function getModuleResources(moduleId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(moduleResources)
+    .where(eq(moduleResources.moduleId, moduleId))
+    .orderBy(asc(moduleResources.sortOrder));
+}
+
+export async function updateModuleResource(id: number, data: Partial<ModuleResource>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(moduleResources).set(data).where(eq(moduleResources.id, id));
+}
+
+export async function deleteModuleResource(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(moduleResources).where(eq(moduleResources.id, id));
+}
+
+export async function reorderModuleResources(moduleId: number, resourceIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  for (let i = 0; i < resourceIds.length; i++) {
+    await db.update(moduleResources).set({ sortOrder: i }).where(eq(moduleResources.id, resourceIds[i]));
+  }
 }

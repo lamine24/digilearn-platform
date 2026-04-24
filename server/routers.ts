@@ -101,6 +101,32 @@ export const appRouter = router({
     delete: formateurProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => { await db.deleteModule(input.id); return { success: true }; }),
   }),
 
+  moduleResources: router({
+    byModule: publicProcedure.input(z.object({ moduleId: z.number() })).query(({ input }) => db.getModuleResources(input.moduleId)),
+    create: formateurProcedure.input(z.object({
+      moduleId: z.number(),
+      title: z.string().min(1),
+      description: z.string().optional(),
+      resourceType: z.enum(["video", "pdf", "document", "image", "audio", "lien", "autre"]),
+      fileUrl: z.string().optional(),
+      fileSize: z.number().optional(),
+      mimeType: z.string().optional(),
+      sortOrder: z.number().default(0),
+    })).mutation(async ({ input }) => ({ id: await db.createModuleResource(input) })),
+    update: formateurProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      resourceType: z.enum(["video", "pdf", "document", "image", "audio", "lien", "autre"]).optional(),
+      fileUrl: z.string().optional(),
+      fileSize: z.number().optional(),
+      mimeType: z.string().optional(),
+      sortOrder: z.number().optional(),
+    })).mutation(async ({ input }) => { const { id, ...data } = input; await db.updateModuleResource(id, data); return { success: true }; }),
+    delete: formateurProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => { await db.deleteModuleResource(input.id); return { success: true }; }),
+    reorder: formateurProcedure.input(z.object({ moduleId: z.number(), resourceIds: z.array(z.number()) })).mutation(async ({ input }) => { await db.reorderModuleResources(input.moduleId, input.resourceIds); return { success: true }; }),
+  }),
+
   enrollments: router({
     myEnrollments: protectedProcedure.query(async ({ ctx }) => {
       await db.updateUserActivity(ctx.user.id);
