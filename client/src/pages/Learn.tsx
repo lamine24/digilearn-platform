@@ -10,12 +10,22 @@ import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import {
   GraduationCap, CheckCircle2, Circle, Play, FileText, HelpCircle,
-  PenTool, Video, ArrowLeft, ChevronLeft, ChevronRight, Award
+  PenTool, Video, ArrowLeft, ChevronLeft, ChevronRight, Award, Download, Eye
 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const contentTypeIcon: Record<string, any> = {
   video: Video, texte: FileText, quiz: HelpCircle, exercice: PenTool, pdf: FileText,
+};
+
+const resourceTypeIcon: Record<string, any> = {
+  video: Video,
+  pdf: FileText,
+  document: FileText,
+  image: FileText,
+  audio: FileText,
+  lien: FileText,
+  autre: FileText,
 };
 
 export default function Learn() {
@@ -45,14 +55,44 @@ export default function Learn() {
   });
 
   const [activeModuleIdx, setActiveModuleIdx] = useState(0);
+  const [moduleResources, setModuleResources] = useState<any[]>([]);
+  const [previewingResource, setPreviewingResource] = useState<any>(null);
 
   const modules = progressData?.modules || [];
   const progress = progressData?.progress || [];
   const activeModule = modules[activeModuleIdx];
 
+  const { data: resourcesData } = trpc.moduleResources.byModule.useQuery(
+    { moduleId: activeModule?.id || 0 },
+    { enabled: !!activeModule?.id }
+  );
+
+  useEffect(() => {
+    if (resourcesData) {
+      setModuleResources(resourcesData);
+    }
+  }, [resourcesData]);
+
   const completedModuleIds = useMemo(() => new Set(progress.filter(p => p.completed).map(p => p.moduleId)), [progress]);
   const overallProgress = modules.length > 0 ? Math.round((completedModuleIds.size / modules.length) * 100) : 0;
   const allCompleted = overallProgress === 100;
+
+  const handleDownloadWithWatermark = (resource: any) => {
+    if (resource.resourceType === "pdf") {
+      // Pour les PDF, on ajoute un filigrane via le serveur
+      const watermarkUrl = `/api/download-watermarked?url=${encodeURIComponent(resource.fileUrl)}&user=${user?.name || "Utilisateur"}`;
+      window.open(watermarkUrl, "_blank");
+    } else {
+      // Pour les autres types, téléchargement direct
+      const link = document.createElement("a");
+      link.href = resource.fileUrl;
+      link.download = resource.title;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    toast.success(`Téléchargement de "${resource.title}" en cours...`);
+  };
 
   if (!courseData) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Chargement...</div>;
@@ -130,9 +170,18 @@ export default function Learn() {
               <Card className="mb-8">
                 <CardContent className="p-8">
                   {activeModule.contentType === "video" && (
-                    <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                    <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative overflow-hidden">
                       {activeModule.contentUrl ? (
-                        <video src={activeModule.contentUrl} controls className="w-full h-full rounded-lg" />
+                        <>
+                          <video src={activeModule.contentUrl} controls className="w-full h-full rounded-lg" />
+                          {/* Filigrane vidéo */}
+                          <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-10">
+                            <div className="text-center transform -rotate-45">
+                              <p className="text-4xl font-bold text-white">{user?.name || "DigiLearn"}</p>
+                              <p className="text-sm text-white">{new Date().toLocaleDateString("fr-FR")}</p>
+                            </div>
+                          </div>
+                        </>
                       ) : (
                         <div className="text-center text-muted-foreground">
                           <Video className="h-12 w-12 mx-auto mb-2" />
@@ -173,6 +222,63 @@ export default function Learn() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Resources section */}
+              {moduleResources.length > 0 && (
+                <Card className="mb-8">
+                  <CardContent className="p-6">
+                    <h3 className="font-semibold mb-4">📚 Ressources du module ({moduleResources.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {moduleResources.map((resource) => {
+                        const Icon = resourceTypeIcon[resource.resourceType] || FileText;
+                        return (
+                          <Card key={resource.id} className="border-border/50 hover:border-primary/50 transition-colors">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3 mb-3">
+                                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                  <Icon className="h-5 w-5 text-primary" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-muted-foreground font-medium uppercase">{resource.resourceType}</div>
+                                  <h4 className="font-medium text-sm line-clamp-1">{resource.title}</h4>
+                                  {resource.description && <p className="text-xs text-muted-foreground line-clamp-1">{resource.description}</p>}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                {resource.resourceType === "lien" ? (
+                                  <a href={resource.fileUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                                    <Button size="sm" variant="outline" className="w-full">
+                                      <Eye className="h-3 w-3 mr-1" /> Ouvrir
+                                    </Button>
+                                  </a>
+                                ) : (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="flex-1"
+                                      onClick={() => setPreviewingResource(resource)}
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" /> Aperçu
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      className="flex-1"
+                                      onClick={() => handleDownloadWithWatermark(resource)}
+                                    >
+                                      <Download className="h-3 w-3 mr-1" /> Télécharger
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Navigation */}
               <div className="flex items-center justify-between">

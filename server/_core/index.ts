@@ -81,6 +81,24 @@ async function startServer() {
     }
   });
 
+  // Download with watermark endpoint
+  app.get("/api/download-watermarked", async (req, res) => {
+    try {
+      const { url, user } = req.query;
+      if (!url || !user) {
+        return res.status(400).json({ error: "Missing url or user parameter" });
+      }
+      const { addWatermarkToPDF } = await import("../watermark");
+      const watermarkedPdf = await addWatermarkToPDF(url as string, user as string);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="document-${Date.now()}.pdf"`);
+      res.send(watermarkedPdf);
+    } catch (error) {
+      console.error("[Download Watermark] Error:", error);
+      res.status(500).json({ error: "Failed to generate watermarked PDF" });
+    }
+  });
+
   // PayTech IPN (Instant Payment Notification) endpoint
   app.post("/api/paytech/ipn", async (req, res) => {
     try {
