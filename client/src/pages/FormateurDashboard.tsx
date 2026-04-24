@@ -36,6 +36,11 @@ export default function FormateurDashboard() {
     onError: (err) => toast.error(err.message),
   });
 
+  const updateStatusMutation = trpc.courses.update.useMutation({
+    onSuccess: () => { toast.success("Statut mis à jour"); refetch(); },
+    onError: (err) => toast.error(err.message),
+  });
+
   if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
   if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
   if (user?.role !== "formateur" && user?.role !== "admin") { navigate("/dashboard"); return null; }
@@ -151,13 +156,22 @@ export default function FormateurDashboard() {
                       </div>
                       <h3 className="font-semibold mb-2">{item.course.title}</h3>
                       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{item.course.shortDescription}</p>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button size="sm" variant="outline" onClick={() => setSelectedCourseId(item.course.id)}>
                           <Users className="mr-1 h-3 w-3" /> Apprenants
                         </Button>
                         <Link href={`/course/${item.course.slug}`}>
                           <Button size="sm" variant="outline"><Eye className="mr-1 h-3 w-3" /> Voir</Button>
                         </Link>
+                        {item.course.status === "brouillon" ? (
+                          <Button size="sm" onClick={() => updateStatusMutation.mutate({ id: item.course.id, status: "publie" })} disabled={updateStatusMutation.isPending}>
+                            Publier
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="destructive" onClick={() => updateStatusMutation.mutate({ id: item.course.id, status: "brouillon" })} disabled={updateStatusMutation.isPending}>
+                            Dépublier
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
