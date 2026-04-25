@@ -26,6 +26,15 @@
 - [x] Aperçu des modules pour formateurs
 - [ ] Réorganisation des modules (drag & drop)
 
+## Gestion des Ressources par Module
+- [x] Création de ressources (upload, types multiples)
+- [x] Modification de ressources
+- [x] Suppression de ressources
+- [x] Téléchargement des ressources par apprenants
+- [x] Filigrane sur les PDF téléchargés
+- [x] Aperçu des ressources
+- [ ] Prévisualisation des ressources pour formateurs (avant publication)
+
 ## Tableaux de Bord
 - [ ] Dashboard Apprenant : vraies données + graphiques
 - [ ] Dashboard Formateur : statistiques complètes

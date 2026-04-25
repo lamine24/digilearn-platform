@@ -10,9 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
-import { GraduationCap, Plus, Trash2, Edit, ArrowLeft, Video, FileText, HelpCircle, PenTool, Link2, Calendar, Clock, Upload, Download, File, Music, Image as ImageIcon } from "lucide-react";
+import { GraduationCap, Plus, Trash2, Edit, ArrowLeft, Video, FileText, HelpCircle, PenTool, Link2, Calendar, Clock, Upload, Download, File, Music, Image as ImageIcon, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getLoginUrl } from "@/const";
+import { ResourcePreview } from "@/components/ResourcePreview";
 
 const resourceTypeIcon: Record<string, any> = {
   video: Video,
@@ -48,6 +49,8 @@ export default function EditCourse() {
   const [showAddModule, setShowAddModule] = useState(false);
   const [editingModuleId, setEditingModuleId] = useState<number | null>(null);
   const [showAddResource, setShowAddResource] = useState(false);
+  const [previewResource, setPreviewResource] = useState<any | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [editingResourceId, setEditingResourceId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -507,6 +510,9 @@ export default function EditCourse() {
                               <p className="text-sm text-muted-foreground line-clamp-1">{res.description}</p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
+                              <Button size="sm" variant="ghost" onClick={() => { setPreviewResource(res); setShowPreview(true); }}>
+                                <Eye className="h-4 w-4 text-green-600" />
+                              </Button>
                               {res.fileUrl && (
                                 <a href={res.fileUrl} target="_blank" rel="noopener noreferrer">
                                   <Button size="sm" variant="ghost">
@@ -534,6 +540,14 @@ export default function EditCourse() {
           </div>
         </div>
       </div>
+
+      {previewResource && (
+        <ResourcePreview
+          resource={previewResource}
+          open={showPreview}
+          onOpenChange={setShowPreview}
+        />
+      )}
     </div>
   );
 }

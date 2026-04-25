@@ -112,7 +112,19 @@ export const appRouter = router({
       fileSize: z.number().optional(),
       mimeType: z.string().optional(),
       sortOrder: z.number().default(0),
-    })).mutation(async ({ input }) => ({ id: await db.createModuleResource(input) })),
+    })).mutation(async ({ input }) => {
+      const cleanInput = {
+        moduleId: input.moduleId,
+        title: input.title,
+        description: input.description || null,
+        resourceType: input.resourceType,
+        fileUrl: input.fileUrl || null,
+        fileSize: input.fileSize ?? null,
+        mimeType: input.mimeType || null,
+        sortOrder: input.sortOrder,
+      };
+      return { id: await db.createModuleResource(cleanInput as any) };
+    }),
     update: formateurProcedure.input(z.object({
       id: z.number(),
       title: z.string().optional(),
@@ -122,7 +134,12 @@ export const appRouter = router({
       fileSize: z.number().optional(),
       mimeType: z.string().optional(),
       sortOrder: z.number().optional(),
-    })).mutation(async ({ input }) => { const { id, ...data } = input; await db.updateModuleResource(id, data); return { success: true }; }),
+    })).mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      const cleanData = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined));
+      await db.updateModuleResource(id, cleanData as any);
+      return { success: true };
+    }),
     delete: formateurProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => { await db.deleteModuleResource(input.id); return { success: true }; }),
     reorder: formateurProcedure.input(z.object({ moduleId: z.number(), resourceIds: z.array(z.number()) })).mutation(async ({ input }) => { await db.reorderModuleResources(input.moduleId, input.resourceIds); return { success: true }; }),
   }),
