@@ -33,17 +33,17 @@
 - [x] Téléchargement des ressources par apprenants
 - [x] Filigrane sur les PDF téléchargés
 - [x] Aperçu des ressources
-- [ ] Prévisualisation des ressources pour formateurs (avant publication)
+- [x] Prévisualisation des ressources pour formateurs (avant publication)
 
 ## Tableaux de Bord
-- [ ] Dashboard Apprenant : vraies données + graphiques
-- [ ] Dashboard Formateur : statistiques complètes
-- [ ] Dashboard Admin : KPIs temps réel avec graphiques
-- [ ] Gestion des utilisateurs complète
+- [x] Dashboard Apprenant : vraies données + graphiques (Radar, Bar, Pie charts)
+- [x] Dashboard Formateur : statistiques complètes (Bar, Line charts, suivi apprenants)
+- [x] Dashboard Admin : KPIs temps réel avec graphiques (Pie, Line, Bar charts)
+- [x] Gestion des utilisateurs complète
 
 ## Paiements & Certificats
-- [ ] Page de paiement PayTech fonctionnelle
-- [ ] Webhook IPN PayTech
+- [ ] Page de paiement PayTech fonctionnelle (redirection, formulaire)
+- [ ] Webhook IPN PayTech (vérification signature, mise à jour statut)
 - [ ] Génération PDF certificats avec QR Code
 - [ ] Téléchargement certificats
 - [ ] Vérification certificats via QR Code

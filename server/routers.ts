@@ -306,6 +306,10 @@ export const appRouter = router({
     })).mutation(async ({ ctx, input }) => ({ id: await db.upsertAlumniProfile(ctx.user.id, input) })),
   }),
 
+  formateur: router({
+    stats: formateurProcedure.query(({ ctx }) => db.getFormateurStats(ctx.user.id)),
+  }),
+
   admin: router({
     stats: adminProcedure.query(() => db.getAdminStats()),
     recentEnrollments: adminProcedure.query(() => db.getRecentEnrollments(20)),

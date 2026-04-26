@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, sql, like, or, count, sum, lt, ne } from "drizzle-orm";
+import { eq, desc, asc, and, sql, like, or, count, sum, lt, ne, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users, courses, categories, modules, enrollments,
@@ -507,5 +507,49 @@ export async function reorderModuleResources(moduleId: number, resourceIds: numb
   if (!db) throw new Error("DB not available");
   for (let i = 0; i < resourceIds.length; i++) {
     await db.update(moduleResources).set({ sortOrder: i }).where(eq(moduleResources.id, resourceIds[i]));
+  }
+}
+
+
+// ─── Formateur Stats ─────────────────────────────────────────────
+export async function getFormateurStats(formateurId: number) {
+  const db = await getDb();
+  if (!db) return { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0, avgCompletion: 0 };
+  
+  try {
+    // Get all courses for this formateur
+    const userCourses = await db.select({ id: courses.id }).from(courses)
+      .where(eq(courses.formateurId, formateurId));
+    
+    const courseIds = userCourses.map(c => c.id);
+    if (courseIds.length === 0) {
+      return { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0, avgCompletion: 0 };
+    }
+    
+    // Count published courses
+    const publishedCount = await db.select({ count: count() }).from(courses)
+      .where(and(eq(courses.formateurId, formateurId), eq(courses.status, "publie")));
+    
+    // Count total enrollments
+    const enrollmentCount = await db.select({ count: count() }).from(enrollments)
+      .where(inArray(enrollments.courseId, courseIds));
+    
+    // Calculate average completion
+    const completionData = await db.select({ progress: enrollments.progress }).from(enrollments)
+      .where(inArray(enrollments.courseId, courseIds));
+    
+    const avgCompletion = completionData.length > 0
+      ? Math.round(completionData.reduce((sum, e) => sum + e.progress, 0) / completionData.length)
+      : 0;
+    
+    return {
+      totalCourses: userCourses.length,
+      publishedCourses: publishedCount[0]?.count || 0,
+      totalEnrollments: enrollmentCount[0]?.count || 0,
+      avgCompletion,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get formateur stats:", error);
+    return { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0, avgCompletion: 0 };
   }
 }
