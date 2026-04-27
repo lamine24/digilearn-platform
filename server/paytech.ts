@@ -78,6 +78,33 @@ export async function initiatePaytechPayment(params: {
 
 export function verifyPaytechIPN(body: Record<string, string>): boolean {
   // PayTech IPN verification
+  // Verify required fields
+  if (!body.ref_command || !body.type_event) {
+    return false;
+  }
+
   // In production, verify the hash signature
-  return !!body.ref_command && !!body.type_event;
+  // PayTech sends: SEN_AMOUNT, SEN_CURRENCY, SEN_MERCHANT_ID, SEN_MERCHANT_KEY, SEN_MERCHANT_RETURN_URL, SEN_REFERENCE_COMMAND, SEN_TYPE_EVENT
+  // Hash = SHA256(SEN_MERCHANT_KEY + SEN_MERCHANT_ID + SEN_REFERENCE_COMMAND + SEN_AMOUNT + SEN_CURRENCY + SEN_TYPE_EVENT)
+  
+  if (ENV.paytechSecretKey) {
+    const expectedHash = crypto
+      .createHash("sha256")
+      .update(
+        ENV.paytechSecretKey +
+        (body.sen_merchant_id || "") +
+        body.ref_command +
+        (body.sen_amount || "") +
+        (body.sen_currency || "") +
+        body.type_event
+      )
+      .digest("hex");
+
+    if (body.sen_hash && body.sen_hash !== expectedHash) {
+      console.warn("[PayTech IPN] Invalid signature");
+      return false;
+    }
+  }
+
+  return true;
 }

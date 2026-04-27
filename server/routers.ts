@@ -241,24 +241,33 @@ export const appRouter = router({
       const existing = await db.getUserCertificates(ctx.user.id);
       const alreadyHas = existing.find(c => c.course.id === input.courseId);
       if (alreadyHas) return { certificateCode: alreadyHas.cert.certificateCode, pdfUrl: alreadyHas.cert.pdfUrl };
-      const code = `DL-CERT-${nanoid(12).toUpperCase()}`;
+      
+      const { generateCertificateCode, generateCertificatePDF } = await import("./certificate-generator");
+      const code = generateCertificateCode();
       const course = await db.getCourseById(input.courseId);
-      // Generate certificate SVG with QR code
-      const { generateCertificateSVG } = await import("./certificate-generator");
-      const { storagePut } = await import("./storage");
-      const svgContent = await generateCertificateSVG({
-        userName: ctx.user.name || "Apprenant",
-        courseName: course?.title || "Formation",
-        certificateCode: code,
-        issuedAt: new Date(),
-        verifyBaseUrl: input.origin,
-      });
-      // Store SVG as certificate file
-      const fileKey = `certificates/${code}.svg`;
-      const { url: pdfUrl } = await storagePut(fileKey, Buffer.from(svgContent, "utf-8"), "image/svg+xml");
-      await db.createCertificate({ userId: ctx.user.id, courseId: input.courseId, enrollmentId: enrollment.id, certificateCode: code, pdfUrl, pdfKey: fileKey });
-      await db.createNotification({ userId: ctx.user.id, type: "certification", title: "Certificat disponible", message: `Votre certificat pour "${course?.title}" est prêt. Code: ${code}` });
-      return { certificateCode: code, pdfUrl };
+      
+      try {
+        // Generate certificate PDF with QR code
+        const { url: pdfUrl, key: pdfKey } = await generateCertificatePDF({
+          userName: ctx.user.name || "Apprenant",
+          courseName: course?.title || "Formation",
+          courseLevel: course?.level || "debutant",
+          certificateCode: code,
+          issuedAt: new Date(),
+          verifyBaseUrl: `${input.origin}/verify-certificate`,
+        });
+        
+        // Store certificate in database
+        await db.createCertificate({ userId: ctx.user.id, courseId: input.courseId, enrollmentId: enrollment.id, certificateCode: code, pdfUrl, pdfKey });
+        
+        // Send notification
+        await db.createNotification({ userId: ctx.user.id, type: "certification", title: "Certificat disponible", message: `Votre certificat pour "${course?.title}" est prêt. Code: ${code}` });
+        
+        return { certificateCode: code, pdfUrl };
+      } catch (error: any) {
+        console.error("[Certificate Generation] Error:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la génération du certificat" });
+      }
     }),
   }),
 

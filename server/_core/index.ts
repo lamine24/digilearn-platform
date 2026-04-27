@@ -102,33 +102,59 @@ async function startServer() {
   // PayTech IPN (Instant Payment Notification) endpoint
   app.post("/api/paytech/ipn", async (req, res) => {
     try {
+      const { verifyPaytechIPN } = await import("../paytech");
+      const { getPaymentByRef, updatePaymentStatus, getEnrollment, createEnrollment, updateEnrollment, getCourseById, createNotification } = await import("../db");
+      
+      // Verify IPN signature
+      if (!verifyPaytechIPN(req.body)) {
+        console.warn("[PayTech IPN] Invalid signature or missing fields");
+        return res.status(400).json({ error: "Invalid signature" });
+      }
+      
       const { ref_command, type_event } = req.body;
       if (!ref_command) {
         return res.status(400).json({ error: "Missing ref_command" });
       }
-      const { getPaymentByRef, updatePaymentStatus, getEnrollment, createEnrollment, updateEnrollment, getCourseById, createNotification } = await import("../db");
+      
       const payment = await getPaymentByRef(ref_command);
       if (!payment) {
+        console.warn(`[PayTech IPN] Payment not found for ref: ${ref_command}`);
         return res.status(404).json({ error: "Payment not found" });
       }
+      
+      // Handle payment success
       if (type_event === "sale_complete") {
+        console.log(`[PayTech IPN] Payment successful for ref: ${ref_command}`);
         await updatePaymentStatus(payment.id, "reussi", new Date());
+        
+        // Create or update enrollment
         const existing = await getEnrollment(payment.userId, payment.courseId);
         if (!existing) {
           await createEnrollment({ userId: payment.userId, courseId: payment.courseId, status: "actif" });
         } else {
           await updateEnrollment(existing.id, { status: "actif" } as any);
         }
+        
+        // Send notification
         const course = await getCourseById(payment.courseId);
         await createNotification({
           userId: payment.userId,
           type: "inscription",
           title: "Inscription confirmée",
-          message: `Votre inscription à "${course?.title}" a été confirmée.`,
+          message: `Votre inscription a \"${course?.title}\" a ete confirmee.`,
         });
-      } else if (type_event === "sale_canceled") {
+      } 
+      // Handle payment cancellation
+      else if (type_event === "sale_canceled") {
+        console.log(`[PayTech IPN] Payment canceled for ref: ${ref_command}`);
         await updatePaymentStatus(payment.id, "echoue");
       }
+      // Handle payment failure
+      else if (type_event === "sale_failed") {
+        console.log(`[PayTech IPN] Payment failed for ref: ${ref_command}`);
+        await updatePaymentStatus(payment.id, "echoue");
+      }
+      
       res.json({ success: true });
     } catch (error) {
       console.error("[PayTech IPN] Error:", error);

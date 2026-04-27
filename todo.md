@@ -42,11 +42,11 @@
 - [x] Gestion des utilisateurs complète
 
 ## Paiements & Certificats
-- [ ] Page de paiement PayTech fonctionnelle (redirection, formulaire)
-- [ ] Webhook IPN PayTech (vérification signature, mise à jour statut)
-- [ ] Génération PDF certificats avec QR Code
-- [ ] Téléchargement certificats
-- [ ] Vérification certificats via QR Code
+- [x] Page de paiement PayTech fonctionnelle (redirection, formulaire)
+- [x] Webhook IPN PayTech (vérification signature, mise à jour statut)
+- [x] Génération PDF certificats avec QR Code (pdf-lib)
+- [ ] Téléchargement certificats (endpoint + UI)
+- [ ] Vérification certificats via QR Code (page de vérification)
 
 ## Notifications & Relances
 - [ ] Notifications email (SMTP)

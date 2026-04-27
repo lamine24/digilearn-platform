@@ -1,4 +1,204 @@
 import QRCode from "qrcode";
+import { PDFDocument, rgb } from "pdf-lib";
+import { storagePut } from "./storage";
+
+/**
+ * Generate a PDF certificate with QR code
+ */
+export async function generateCertificatePDF(params: {
+  userName: string;
+  courseName: string;
+  courseLevel: string;
+  certificateCode: string;
+  issuedAt: Date;
+  verifyBaseUrl: string;
+}): Promise<{ url: string; key: string }> {
+  const { userName, courseName, courseLevel, certificateCode, issuedAt, verifyBaseUrl } = params;
+  const verifyUrl = `${verifyBaseUrl}/verify-certificate?code=${certificateCode}`;
+  
+  try {
+    // Create QR code
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+      errorCorrectionLevel: "H",
+      type: "image/png",
+      width: 150,
+      margin: 1,
+    });
+
+    // Convert data URL to buffer
+    const qrBuffer = Buffer.from(qrDataUrl.split(",")[1], "base64");
+
+    // Create PDF document
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([842, 595]); // A4 landscape
+
+    // Set background color
+    page.drawRectangle({
+      x: 0,
+      y: 0,
+      width: 842,
+      height: 595,
+      color: rgb(1, 0.95, 0.92), // Light cream background
+    });
+
+    // Add decorative border
+    page.drawRectangle({
+      x: 20,
+      y: 20,
+      width: 802,
+      height: 555,
+      borderColor: rgb(0.2, 0.4, 0.8), // Primary blue
+      borderWidth: 3,
+    });
+
+    // Add inner decorative border
+    page.drawRectangle({
+      x: 30,
+      y: 30,
+      width: 782,
+      height: 535,
+      borderColor: rgb(0.2, 0.4, 0.8),
+      borderWidth: 1,
+    });
+
+    // Add title
+    page.drawText("CERTIFICAT DE COMPLÉTION", {
+      x: 200,
+      y: 500,
+      size: 36,
+      color: rgb(0.2, 0.4, 0.8),
+      font: await pdfDoc.embedFont("Helvetica-Bold"),
+    });
+
+    // Add subtitle
+    page.drawText("DigiLearn - Plateforme de Formation Certifiante", {
+      x: 200,
+      y: 460,
+      size: 14,
+      color: rgb(0.4, 0.4, 0.4),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Add decorative line
+    page.drawLine({
+      start: { x: 100, y: 430 },
+      end: { x: 742, y: 430 },
+      thickness: 1,
+      color: rgb(0.2, 0.4, 0.8),
+    });
+
+    // Add main text
+    page.drawText("Ceci certifie que", {
+      x: 200,
+      y: 380,
+      size: 14,
+      color: rgb(0.3, 0.3, 0.3),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Add student name
+    page.drawText(userName.toUpperCase(), {
+      x: 200,
+      y: 340,
+      size: 28,
+      color: rgb(0.2, 0.4, 0.8),
+      font: await pdfDoc.embedFont("Helvetica-Bold"),
+    });
+
+    // Add completion text
+    page.drawText("a complété avec succès la formation", {
+      x: 200,
+      y: 300,
+      size: 14,
+      color: rgb(0.3, 0.3, 0.3),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Add course name
+    page.drawText(courseName, {
+      x: 200,
+      y: 260,
+      size: 20,
+      color: rgb(0.2, 0.4, 0.8),
+      font: await pdfDoc.embedFont("Helvetica-Bold"),
+    });
+
+    // Add course level
+    page.drawText(`Niveau: ${courseLevel}`, {
+      x: 200,
+      y: 225,
+      size: 12,
+      color: rgb(0.4, 0.4, 0.4),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Add completion date
+    const formattedDate = issuedAt.toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    page.drawText(`Délivré le ${formattedDate}`, {
+      x: 200,
+      y: 190,
+      size: 12,
+      color: rgb(0.4, 0.4, 0.4),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Add certificate code
+    page.drawText(`Code: ${certificateCode}`, {
+      x: 200,
+      y: 155,
+      size: 10,
+      color: rgb(0.6, 0.6, 0.6),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Embed QR code
+    const qrImage = await pdfDoc.embedPng(qrBuffer);
+    page.drawImage(qrImage, {
+      x: 680,
+      y: 80,
+      width: 120,
+      height: 120,
+    });
+
+    // Add QR code label
+    page.drawText("Vérifier le certificat", {
+      x: 680,
+      y: 65,
+      size: 9,
+      color: rgb(0.4, 0.4, 0.4),
+      font: await pdfDoc.embedFont("Helvetica"),
+    });
+
+    // Add footer
+    page.drawText(
+      "Ce certificat est délivré par DigiLearn et valide l'accomplissement de la formation spécifiée ci-dessus.",
+      {
+        x: 50,
+        y: 40,
+        size: 9,
+        color: rgb(0.5, 0.5, 0.5),
+        font: await pdfDoc.embedFont("Helvetica"),
+      }
+    );
+
+    // Save PDF to buffer
+    const pdfBuffer = await pdfDoc.save();
+
+    // Upload to S3
+    const timestamp = Date.now();
+    const fileKey = `certificates/${timestamp}-${certificateCode}.pdf`;
+    const { url, key } = await storagePut(fileKey, pdfBuffer, "application/pdf");
+
+    return { url, key };
+  } catch (error) {
+    console.error("[Certificate Generator] Error:", error);
+    throw new Error("Failed to generate certificate PDF");
+  }
+}
 
 /**
  * Generates a certificate as an SVG string that can be converted to PDF
@@ -84,4 +284,13 @@ export function generateCertificateHTML(svgContent: string): string {
 </head>
 <body>${svgContent}</body>
 </html>`;
+}
+
+/**
+ * Generate a unique certificate code
+ */
+export function generateCertificateCode(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `CERT-${timestamp}-${random}`;
 }

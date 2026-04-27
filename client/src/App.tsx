@@ -13,6 +13,7 @@ import Learn from "./pages/Learn";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
+import PaymentPage from "./pages/PaymentPage";
 import Alumni from "./pages/Alumni";
 import ChatWidget from "./components/ChatWidget";
 import Onboarding from "./pages/Onboarding";
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/formateur" component={FormateurDashboard} />
       <Route path="/learn/:slug" component={Learn} />
       <Route path="/verify-certificate" component={VerifyCertificate} />
+      <Route path="/payment" component={PaymentPage} />
       <Route path="/payment/success" component={PaymentSuccess} />
       <Route path="/payment/cancel" component={PaymentCancel} />
       <Route path="/alumni" component={Alumni} />
