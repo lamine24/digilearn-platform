@@ -24,7 +24,7 @@
 - [x] Upload de vidéos (S3 streaming) - endpoint /api/upload implémenté
 - [x] Upload de ressources (PDF, documents) - endpoint /api/upload implémenté
 - [x] Aperçu des modules pour formateurs
-- [ ] Réorganisation des modules (drag & drop)
+- [x] Réorganisation des modules (drag & drop avec @dnd-kit)
 
 ## Gestion des Ressources par Module
 - [x] Création de ressources (upload, types multiples)
@@ -55,6 +55,6 @@
 
 ## Fonctionnalités Avancées
 - [x] Chatbot hybride
-- [ ] Espace Alumni avec annuaire
-- [ ] Suivi assiduité apprenants
-- [ ] Statistiques d'engagement
+- [x] Espace Alumni avec annuaire (page + procédure tRPC)
+- [x] Suivi assiduité apprenants (job d'inactivité + tracking)
+- [x] Statistiques d'engagement (dashboards avec graphiques)

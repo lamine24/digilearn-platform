@@ -99,6 +99,12 @@ export const appRouter = router({
       duration: z.number().optional(), sortOrder: z.number().optional(), isPreview: z.boolean().optional(),
     })).mutation(async ({ input }) => { const { id, ...data } = input; await db.updateModule(id, data); return { success: true }; }),
     delete: formateurProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => { await db.deleteModule(input.id); return { success: true }; }),
+    reorder: formateurProcedure.input(z.object({ courseId: z.number(), moduleIds: z.array(z.number()) })).mutation(async ({ input }) => {
+      for (let i = 0; i < input.moduleIds.length; i++) {
+        await db.updateModule(input.moduleIds[i], { sortOrder: i });
+      }
+      return { success: true };
+    }),
   }),
 
   moduleResources: router({
@@ -317,9 +323,11 @@ export const appRouter = router({
 
   alumni: router({
     directory: publicProcedure.query(() => db.getAlumniDirectory()),
+    list: publicProcedure.query(() => db.getAlumniDirectory()),
     updateProfile: protectedProcedure.input(z.object({
       linkedinUrl: z.string().optional(), company: z.string().optional(),
       jobTitle: z.string().optional(), graduationYear: z.number().optional(), isVisible: z.boolean().optional(),
+      portfolioUrl: z.string().optional(),
     })).mutation(async ({ ctx, input }) => ({ id: await db.upsertAlumniProfile(ctx.user.id, input) })),
   }),
 

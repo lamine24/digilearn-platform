@@ -14,6 +14,7 @@ import { GraduationCap, Plus, Trash2, Edit, ArrowLeft, Video, FileText, HelpCirc
 import { useState, useEffect } from "react";
 import { getLoginUrl } from "@/const";
 import { ResourcePreview } from "@/components/ResourcePreview";
+import { ModuleReorder } from "@/components/ModuleReorder";
 
 const resourceTypeIcon: Record<string, any> = {
   video: Video,
@@ -53,6 +54,15 @@ export default function EditCourse() {
   const [showPreview, setShowPreview] = useState(false);
   const [editingResourceId, setEditingResourceId] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showReorder, setShowReorder] = useState(false);
+  const reorderMutation = trpc.modules.reorder.useMutation({
+    onSuccess: () => {
+      toast.success("Ordre des modules mis à jour");
+      refetchModules();
+      setShowReorder(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const [newModule, setNewModule] = useState<{
     title: string;
@@ -337,18 +347,24 @@ export default function EditCourse() {
           <div className="lg:col-span-1">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Modules ({modules?.length || 0})</h2>
-              <Dialog open={showAddModule} onOpenChange={(open) => {
-                setShowAddModule(open);
-                if (!open) {
-                  setEditingModuleId(null);
-                  setNewModule({ title: "", description: "", contentType: "video", contentUrl: "", contentBody: "", duration: 5, isPreview: false });
-                }
-              }}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-3 w-3" />
+              <div className="flex gap-2">
+                {modules && modules.length > 1 && (
+                  <Button size="sm" variant="outline" onClick={() => setShowReorder(!showReorder)}>
+                    {showReorder ? "Annuler" : "Réorganiser"}
                   </Button>
-                </DialogTrigger>
+                )}
+                <Dialog open={showAddModule} onOpenChange={(open) => {
+                  setShowAddModule(open);
+                  if (!open) {
+                    setEditingModuleId(null);
+                    setNewModule({ title: "", description: "", contentType: "video", contentUrl: "", contentBody: "", duration: 5, isPreview: false });
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>{editingModuleId ? "Modifier" : "Créer"} un module</DialogTitle>
@@ -390,12 +406,28 @@ export default function EditCourse() {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
 
             <div className="space-y-2">
               {!modules || modules.length === 0 ? (
                 <Card><CardContent className="p-4 text-center text-sm text-muted-foreground">Aucun module</CardContent></Card>
+              ) : showReorder ? (
+                <div className="space-y-3">
+                  <ModuleReorder
+                    modules={modules.map(m => ({ id: m.id, title: m.title, completed: false }))}
+                    onReorder={(reordered) => {
+                      reorderMutation.mutate({
+                        courseId: courseData?.course?.id || 0,
+                        moduleIds: reordered.map(m => m.id),
+                      });
+                    }}
+                  />
+                  <Button variant="outline" onClick={() => setShowReorder(false)} className="w-full">
+                    Annuler
+                  </Button>
+                </div>
               ) : (
                 modules.map((mod, idx) => (
                   <Card key={mod.id} className={`cursor-pointer border transition-colors ${activeModuleId === mod.id ? "border-primary bg-primary/5" : "border-border/50 hover:border-primary/50"}`} onClick={() => setActiveModuleId(mod.id)}>
@@ -418,7 +450,8 @@ export default function EditCourse() {
                     </CardContent>
                   </Card>
                 ))
-              )}
+              )
+              }
             </div>
           </div>
 
