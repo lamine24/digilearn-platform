@@ -45,13 +45,13 @@
 - [x] Page de paiement PayTech fonctionnelle (redirection, formulaire)
 - [x] Webhook IPN PayTech (vérification signature, mise à jour statut)
 - [x] Génération PDF certificats avec QR Code (pdf-lib)
-- [ ] Téléchargement certificats (endpoint + UI)
-- [ ] Vérification certificats via QR Code (page de vérification)
+- [x] Téléchargement certificats (endpoint + UI avec bouton dans Learn)
+- [x] Vérification certificats via QR Code (page de vérification fonctionnelle)
 
 ## Notifications & Relances
-- [ ] Notifications email (SMTP)
-- [ ] Relances après 3 jours inactivité
-- [ ] Notifications in-app complètes
+- [x] Notifications email (SMTP avec nodemailer)
+- [x] Relances après 3 jours inactivité (job automatisé)
+- [x] Notifications in-app complètes
 
 ## Fonctionnalités Avancées
 - [x] Chatbot hybride

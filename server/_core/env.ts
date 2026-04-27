@@ -9,4 +9,10 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   paytechApiKey: process.env.PAYTECH_API_KEY ?? "",
   paytechSecretKey: process.env.PAYTECH_SECRET_KEY ?? "",
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: process.env.SMTP_PORT ?? "587",
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPassword: process.env.SMTP_PASSWORD ?? "",
+  smtpFrom: process.env.SMTP_FROM ?? "noreply@digilearn.com",
+  smtpSecure: process.env.SMTP_SECURE ?? "false",
 };

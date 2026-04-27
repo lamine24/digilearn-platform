@@ -50,9 +50,32 @@ export default function Learn() {
   const certMutation = trpc.certificates.generate.useMutation({
     onSuccess: (result) => {
       toast.success(`Certificat généré ! Code: ${result.certificateCode}`);
+      refetchProgress();
     },
     onError: (err) => toast.error(err.message),
   });
+  
+  const [userCertificates, setUserCertificates] = useState<any[]>([]);
+  const { data: certificatesData } = trpc.certificates.myCertificates.useQuery();
+  
+  useEffect(() => {
+    if (certificatesData) {
+      setUserCertificates(certificatesData);
+    }
+  }, [certificatesData]);
+  
+  const myCertificate = userCertificates.find(c => c.course.id === courseData?.course?.id);
+  
+  const handleDownloadCertificate = () => {
+    if (myCertificate?.cert.pdfUrl) {
+      const link = document.createElement('a');
+      link.href = myCertificate.cert.pdfUrl;
+      link.download = `certificat-${myCertificate.cert.certificateCode}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
 
   const [activeModuleIdx, setActiveModuleIdx] = useState(0);
   const [moduleResources, setModuleResources] = useState<any[]>([]);
@@ -301,13 +324,24 @@ export default function Learn() {
                     </Button>
                   )}
                   {allCompleted && (
-                    <Button
-                      variant="secondary"
-                      onClick={() => certMutation.mutate({ courseId: courseData.course.id, origin: window.location.origin })}
-                      disabled={certMutation.isPending}
-                    >
-                      <Award className="mr-1 h-4 w-4" /> Obtenir le certificat
-                    </Button>
+                    <>
+                      {myCertificate ? (
+                        <Button
+                          variant="secondary"
+                          onClick={handleDownloadCertificate}
+                        >
+                          <Download className="mr-1 h-4 w-4" /> Télécharger le certificat
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          onClick={() => certMutation.mutate({ courseId: courseData.course.id, origin: window.location.origin })}
+                          disabled={certMutation.isPending}
+                        >
+                          <Award className="mr-1 h-4 w-4" /> Obtenir le certificat
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
 

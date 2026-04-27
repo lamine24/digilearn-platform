@@ -1,10 +1,11 @@
 /**
  * Inactivity reminder job
  * Runs every hour, checks for users inactive for 3+ days,
- * creates in-app notifications and notifies the owner.
+ * creates in-app notifications, sends emails, and notifies the owner.
  */
 import * as db from "./db";
 import { notifyOwner } from "./_core/notification";
+import { sendInactivityReminderEmail } from "./email-service";
 
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 const CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
@@ -25,6 +26,14 @@ async function checkInactiveUsers() {
         title: "Vous nous manquez !",
         message: `Cela fait plus de 3 jours que vous n'avez pas visité DigiLearn. Reprenez votre parcours d'apprentissage dès maintenant !`,
       });
+
+      // Send email reminder if user has email
+      if (user.email) {
+        const daysSinceActive = Math.floor(
+          (Date.now() - new Date(user.lastActiveAt).getTime()) / (24 * 60 * 60 * 1000)
+        );
+        await sendInactivityReminderEmail(user.name || "Apprenant", user.email, daysSinceActive);
+      }
 
       notifiedUsers.add(user.id);
     }

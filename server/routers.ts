@@ -150,13 +150,21 @@ export const appRouter = router({
       return db.getUserEnrollments(ctx.user.id);
     }),
     check: protectedProcedure.input(z.object({ courseId: z.number() })).query(({ ctx, input }) => db.getEnrollment(ctx.user.id, input.courseId)),
-    enroll: protectedProcedure.input(z.object({ courseId: z.number() })).mutation(async ({ ctx, input }) => {
+    enroll: protectedProcedure.input(z.object({ courseId: z.number(), origin: z.string().optional() })).mutation(async ({ ctx, input }) => {
       const existing = await db.getEnrollment(ctx.user.id, input.courseId);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "Déjà inscrit" });
       const course = await db.getCourseById(input.courseId);
       if (!course) throw new TRPCError({ code: "NOT_FOUND" });
       if (Number(course.price) === 0) {
         const id = await db.createEnrollment({ userId: ctx.user.id, courseId: input.courseId, status: "actif" });
+        
+        // Send enrollment confirmation email
+        if (ctx.user.email) {
+          const { sendEnrollmentEmail } = await import("./email-service");
+          const courseUrl = `${input.origin || "https://digilearn.manus.space"}/learn/${course.slug}`;
+          await sendEnrollmentEmail(ctx.user.name || "Apprenant", ctx.user.email, course.title, courseUrl);
+        }
+        
         return { id, paymentRequired: false };
       }
       return { paymentRequired: true, courseId: input.courseId, price: course.price, currency: course.currency };

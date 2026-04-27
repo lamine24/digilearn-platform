@@ -14,7 +14,7 @@ export async function generateCertificatePDF(params: {
   verifyBaseUrl: string;
 }): Promise<{ url: string; key: string }> {
   const { userName, courseName, courseLevel, certificateCode, issuedAt, verifyBaseUrl } = params;
-  const verifyUrl = `${verifyBaseUrl}/verify-certificate?code=${certificateCode}`;
+  const verifyUrl = `${verifyBaseUrl}?code=${certificateCode}`;
   
   try {
     // Create QR code
