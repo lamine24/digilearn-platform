@@ -223,40 +223,44 @@ export default function FormateurDashboard() {
         {/* Charts */}
         {myCourses && myCourses.length > 0 && (
           <div className="grid md:grid-cols-2 gap-4 mb-8">
-            {enrollmentChartData.length > 0 && (
-              <Card>
+            {enrollmentChartData && enrollmentChartData.length > 0 && (
+              <Card key="enrollment-chart">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold">Inscriptions par formation</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={enrollmentChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Bar dataKey="inscriptions" fill="#3b4f8a" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <div style={{ width: '100%', height: 250 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={enrollmentChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} />
+                        <Tooltip />
+                        <Bar dataKey="inscriptions" fill="#3b4f8a" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
-            {completionChartData.length > 0 && (
-              <Card>
+            {completionChartData && completionChartData.length > 0 && (
+              <Card key="completion-chart">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold">Taux de complétion</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={completionChartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-                      <Tooltip formatter={(v: number) => `${v}%`} />
-                      <Line type="monotone" dataKey="complétion" stroke="#2a7d6e" strokeWidth={2} dot={{ fill: "#2a7d6e", r: 4 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <div style={{ width: '100%', height: 250 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={completionChartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
+                        <Tooltip formatter={(v: number) => `${v}%`} />
+                        <Line type="monotone" dataKey="complétion" stroke="#2a7d6e" strokeWidth={2} dot={{ fill: "#2a7d6e", r: 4 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}

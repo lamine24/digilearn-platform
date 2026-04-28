@@ -175,62 +175,68 @@ export default function Dashboard() {
         {enrollments && enrollments.length > 0 && (
           <div className="grid md:grid-cols-3 gap-4 mb-8">
             {/* Radar: competencies */}
-            {radarData.length > 0 && (
-              <Card>
+            {radarData && radarData.length > 0 && (
+              <Card key="radar-chart">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold">Compétences acquises</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="#e5e7eb" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6b7280" }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                      <Radar name="Score" dataKey="score" stroke="#3b4f8a" fill="#3b4f8a" fillOpacity={0.25} />
-                    </RadarChart>
-                  </ResponsiveContainer>
+                  <div style={{ width: '100%', height: 220 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="#e5e7eb" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#6b7280" }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                        <Radar name="Score" dataKey="score" stroke="#3b4f8a" fill="#3b4f8a" fillOpacity={0.25} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
             {/* Bar: progression per course */}
-            {barData.length > 0 && (
-              <Card>
+            {barData && barData.length > 0 && (
+              <Card key="bar-chart">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold">Progression par formation</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} />
-                      <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
-                      <Tooltip formatter={(v: number) => `${v}%`} />
-                      <Bar dataKey="progression" fill="#2a7d6e" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <div style={{ width: '100%', height: 220 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10 }} />
+                        <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
+                        <Tooltip formatter={(v: number) => `${v}%`} />
+                        <Bar dataKey="progression" fill="#2a7d6e" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
             {/* Pie: status distribution */}
-            {pieData.length > 0 && (
-              <Card>
+            {pieData && pieData.length > 0 && (
+              <Card key="pie-chart">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-semibold">Répartition des formations</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
-                        {pieData.map((_, i) => (
-                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div style={{ width: '100%', height: 220 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                          {pieData.map((_, i) => (
+                            <Cell key={`cell-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}

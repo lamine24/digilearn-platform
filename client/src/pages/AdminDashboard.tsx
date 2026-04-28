@@ -48,6 +48,7 @@ export default function AdminDashboard() {
     onError: (err) => toast.error(err.message),
   });
 
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   // Chart data: users by role
   const usersByRoleData = useMemo(() => {
     if (!allUsers) return [];
@@ -92,6 +93,7 @@ export default function AdminDashboard() {
     }));
   }, [allCourses]);
 
+  // NOW DO EARLY RETURNS AFTER ALL HOOKS
   if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
   if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
   if (user?.role !== "admin") { navigate("/dashboard"); return null; }
@@ -188,82 +190,90 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Charts */}
+        {/* Charts - Fixed ResponsiveContainer wrapping */}
         <div className="grid md:grid-cols-2 gap-4 mb-8">
-          {usersByRoleData.length > 0 && (
-            <Card>
+          {usersByRoleData && usersByRoleData.length > 0 && (
+            <Card key="users-by-role-chart">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Utilisateurs par rôle</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie data={usersByRoleData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
-                      {usersByRoleData.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <div style={{ width: '100%', height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={usersByRoleData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                        {usersByRoleData.map((_, i) => (
+                          <Cell key={`cell-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {revenueChartData.length > 0 && (
-            <Card>
+          {revenueChartData && revenueChartData.length > 0 && (
+            <Card key="revenue-chart">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Revenus mensuels</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={revenueChartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Line type="monotone" dataKey="revenus" stroke="#e07c3e" strokeWidth={2} dot={{ fill: "#e07c3e", r: 4 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div style={{ width: '100%', height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={revenueChartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                      <Line type="monotone" dataKey="revenus" stroke="#e07c3e" strokeWidth={2} dot={{ fill: "#e07c3e", r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {enrollmentStatusData.length > 0 && (
-            <Card>
+          {enrollmentStatusData && enrollmentStatusData.length > 0 && (
+            <Card key="enrollment-status-chart">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Statut des inscriptions</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={enrollmentStatusData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#3b4f8a" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ width: '100%', height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={enrollmentStatusData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="#3b4f8a" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {topCoursesData.length > 0 && (
-            <Card>
+          {topCoursesData && topCoursesData.length > 0 && (
+            <Card key="top-courses-chart">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Top formations</CardTitle>
               </CardHeader>
               <CardContent className="p-2">
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={topCoursesData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis type="number" tick={{ fontSize: 10 }} />
-                    <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
-                    <Tooltip />
-                    <Bar dataKey="inscrits" fill="#2a7d6e" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div style={{ width: '100%', height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={topCoursesData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis type="number" tick={{ fontSize: 10 }} />
+                      <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Bar dataKey="inscrits" fill="#2a7d6e" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -279,47 +289,32 @@ export default function AdminDashboard() {
 
           <TabsContent value="users">
             <Card>
-              <CardHeader><CardTitle className="text-lg">Gestion des utilisateurs</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Gestion des utilisateurs</CardTitle>
+              </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left">
-                        <th className="pb-3 font-medium">Nom</th>
-                        <th className="pb-3 font-medium">Email</th>
-                        <th className="pb-3 font-medium">Rôle</th>
-                        <th className="pb-3 font-medium">Inscrit le</th>
-                        <th className="pb-3 font-medium">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allUsers?.map((u) => (
-                        <tr key={u.id} className="border-b last:border-0">
-                          <td className="py-3">{u.name || "—"}</td>
-                          <td className="py-3 text-muted-foreground">{u.email || "—"}</td>
-                          <td className="py-3">
-                            <Badge className={`text-xs ${roleColors[u.role]}`}>{roleLabels[u.role]}</Badge>
-                          </td>
-                          <td className="py-3 text-muted-foreground">{new Date(u.createdAt).toLocaleDateString("fr-FR")}</td>
-                          <td className="py-3">
-                            <Select
-                              value={u.role}
-                              onValueChange={(val) => updateRoleMutation.mutate({ userId: u.id, role: val as any })}
-                            >
-                              <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="admin">Administrateur</SelectItem>
-                                <SelectItem value="formateur">Formateur</SelectItem>
-                                <SelectItem value="apprenant">Apprenant</SelectItem>
-                                <SelectItem value="alumni">Alumni</SelectItem>
-                                <SelectItem value="prospect">Prospect</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-4">
+                  {allUsers?.map(user => (
+                    <div key={user.id} className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <div className="font-semibold">{user.name}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={roleColors[user.role]}>{roleLabels[user.role]}</Badge>
+                        <Select value={user.role} onValueChange={(role) => updateRoleMutation.mutate({ userId: user.id, role: role as any })}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="apprenant">Apprenant</SelectItem>
+                            <SelectItem value="formateur">Formateur</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -327,33 +322,17 @@ export default function AdminDashboard() {
 
           <TabsContent value="courses">
             <Card>
-              <CardHeader><CardTitle className="text-lg">Formations</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Formations</CardTitle>
+              </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left">
-                        <th className="pb-3 font-medium">Titre</th>
-                        <th className="pb-3 font-medium">Catégorie</th>
-                        <th className="pb-3 font-medium">Prix</th>
-                        <th className="pb-3 font-medium">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allCourses?.map((item) => (
-                        <tr key={item.course.id} className="border-b last:border-0">
-                          <td className="py-3 font-medium">{item.course.title}</td>
-                          <td className="py-3 text-muted-foreground">{item.category?.name || "—"}</td>
-                          <td className="py-3">{formatCurrency(item.course.price)}</td>
-                          <td className="py-3">
-                            <Badge variant={item.course.status === "publie" ? "default" : "secondary"} className="text-xs">
-                              {item.course.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-2">
+                  {allCourses?.map(item => (
+                    <div key={item.course.id} className="p-3 border rounded">
+                      <div className="font-semibold">{item.course.title}</div>
+                      <div className="text-sm text-muted-foreground">{item.course.description}</div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -361,31 +340,22 @@ export default function AdminDashboard() {
 
           <TabsContent value="enrollments">
             <Card>
-              <CardHeader><CardTitle className="text-lg">Inscriptions récentes</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Inscriptions récentes</CardTitle>
+              </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left">
-                        <th className="pb-3 font-medium">Apprenant</th>
-                        <th className="pb-3 font-medium">Formation</th>
-                        <th className="pb-3 font-medium">Statut</th>
-                        <th className="pb-3 font-medium">Progression</th>
-                        <th className="pb-3 font-medium">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentEnrollments?.map((item) => (
-                        <tr key={item.enrollment.id} className="border-b last:border-0">
-                          <td className="py-3">{item.user.name || "—"}</td>
-                          <td className="py-3">{item.course.title}</td>
-                          <td className="py-3"><Badge variant="outline" className="text-xs">{item.enrollment.status}</Badge></td>
-                          <td className="py-3">{item.enrollment.progress}%</td>
-                          <td className="py-3 text-muted-foreground">{new Date(item.enrollment.enrolledAt).toLocaleDateString("fr-FR")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-2">
+                  {recentEnrollments?.map(item => (
+                    <div key={item.enrollment.id} className="p-3 border rounded">
+                      <div className="flex justify-between">
+                        <div>
+                          <div className="font-semibold">{item.user.name}</div>
+                          <div className="text-sm text-muted-foreground">{item.course.title}</div>
+                        </div>
+                        <Badge>{item.enrollment.status}</Badge>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -393,35 +363,20 @@ export default function AdminDashboard() {
 
           <TabsContent value="payments">
             <Card>
-              <CardHeader><CardTitle className="text-lg">Paiements</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Paiements</CardTitle>
+              </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b text-left">
-                        <th className="pb-3 font-medium">Utilisateur</th>
-                        <th className="pb-3 font-medium">Formation</th>
-                        <th className="pb-3 font-medium">Montant</th>
-                        <th className="pb-3 font-medium">Statut</th>
-                        <th className="pb-3 font-medium">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {allPayments?.map((item) => (
-                        <tr key={item.payment.id} className="border-b last:border-0">
-                          <td className="py-3">{item.user.name || "—"}</td>
-                          <td className="py-3">{item.course.title}</td>
-                          <td className="py-3 font-medium">{formatCurrency(item.payment.amount)}</td>
-                          <td className="py-3">
-                            <Badge variant={item.payment.status === "reussi" ? "default" : "secondary"} className="text-xs">
-                              {item.payment.status}
-                            </Badge>
-                          </td>
-                          <td className="py-3 text-muted-foreground">{new Date(item.payment.createdAt).toLocaleDateString("fr-FR")}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-2">
+                  {allPayments?.map(item => (
+                    <div key={item.payment.id} className="p-3 border rounded flex justify-between">
+                      <div>
+                        <div className="font-semibold">{item.payment.transactionRef || 'N/A'}</div>
+                        <div className="text-sm text-muted-foreground">{formatCurrency(item.payment.amount)}</div>
+                      </div>
+                      <Badge variant={item.payment.status === 'reussi' ? 'default' : 'secondary'}>{item.payment.status}</Badge>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
