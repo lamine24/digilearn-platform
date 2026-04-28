@@ -39,6 +39,16 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
 
+  // Lightweight health endpoint for infrastructure checks
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      service: "digilearn-platform",
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.round(process.uptime()),
+    });
+  });
+
   // File upload endpoint
   app.post("/api/upload", async (req, res) => {
     try {
@@ -183,8 +193,11 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  const host = process.env.HOST || "0.0.0.0";
+  server.listen(port, host, () => {
+    console.log(`Server running on:`);
+    console.log(`- http://localhost:${port}/`);
+    console.log(`- http://127.0.0.1:${port}/`);
     // Start background jobs
     startInactivityJob();
   });
