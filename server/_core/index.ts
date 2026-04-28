@@ -39,6 +39,16 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
 
+  // Lightweight health endpoint for infrastructure checks
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      service: "digilearn-platform",
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.round(process.uptime()),
+    });
+  });
+
   // File upload endpoint
   app.post("/api/upload", async (req, res) => {
     try {
