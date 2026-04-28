@@ -48,10 +48,6 @@ export default function AdminDashboard() {
     onError: (err) => toast.error(err.message),
   });
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
-  if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
-  if (user?.role !== "admin") { navigate("/dashboard"); return null; }
-
   // Chart data: users by role
   const usersByRoleData = useMemo(() => {
     if (!allUsers) return [];
@@ -68,7 +64,7 @@ export default function AdminDashboard() {
   // Chart data: revenue trend (simulated)
   const revenueChartData = useMemo(() => {
     const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"];
-    return months.map((month, i) => ({
+    return months.map((month) => ({
       name: month,
       revenus: Math.floor(Math.random() * 500000) + 100000,
     }));
@@ -90,11 +86,15 @@ export default function AdminDashboard() {
   // Chart data: top courses
   const topCoursesData = useMemo(() => {
     if (!allCourses) return [];
-    return allCourses.slice(0, 5).map((item, i) => ({
+    return allCourses.slice(0, 5).map((item) => ({
       name: item.course.title.length > 20 ? item.course.title.substring(0, 18) + "…" : item.course.title,
       inscrits: Math.floor(Math.random() * 200) + 10,
     }));
   }, [allCourses]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
+  if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
+  if (user?.role !== "admin") { navigate("/dashboard"); return null; }
 
   return (
     <div className="min-h-screen bg-background">

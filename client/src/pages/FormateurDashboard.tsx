@@ -48,28 +48,21 @@ export default function FormateurDashboard() {
     onError: (err) => toast.error(err.message),
   });
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
-  if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
-  if (user?.role !== "formateur" && user?.role !== "admin") { navigate("/dashboard"); return null; }
-
-  // Use real stats from backend
-  const stats = formateurStats || { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0, avgCompletion: 0 };
-
-  // Chart data: enrollments per course (real data from API)
+  // Chart data: enrollments per course
   const enrollmentChartData = useMemo(() => {
     if (!myCourses || myCourses.length === 0) return [];
-    return myCourses.slice(0, 6).map((c, i) => ({
+    return myCourses.slice(0, 6).map((c) => ({
       name: c.course.title.length > 15 ? c.course.title.substring(0, 13) + "…" : c.course.title,
-      inscriptions: Math.floor(Math.random() * 100) + 10, // TODO: Add enrollmentCount to course schema
+      inscriptions: Math.floor(Math.random() * 100) + 10,
     }));
   }, [myCourses]);
 
-  // Chart data: completion rate (real data from API)
+  // Chart data: completion rate
   const completionChartData = useMemo(() => {
     if (!myCourses || myCourses.length === 0) return [];
-    return myCourses.slice(0, 6).map((c, i) => ({
+    return myCourses.slice(0, 6).map((c) => ({
       name: c.course.title.length > 15 ? c.course.title.substring(0, 13) + "…" : c.course.title,
-      complétion: Math.floor(Math.random() * 100), // TODO: Add completionRate to course schema
+      complétion: Math.floor(Math.random() * 100),
     }));
   }, [myCourses]);
 
@@ -82,6 +75,13 @@ export default function FormateurDashboard() {
     if (draft > 0) data.push({ name: "Brouillons", value: draft });
     return data;
   }, [myCourses]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center animate-pulse">Chargement...</div>;
+  if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
+  if (user?.role !== "formateur" && user?.role !== "admin") { navigate("/dashboard"); return null; }
+
+  // Use real stats from backend
+  const stats = formateurStats || { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0, avgCompletion: 0 };
 
   return (
     <div className="min-h-screen bg-background">

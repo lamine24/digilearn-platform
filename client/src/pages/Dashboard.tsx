@@ -29,19 +29,12 @@ export default function Dashboard() {
   const { data: unreadCount } = trpc.notifications.unreadCount.useQuery(undefined, { enabled: isAuthenticated });
   const markReadMutation = trpc.notifications.markRead.useMutation();
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-muted-foreground animate-pulse">Chargement...</div>;
-  }
-
-  if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
-    return null;
-  }
-
   useEffect(() => {
-    if (user?.role === "admin") navigate("/admin");
-    else if (user?.role === "formateur") navigate("/formateur");
-  }, [user?.role, navigate]);
+    if (!loading && isAuthenticated) {
+      if (user?.role === "admin") navigate("/admin");
+      else if (user?.role === "formateur") navigate("/formateur");
+    }
+  }, [loading, isAuthenticated, user?.role, navigate]);
 
   const activeEnrollments = enrollments?.filter(e => e.enrollment.status === "actif") || [];
   const completedEnrollments = enrollments?.filter(e => e.enrollment.status === "complete") || [];
@@ -84,6 +77,9 @@ export default function Dashboard() {
     if (completed > 0) data.push({ name: "Complétées", value: completed });
     return data;
   }, [activeEnrollments, completedEnrollments]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground animate-pulse">Chargement...</div>;
+  if (!isAuthenticated) { window.location.href = getLoginUrl(); return null; }
 
   return (
     <div className="min-h-screen bg-background">
