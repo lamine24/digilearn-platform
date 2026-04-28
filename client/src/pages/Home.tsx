@@ -10,9 +10,22 @@ import {
   Code, Target, TrendingUp, Calculator, ArrowRight, CheckCircle2,
   Play, Star, ChevronRight, Shield, Zap
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 const iconMap: Record<string, any> = { BarChart3, TrendingUp, Code, Target, Brain, Calculator };
+const CHART_COLORS = ["#3b4f8a", "#2a7d6e", "#e07c3e", "#8b5cf6", "#ec4899", "#06b6d4"];
 
 function formatPrice(price: string, currency: string) {
   const num = Number(price);
@@ -38,6 +51,24 @@ export default function Home() {
     ? coursesData?.filter(c => c.category?.slug === selectedCategory)
     : coursesData;
 
+  const categoryDistribution = useMemo(() => {
+    const counts = new Map<string, number>();
+    coursesData?.forEach((item) => {
+      const key = item.category?.name || "Général";
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+    return Array.from(counts.entries()).map(([name, value]) => ({ name, value }));
+  }, [coursesData]);
+
+  const durationByCourse = useMemo(() => {
+    return (coursesData || [])
+      .slice(0, 6)
+      .map((item) => ({
+        name: item.course.title.length > 16 ? `${item.course.title.slice(0, 14)}…` : item.course.title,
+        minutes: Number(item.course.duration || 0),
+      }));
+  }, [coursesData]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -51,6 +82,7 @@ export default function Home() {
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#catalogue" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Catalogue</a>
+            <a href="#visualisation" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Visualisation</a>
             <a href="#avantages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Avantages</a>
             <a href="#temoignages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Témoignages</a>
             <Link href="/verify-certificate" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Vérifier un certificat</Link>
@@ -171,6 +203,53 @@ export default function Home() {
                 </Card>
               </Link>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Visualisation */}
+      <section id="visualisation" className="py-20 bg-muted/30">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Visualisation des parcours</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Une lecture rapide de notre catalogue pour vous aider à choisir la formation la plus adaptée.
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-2 gap-6">
+            <Card className="border-border/50">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Répartition par domaine</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={categoryDistribution} dataKey="value" nameKey="name" outerRadius={100} label>
+                        {categoryDistribution.map((_, i) => (
+                          <Cell key={`cell-${i}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-4">Durée des formations (minutes)</h3>
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={durationByCourse} margin={{ left: 8, right: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v: number) => `${v} min`} />
+                      <Bar dataKey="minutes" fill="#3b4f8a" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
