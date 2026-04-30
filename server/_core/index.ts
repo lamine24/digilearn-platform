@@ -9,23 +9,54 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 
-function isPortAvailable(port: number): Promise<boolean> {
+function isPortAvailable(port: number, host: string): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
-    server.listen(port, () => {
+    server.listen(port, host, () => {
       server.close(() => resolve(true));
     });
     server.on("error", () => resolve(false));
   });
 }
 
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
+async function findAvailablePort(startPort: number = 3000, host: string): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
+    if (await isPortAvailable(port, host)) {
       return port;
     }
   }
-  throw new Error(`No available port found starting from ${startPort}`);
+  throw new Error(`No available port found on ${host} starting from ${startPort}`);
+}
+
+async function listenWithRetry(
+  server: ReturnType<typeof createServer>,
+  host: string,
+  startPort: number,
+  maxAttempts: number = 20
+): Promise<number> {
+  for (let port = startPort; port < startPort + maxAttempts; port++) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onError = (error: NodeJS.ErrnoException) => {
+          server.off("listening", onListening);
+          reject(error);
+        };
+        const onListening = () => {
+          server.off("error", onError);
+          resolve();
+        };
+        server.once("error", onError);
+        server.once("listening", onListening);
+        server.listen(port, host);
+      });
+      return port;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EADDRINUSE") {
+        throw error;
+      }
+    }
+  }
+  throw new Error(`Unable to listen on ${host} between ports ${startPort} and ${startPort + maxAttempts - 1}`);
 }
 
 import { startInactivityJob } from "../inactivity-job";
@@ -186,21 +217,20 @@ async function startServer() {
     serveStatic(app);
   }
 
+  const host = process.env.HOST || "0.0.0.0";
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const port = await findAvailablePort(preferredPort, host);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  const host = process.env.HOST || "0.0.0.0";
-  server.listen(port, host, () => {
-    console.log(`Server running on:`);
-    console.log(`- http://localhost:${port}/`);
-    console.log(`- http://127.0.0.1:${port}/`);
-    // Start background jobs
-    startInactivityJob();
-  });
+  const listeningPort = await listenWithRetry(server, host, port);
+  console.log(`Server running on:`);
+  console.log(`- http://localhost:${listeningPort}/`);
+  console.log(`- http://127.0.0.1:${listeningPort}/`);
+  // Start background jobs
+  startInactivityJob();
 }
 
 startServer().catch(console.error);

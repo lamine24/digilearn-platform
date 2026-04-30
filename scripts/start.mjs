@@ -1,9 +1,8 @@
 import { spawn } from "node:child_process";
 
-const command = process.platform === "win32" ? "node.exe" : "node";
-const child = spawn(command, ["dist/index.js"], {
+const child = spawn(process.execPath, ["dist/index.js"], {
   stdio: "inherit",
-  shell: true,
+  shell: false,
   env: {
     ...process.env,
     NODE_ENV: "production",

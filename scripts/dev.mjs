@@ -1,9 +1,9 @@
 import { spawn } from "node:child_process";
 
-const command = process.platform === "win32" ? "tsx.cmd" : "tsx";
-const child = spawn(command, ["watch", "server/_core/index.ts"], {
+const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+const child = spawn(command, ["exec", "tsx", "watch", "server/_core/index.ts"], {
   stdio: "inherit",
-  shell: true,
+  shell: false,
   env: {
     ...process.env,
     NODE_ENV: "development",
