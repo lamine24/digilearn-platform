@@ -72,3 +72,7 @@
 - [x] Glisser-déposer (drag & drop) pour fichiers (intégré dans FileUpload)
 - [x] Validation des types de fichiers (multer + frontend)
 - [x] Affichage des erreurs d'upload en temps réel (messages d'erreur)
+
+- [ ] Réorganisation des ressources par drag & drop
+- [ ] Réorganisation des modules par drag & drop (amélioration)
+- [ ] Sauvegarde automatique de l'ordre des modules/ressources
