@@ -19,6 +19,7 @@ import ChatWidget from "./components/ChatWidget";
 import Onboarding from "./pages/Onboarding";
 import EditCourse from "./pages/EditCourse";
 import CreateCourse from "./pages/CreateCourse";
+import ReorderResources from "./pages/ReorderResources";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/edit-course/:slug" component={EditCourse} />
       <Route path="/formateur/create-course" component={CreateCourse} />
+      <Route path="/formateur/reorder-resources/:moduleId" component={ReorderResources} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

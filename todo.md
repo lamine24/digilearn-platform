@@ -73,6 +73,6 @@
 - [x] Validation des types de fichiers (multer + frontend)
 - [x] Affichage des erreurs d'upload en temps réel (messages d'erreur)
 
-- [ ] Réorganisation des ressources par drag & drop
-- [ ] Réorganisation des modules par drag & drop (amélioration)
-- [ ] Sauvegarde automatique de l'ordre des modules/ressources
+- [ ] Réorganisation des ressources par drag & drop (accès depuis EditCourse + test complet)
+- [ ] Réorganisation des modules par drag & drop (intégration dans FormateurDashboard + test)
+- [ ] Sauvegarde automatique de l'ordre des modules/ressources (wiring complet + UX)
