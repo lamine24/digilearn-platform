@@ -18,6 +18,7 @@ import Alumni from "./pages/Alumni";
 import ChatWidget from "./components/ChatWidget";
 import Onboarding from "./pages/Onboarding";
 import EditCourse from "./pages/EditCourse";
+import CreateCourse from "./pages/CreateCourse";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/alumni" component={Alumni} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/edit-course/:slug" component={EditCourse} />
+      <Route path="/formateur/create-course" component={CreateCourse} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

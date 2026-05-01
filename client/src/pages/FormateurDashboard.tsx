@@ -274,6 +274,9 @@ export default function FormateurDashboard() {
           </TabsList>
 
           <TabsContent value="courses" className="space-y-4">
+            <Link href="/formateur/create-course">
+              <Button className="w-full mb-4"><Plus className="h-4 w-4 mr-2" />Créer une nouvelle formation</Button>
+            </Link>
             {myCourses && myCourses.length > 0 ? (
               <div className="grid gap-4">
                 {myCourses.map(courseItem => (

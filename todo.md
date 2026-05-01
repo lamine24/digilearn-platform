@@ -58,3 +58,10 @@
 - [x] Espace Alumni avec annuaire (page + procédure tRPC)
 - [x] Suivi assiduité apprenants (job d'inactivité + tracking)
 - [x] Statistiques d'engagement (dashboards avec graphiques)
+
+
+## 🐛 Bugs à Corriger (Session Actuelle)
+- [x] Formateur ne peut pas ajouter de formations (page CreateCourse créée)
+- [ ] Formateur ne peut pas ajouter de modules aux formations (à vérifier)
+- [ ] Impossible d'ajouter des ressources aux modules (à vérifier)
+- [ ] Erreurs dans les formulaires de création (à vérifier)
