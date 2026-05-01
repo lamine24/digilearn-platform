@@ -30,7 +30,7 @@ export default function CreateCourse() {
   const createCourseMutation = trpc.courses.create.useMutation({
     onSuccess: (data) => {
       toast.success("Formation créée avec succès");
-      navigate(`/formateur/dashboard`);
+      navigate(`/formateur`);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -208,7 +208,7 @@ export default function CreateCourse() {
                 >
                   {createCourseMutation.isPending ? "Création..." : "Créer la formation"}
                 </Button>
-                <Link href="/formateur/dashboard">
+                <Link href="/formateur">
                   <Button type="button" variant="outline" className="flex-1">
                     Annuler
                   </Button>

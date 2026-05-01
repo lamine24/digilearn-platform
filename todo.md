@@ -60,8 +60,8 @@
 - [x] Statistiques d'engagement (dashboards avec graphiques)
 
 
-## 🐛 Bugs à Corriger (Session Actuelle)
+## 🐛 Bugs Corrigés (Session Actuelle)
 - [x] Formateur ne peut pas ajouter de formations (page CreateCourse créée)
-- [ ] Formateur ne peut pas ajouter de modules aux formations (à vérifier)
-- [ ] Impossible d'ajouter des ressources aux modules (à vérifier)
-- [ ] Erreurs dans les formulaires de création (à vérifier)
+- [x] Formateur ne peut pas ajouter de modules aux formations (formulaire dans EditCourse OK)
+- [x] Impossible d'ajouter des ressources aux modules (formulaire dans EditCourse OK)
+- [x] Erreurs dans les formulaires de création (lien EditCourse corrigé)

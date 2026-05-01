@@ -295,7 +295,7 @@ export default function FormateurDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Link href={`/edit-course/${courseItem.course.id}`}>
+                          <Link href={`/edit-course/${courseItem.course.slug}`}>
                             <Button variant="outline" size="sm"><Pencil className="h-4 w-4" /></Button>
                           </Link>
                           <Button 
