@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { getLoginUrl } from "@/const";
 import { ResourcePreview } from "@/components/ResourcePreview";
 import { ModuleReorder } from "@/components/ModuleReorder";
+import FileUpload from "@/components/FileUpload";
 
 const resourceTypeIcon: Record<string, any> = {
   video: Video,
@@ -401,6 +402,38 @@ export default function EditCourse() {
                       <input type="checkbox" id="isPreview" checked={newModule.isPreview} onChange={(e) => setNewModule({ ...newModule, isPreview: e.target.checked })} />
                       <Label htmlFor="isPreview" className="cursor-pointer">Aperçu gratuit</Label>
                     </div>
+                    {newModule.contentType === "video" && (
+                      <div>
+                        <Label>Telecharger video</Label>
+                        <FileUpload
+                          onFileSelect={(file) => {
+                            setNewModule({ ...newModule, contentUrl: file.name });
+                            toast.success("Fichier video selectionne");
+                          }}
+                          acceptedTypes={["video/mp4", "video/webm", "video/ogg"]}
+                          maxSize={500 * 1024 * 1024}
+                        />
+                      </div>
+                    )}
+                    {newModule.contentType === "pdf" && (
+                      <div>
+                        <Label>Telecharger PDF</Label>
+                        <FileUpload
+                          onFileSelect={(file) => {
+                            setNewModule({ ...newModule, contentUrl: file.name });
+                            toast.success("Fichier PDF selectionne");
+                          }}
+                          acceptedTypes={["application/pdf"]}
+                          maxSize={100 * 1024 * 1024}
+                        />
+                      </div>
+                    )}
+                    {newModule.contentType === "texte" && (
+                      <div>
+                        <Label>Contenu texte</Label>
+                        <Textarea value={newModule.contentBody} onChange={(e) => setNewModule({ ...newModule, contentBody: e.target.value })} placeholder="Entrez le contenu texte..." />
+                      </div>
+                    )}
                     <Button className="w-full" onClick={handleAddModule} disabled={createModuleMutation.isPending || updateModuleMutation.isPending}>
                       {createModuleMutation.isPending || updateModuleMutation.isPending ? "..." : editingModuleId ? "Mettre à jour" : "Créer"}
                     </Button>

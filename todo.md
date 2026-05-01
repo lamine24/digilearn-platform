@@ -65,3 +65,10 @@
 - [x] Formateur ne peut pas ajouter de modules aux formations (formulaire dans EditCourse OK)
 - [x] Impossible d'ajouter des ressources aux modules (formulaire dans EditCourse OK)
 - [x] Erreurs dans les formulaires de création (lien EditCourse corrigé)
+
+
+## 🆕 Nouvelles Fonctionnalités (Session Actuelle)
+- [x] Barre de progression pour upload de ressources (composant FileUpload)
+- [x] Glisser-déposer (drag & drop) pour fichiers (intégré dans FileUpload)
+- [x] Validation des types de fichiers (multer + frontend)
+- [x] Affichage des erreurs d'upload en temps réel (messages d'erreur)
