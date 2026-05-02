@@ -104,3 +104,12 @@
 - [x] Tests unitaires pour recherche et filtrage (search.test.ts)
 - [ ] Sauvegarde des préférences de filtrage (localStorage)
 - [ ] Historique de recherche utilisateur
+
+
+## 📄 Page de Détails Cours Externes (Nouvelle Session)
+- [x] Helpers DB pour récupérer cours similaires et détails (getSimilarCourses, getRelatedCourses, getCourseStats)
+- [x] Procédures tRPC pour détails et recommandations (getDetail, getSimilar, getRelated, getStats)
+- [x] Page ExternalCourseDetail avec layout professionnel (header, détails, recommandations, CTA)
+- [x] Composants réutilisables (RatingBadge, PlatformBadge, CourseAccessButton)
+- [x] Intégration dans le catalogue (liens vers détails via /external-course/:slug)
+- [x] Tests unitaires pour page de détails (external-course-detail.test.ts)

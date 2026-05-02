@@ -60,8 +60,12 @@ async function listenWithRetry(
 }
 
 import { startInactivityJob } from "../inactivity-job";
+import { initializeDatabaseTables } from "../db-init";
 
 async function startServer() {
+  // Initialize database tables on startup
+  await initializeDatabaseTables();
+  
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

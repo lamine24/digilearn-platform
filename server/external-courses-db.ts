@@ -133,3 +133,106 @@ export async function isUserSubscribed(userId: number): Promise<boolean> {
   const subscription = await getUserSubscription(userId);
   return !!subscription;
 }
+
+
+// ─── Similar Courses & Recommendations ───────────────────────────────────────
+export async function getSimilarCourses(courseId: number, limit: number = 4) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    // Get the current course to find similar ones
+    const currentCourse = await db
+      .select()
+      .from(externalCourses)
+      .where(eq(externalCourses.id, courseId))
+      .limit(1);
+    
+    if (!currentCourse[0]) return [];
+    
+    const current = currentCourse[0];
+    
+    // Find similar courses by level and source
+    const similar = await db
+      .select()
+      .from(externalCourses)
+      .where(
+        and(
+          eq(externalCourses.isActive, true),
+          eq(externalCourses.level, current.level as any),
+          // Don't include the current course
+          // Note: We can't use ne() in Drizzle, so we'll filter in JS
+        )
+      )
+      .limit(limit + 1); // Get one extra to account for filtering
+    
+    // Filter out the current course
+    return similar.filter((c: any) => c.id !== courseId).slice(0, limit);
+  } catch (error) {
+    console.error("[DB] Error getting similar courses:", error);
+    return [];
+  }
+}
+
+export async function getRelatedCourses(courseId: number, limit: number = 3) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    // Get the current course
+    const currentCourse = await db
+      .select()
+      .from(externalCourses)
+      .where(eq(externalCourses.id, courseId))
+      .limit(1);
+    
+    if (!currentCourse[0]) return [];
+    
+    const current = currentCourse[0];
+    
+    // Find related courses by source
+    const related = await db
+      .select()
+      .from(externalCourses)
+      .where(
+        and(
+          eq(externalCourses.isActive, true),
+          eq(externalCourses.source, current.source as any)
+        )
+      )
+      .limit(limit + 1);
+    
+    // Filter out the current course
+    return related.filter((c: any) => c.id !== courseId).slice(0, limit);
+  } catch (error) {
+    console.error("[DB] Error getting related courses:", error);
+    return [];
+  }
+}
+
+export async function getCourseStats(courseId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const course = await db
+      .select()
+      .from(externalCourses)
+      .where(eq(externalCourses.id, courseId))
+      .limit(1);
+    
+    if (!course[0]) return null;
+    
+    return {
+      id: course[0].id,
+      enrollmentCount: course[0].enrollmentCount || 0,
+      rating: course[0].rating || 0,
+      duration: course[0].duration || 0,
+      level: course[0].level,
+      source: course[0].source,
+    };
+  } catch (error) {
+    console.error("[DB] Error getting course stats:", error);
+    return null;
+  }
+}

@@ -11,6 +11,9 @@ import {
   isUserSubscribed,
   createSubscription,
   cancelSubscription,
+  getSimilarCourses,
+  getRelatedCourses,
+  getCourseStats,
 } from "./external-courses-db";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -36,6 +39,32 @@ export const externalCoursesRouter = router({
   getBySlug: publicProcedure.input(z.object({ slug: z.string() })).query(async ({ input }) => {
     return getExternalCourseBySlug(input.slug);
   }),
+
+  getDetail: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input }) => {
+      const course = await getExternalCourseBySlug(input.slug);
+      if (!course) throw new TRPCError({ code: "NOT_FOUND", message: "Cours non trouvé" });
+      return course;
+    }),
+
+  getSimilar: publicProcedure
+    .input(z.object({ courseId: z.number(), limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      return getSimilarCourses(input.courseId, input.limit || 4);
+    }),
+
+  getRelated: publicProcedure
+    .input(z.object({ courseId: z.number(), limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      return getRelatedCourses(input.courseId, input.limit || 3);
+    }),
+
+  getStats: publicProcedure
+    .input(z.object({ courseId: z.number() }))
+    .query(async ({ input }) => {
+      return getCourseStats(input.courseId);
+    }),
 
   create: adminProcedure
     .input(

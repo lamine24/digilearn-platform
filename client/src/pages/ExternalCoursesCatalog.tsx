@@ -150,29 +150,30 @@ export default function ExternalCoursesCatalog() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course: any) => (
-              <Card key={course.id} className="flex flex-col hover:shadow-lg transition-shadow">
-                {course.thumbnailUrl && (
-                  <div className="w-full h-40 bg-muted overflow-hidden rounded-t-lg">
-                    <img
-                      src={course.thumbnailUrl}
-                      alt={course.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
+              <Link key={course.id} href={`/external-course/${course.slug}`}>
+                <Card className="flex flex-col hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  {course.thumbnailUrl && (
+                    <div className="w-full h-40 bg-muted overflow-hidden rounded-t-lg">
+                      <img
+                        src={course.thumbnailUrl}
+                        alt={course.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
 
-                <CardHeader className="flex-1">
-                  <div className="flex justify-between items-start gap-2 mb-2">
-                    <Badge variant="outline">
-                      {SOURCE_ICONS[course.source]} {course.source}
-                    </Badge>
-                    {course.requiresSubscription && !isSubscribed && (
-                      <Lock className="h-4 w-4 text-yellow-600" />
-                    )}
-                  </div>
-                  <CardTitle className="text-lg">{course.title}</CardTitle>
-                  <CardDescription>{LEVEL_LABELS[course.level]}</CardDescription>
-                </CardHeader>
+                  <CardHeader className="flex-1">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <Badge variant="outline">
+                        {SOURCE_ICONS[course.source]} {course.source}
+                      </Badge>
+                      {course.requiresSubscription && !isSubscribed && (
+                        <Lock className="h-4 w-4 text-yellow-600" />
+                      )}
+                    </div>
+                    <CardTitle className="text-lg">{course.title}</CardTitle>
+                    <CardDescription>{LEVEL_LABELS[course.level]}</CardDescription>
+                  </CardHeader>
 
                 <CardContent className="space-y-3">
                   {course.description && (
@@ -194,7 +195,11 @@ export default function ExternalCoursesCatalog() {
                   </div>
 
                   <Button
-                    onClick={() => handleAccessCourse(course)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAccessCourse(course);
+                    }}
                     className="w-full"
                   >
                     {!isAuthenticated ? (
@@ -209,6 +214,7 @@ export default function ExternalCoursesCatalog() {
                   </Button>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
         )}
