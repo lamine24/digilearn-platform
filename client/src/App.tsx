@@ -23,6 +23,7 @@ import ReorderResources from "./pages/ReorderResources";
 import { AdminExternalCourses } from "./pages/AdminExternalCourses";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import ExternalCoursesCatalog from "./pages/ExternalCoursesCatalog";
+import { SearchPage } from "./pages/SearchPage";
 
 function Router() {
   return (
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/admin/external-courses" component={AdminExternalCourses} />
       <Route path="/subscription" component={SubscriptionPage} />
       <Route path="/external-courses" component={ExternalCoursesCatalog} />
+      <Route path="/search" component={SearchPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

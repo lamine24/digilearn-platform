@@ -91,3 +91,16 @@
 - [x] Tests unitaires pour external courses et subscriptions
 - [ ] Migrations de base de données (tables externalCourses et subscriptions)
 - [ ] Vérification complète du flux d'abonnement en production
+
+
+## 🔍 Recherche et Filtrage Avancés (Nouvelle Session)
+- [x] Helpers de recherche full-text en base de données (search-db.ts)
+- [x] Procédures tRPC pour recherche et filtrage (search-router.ts avec searchCourses, getFilters, getSuggestions)
+- [x] Composant FilterPanel réutilisable (catégorie, niveau, prix, durée, formateur)
+- [x] Composant SearchBar avec suggestions et autocomplete
+- [x] Page de recherche avec résultats en temps réel (SearchPage avec pagination)
+- [x] Intégration de la recherche dans le catalogue existant (lien "Rechercher" dans Home)
+- [x] Tri par pertinence, popularité, prix (croissant/décroissant), date
+- [x] Tests unitaires pour recherche et filtrage (search.test.ts)
+- [ ] Sauvegarde des préférences de filtrage (localStorage)
+- [ ] Historique de recherche utilisateur
