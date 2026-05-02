@@ -202,6 +202,42 @@ async function startServer() {
       res.status(500).json({ error: "Internal server error" });
     }
   });
+
+  // Subscription Payment endpoint
+  app.post("/api/paytech/subscription/init", async (req, res) => {
+    try {
+      const { initiateSubscriptionPayment } = await import("../paytech-subscription");
+      const { amount, currency, description, planType, userId } = req.body;
+
+      if (!amount || !currency || !planType || !userId) {
+        return res.status(400).json({
+          success: false,
+          message: "Missing required fields",
+        });
+      }
+
+      const result = await initiateSubscriptionPayment({
+        amount,
+        currency,
+        description,
+        planType,
+        userId,
+      });
+
+      if (result.success) {
+        return res.json(result);
+      } else {
+        return res.status(400).json(result);
+      }
+    } catch (error: any) {
+      console.error("[Subscription Payment] Error:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Internal server error",
+      });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

@@ -8,6 +8,7 @@ import * as db from "./db";
 import { initiatePaytechPayment } from "./paytech";
 import { invokeLLM } from "./_core/llm";
 import { nanoid } from "nanoid";
+import { externalCoursesRouter, subscriptionsRouter } from "./external-courses-router";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -352,6 +353,9 @@ export const appRouter = router({
       correctAnswer: z.number(), explanation: z.string().optional(), sortOrder: z.number().default(0),
     })).mutation(async ({ input }) => ({ id: await db.createQuizQuestion(input) })),
   }),
+
+  externalCourses: externalCoursesRouter,
+  subscriptions: subscriptionsRouter,
 });
 
 export type AppRouter = typeof appRouter;

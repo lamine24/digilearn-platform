@@ -20,6 +20,9 @@ import Onboarding from "./pages/Onboarding";
 import EditCourse from "./pages/EditCourse";
 import CreateCourse from "./pages/CreateCourse";
 import ReorderResources from "./pages/ReorderResources";
+import { AdminExternalCourses } from "./pages/AdminExternalCourses";
+import SubscriptionPage from "./pages/SubscriptionPage";
+import ExternalCoursesCatalog from "./pages/ExternalCoursesCatalog";
 
 function Router() {
   return (
@@ -39,6 +42,9 @@ function Router() {
       <Route path="/edit-course/:slug" component={EditCourse} />
       <Route path="/formateur/create-course" component={CreateCourse} />
       <Route path="/formateur/reorder-resources/:moduleId" component={ReorderResources} />
+      <Route path="/admin/external-courses" component={AdminExternalCourses} />
+      <Route path="/subscription" component={SubscriptionPage} />
+      <Route path="/external-courses" component={ExternalCoursesCatalog} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

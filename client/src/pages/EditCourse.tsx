@@ -601,7 +601,11 @@ export default function EditCourse() {
                 </div>
               </div>
             ) : (
-              <Card><CardContent className="p-8 text-center text-muted-foreground">Sélectionnez un module pour gérer ses ressources</CardContent></Card>
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  Sélectionnez un module pour gérer ses ressources
+                </CardContent>
+              </Card>
             )}
           </div>
         </div>

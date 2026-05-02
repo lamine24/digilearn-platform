@@ -283,6 +283,7 @@ export default function AdminDashboard() {
           <TabsList>
             <TabsTrigger value="users">Utilisateurs</TabsTrigger>
             <TabsTrigger value="courses">Formations</TabsTrigger>
+            <TabsTrigger value="external">Cours Externes</TabsTrigger>
             <TabsTrigger value="enrollments">Inscriptions</TabsTrigger>
             <TabsTrigger value="payments">Paiements</TabsTrigger>
           </TabsList>
@@ -357,6 +358,20 @@ export default function AdminDashboard() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="external">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Cours Externes</CardTitle>
+                <Link href="/admin/external-courses">
+                  <Button>Gérer les cours externes</Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Cliquez sur le bouton ci-dessus pour gérer les cours provenant de Udemy, Coursera, YouTube et autres plateformes.</p>
               </CardContent>
             </Card>
           </TabsContent>

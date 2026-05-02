@@ -73,6 +73,21 @@
 - [x] Validation des types de fichiers (multer + frontend)
 - [x] Affichage des erreurs d'upload en temps réel (messages d'erreur)
 
-- [ ] Réorganisation des ressources par drag & drop (accès depuis EditCourse + test complet)
-- [ ] Réorganisation des modules par drag & drop (intégration dans FormateurDashboard + test)
-- [ ] Sauvegarde automatique de l'ordre des modules/ressources (wiring complet + UX)
+- [x] Réorganisation des ressources par drag & drop (composant SimpleResourceReorder + page ReorderResources)
+- [x] Réorganisation des modules par drag & drop (intégration dans FormateurDashboard)
+- [x] Sauvegarde automatique de l'ordre des modules/ressources (procédures tRPC reorder)
+
+
+## 🌐 Intégration des Cours Externes
+- [x] Schéma ExternalCourse dans la base de données
+- [x] Procédures tRPC pour gérer les cours externes (list, getBySlug, create, update, delete)
+- [x] UI Admin pour ajouter des cours externes (AdminExternalCourses page)
+- [x] Modèle d'abonnement mensuel/annuel/à vie (10 000 FCFA, 100 000 FCFA, 500 000 FCFA)
+- [x] Intégration PayTech pour les abonnements (endpoint /api/paytech/subscription/init)
+- [x] Page d'abonnement avec 3 plans (SubscriptionPage)
+- [x] Affichage des cours externes dans le catalogue (ExternalCoursesCatalog)
+- [x] Vérification de l'abonnement avant accès (procédure tRPC isSubscribed)
+- [x] Redirection vers le cours externe (lien externe dans nouvelle fenêtre)
+- [x] Tests unitaires pour external courses et subscriptions
+- [ ] Migrations de base de données (tables externalCourses et subscriptions)
+- [ ] Vérification complète du flux d'abonnement en production

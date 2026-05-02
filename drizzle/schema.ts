@@ -184,3 +184,48 @@ export const quizQuestions = mysqlTable("quiz_questions", {
   explanation: text("explanation"),
   sortOrder: int("sortOrder").default(0).notNull(),
 });
+
+
+// ─── External Courses ───────────────────────────────────────────
+export const externalCourses = mysqlTable("external_courses", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  slug: varchar("slug", { length: 500 }).notNull().unique(),
+  description: text("description"),
+  shortDescription: text("shortDescription"),
+  thumbnailUrl: text("thumbnailUrl"),
+  externalUrl: text("externalUrl").notNull(),
+  source: mysqlEnum("source", ["udemy", "coursera", "youtube", "other"]).notNull(),
+  categoryId: int("categoryId"),
+  level: mysqlEnum("level", ["debutant", "intermediaire", "avance"]).default("debutant").notNull(),
+  duration: int("duration").default(0),
+  instructor: varchar("instructor", { length: 255 }),
+  rating: decimal("rating", { precision: 3, scale: 1 }).default("0.0"),
+  enrollmentCount: int("enrollmentCount").default(0),
+  requiresSubscription: boolean("requiresSubscription").default(true).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExternalCourse = typeof externalCourses.$inferSelect;
+export type InsertExternalCourse = typeof externalCourses.$inferInsert;
+
+// ─── Subscriptions ──────────────────────────────────────────────
+export const subscriptions = mysqlTable("subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  planType: mysqlEnum("planType", ["monthly", "yearly", "lifetime"]).default("monthly").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).default("XOF").notNull(),
+  startDate: timestamp("startDate").defaultNow().notNull(),
+  endDate: timestamp("endDate"),
+  status: mysqlEnum("status", ["active", "cancelled", "expired"]).default("active").notNull(),
+  paymentId: varchar("paymentId", { length: 255 }),
+  autoRenew: boolean("autoRenew").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = typeof subscriptions.$inferInsert;
