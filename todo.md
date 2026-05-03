@@ -135,3 +135,10 @@
 - [x] Intégration dans le catalogue principal (lien "Ressources Libres" dans Home)
 - [x] Tests unitaires pour les ressources libres (free-resources.test.ts avec 12 tests)
 - [x] Seed de données de test (9 ressources seedées au démarrage)
+
+
+## 📚 Enrichissement des Ressources Libres (Nouvelle Session)
+- [x] Ajouter 8 nouvelles plateformes au seed (OpenLearn, Saylor Academy, AUF, UNESCO OER Commons, Bookdown, FUN-MOOC)
+- [x] Mettre à jour l'UI pour afficher les nouvelles plateformes (platformOptions + description header)
+- [x] Ajouter des tests pour les nouvelles ressources (86 tests passent)
+- [x] Vérifier l'intégration complète (TypeScript compilation OK, 16 ressources seedées)

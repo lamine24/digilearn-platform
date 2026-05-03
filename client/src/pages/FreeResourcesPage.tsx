@@ -13,6 +13,12 @@ const platformOptions = [
   { value: "statlearning", label: "StatLearning" },
   { value: "open_learning_campus", label: "Open Learning Campus" },
   { value: "canal_u", label: "Canal-U" },
+  { value: "openlearn", label: "OpenLearn" },
+  { value: "saylor_academy", label: "Saylor Academy" },
+  { value: "auf", label: "AUF - Campus Numérique" },
+  { value: "unesco_oer", label: "UNESCO OER Commons" },
+  { value: "bookdown", label: "Bookdown" },
+  { value: "fun_mooc", label: "FUN-MOOC" },
 ];
 
 const levelOptions = [
@@ -64,7 +70,7 @@ export function FreeResourcesPage() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Ressources Éducatives Libres</h1>
           <p className="text-lg text-gray-600">
-            Accédez à des milliers de cours gratuits de Khan Academy, MIT OpenCourseWare, StatLearning et autres plateformes
+            Accédez à plus de 16 cours gratuits de Khan Academy, MIT OpenCourseWare, StatLearning, OpenLearn, Saylor Academy, AUF, UNESCO OER Commons, Bookdown, FUN-MOOC, Canal-U et autres plateformes éducatives
           </p>
         </div>
 
