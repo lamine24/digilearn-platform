@@ -9,6 +9,7 @@ import { ExternalLink, Lock, CheckCircle } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { CoursePreviewModal } from "@/components/CoursePreviewModal";
 
 const SOURCE_ICONS: Record<string, string> = {
   udemy: "🎓",
@@ -28,6 +29,8 @@ export default function ExternalCoursesCatalog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [previewCourse, setPreviewCourse] = useState<any | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const { data: courses, isLoading } = trpc.externalCourses.list.useQuery({
     source: selectedSource || undefined,
@@ -203,24 +206,38 @@ export default function ExternalCoursesCatalog() {
                     )}
                   </div>
 
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAccessCourse(course);
-                    }}
-                    className="w-full"
-                  >
-                    {!isAuthenticated ? (
-                      "Se connecter"
-                    ) : course.requiresSubscription && !isSubscribed ? (
-                      "S'abonner pour accéder"
-                    ) : (
-                      <>
-                        Accéder au cours <ExternalLink className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setPreviewCourse(course);
+                        setIsPreviewOpen(true);
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Aperçu
+                    </Button>
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleAccessCourse(course);
+                      }}
+                      className="flex-1"
+                    >
+                      {!isAuthenticated ? (
+                        "Se connecter"
+                      ) : course.requiresSubscription && !isSubscribed ? (
+                        "S'abonner"
+                      ) : (
+                        <>
+                          Accéder <ExternalLink className="ml-2 h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
               </Link>
@@ -228,6 +245,22 @@ export default function ExternalCoursesCatalog() {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      {previewCourse && (
+        <CoursePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          course={previewCourse}
+          onEnroll={() => {
+            handleAccessCourse(previewCourse);
+            setIsPreviewOpen(false);
+          }}
+          onAddToFavorites={() => {
+            // Handled by FavoriteButton in modal
+          }}
+        />
+      )}
     </div>
   );
 }

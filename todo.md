@@ -142,3 +142,14 @@
 - [x] Mettre à jour l'UI pour afficher les nouvelles plateformes (platformOptions + description header)
 - [x] Ajouter des tests pour les nouvelles ressources (86 tests passent)
 - [x] Vérifier l'intégration complète (TypeScript compilation OK, 16 ressources seedées)
+
+
+## 🎜 Prévisualisation des Cours dans le Catalogue (Nouvelle Session)
+- [x] Composant modal CoursePreviewModal avec layout professionnel
+- [x] Lecteur vidéo intégré (YouTube avec extraction d'ID automatique)
+- [x] Affichage des informations clés (durée, niveau, instructeur, évaluation)
+- [x] Avis et commentaires utilisateurs dans la prévisualisation (onglet avis)
+- [x] Boutons d'action (S'inscrire, Ajouter aux favoris, Partager)
+- [x] Intégration dans le catalogue (ExternalCoursesCatalog avec bouton Aperçu)
+- [x] Animations fluides et transitions (Dialog + Tabs)
+- [x] Tests unitaires pour la prévisualisation (course-preview.test.ts avec 18 tests)
