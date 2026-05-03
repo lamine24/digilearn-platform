@@ -1,0 +1,22 @@
+CREATE TABLE `free_resources` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(500) NOT NULL,
+	`slug` varchar(500) NOT NULL,
+	`description` text,
+	`shortDescription` text,
+	`thumbnailUrl` text,
+	`externalUrl` text NOT NULL,
+	`platform` enum('khan_academy','mit_ocw','statlearning','open_learning_campus','canal_u','other') NOT NULL,
+	`category` varchar(255),
+	`level` enum('debutant','intermediaire','avance') NOT NULL DEFAULT 'debutant',
+	`duration` int,
+	`language` varchar(10) NOT NULL DEFAULT 'fr',
+	`tags` text,
+	`rating` decimal(3,2) DEFAULT '0',
+	`enrollmentCount` int DEFAULT 0,
+	`isActive` boolean NOT NULL DEFAULT true,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `free_resources_id` PRIMARY KEY(`id`),
+	CONSTRAINT `free_resources_slug_unique` UNIQUE(`slug`)
+);

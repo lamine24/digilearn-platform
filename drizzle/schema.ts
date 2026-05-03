@@ -243,3 +243,29 @@ export const favorites = mysqlTable("favorites", {
 
 export type Favorite = typeof favorites.$inferSelect;
 export type InsertFavorite = typeof favorites.$inferInsert;
+
+
+// ─── Free Resources ─────────────────────────────────────────────
+export const freeResources = mysqlTable("free_resources", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 500 }).notNull(),
+  slug: varchar("slug", { length: 500 }).notNull().unique(),
+  description: text("description"),
+  shortDescription: text("shortDescription"),
+  thumbnailUrl: text("thumbnailUrl"),
+  externalUrl: text("externalUrl").notNull(),
+  platform: mysqlEnum("platform", ["khan_academy", "mit_ocw", "statlearning", "open_learning_campus", "canal_u", "other"]).notNull(),
+  category: varchar("category", { length: 255 }),
+  level: mysqlEnum("level", ["debutant", "intermediaire", "avance"]).default("debutant").notNull(),
+  duration: int("duration"),
+  language: varchar("language", { length: 10 }).default("fr").notNull(),
+  tags: text("tags"),
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
+  enrollmentCount: int("enrollmentCount").default(0),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FreeResource = typeof freeResources.$inferSelect;
+export type InsertFreeResource = typeof freeResources.$inferInsert;

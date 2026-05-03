@@ -124,3 +124,13 @@
 - [x] Intégration des favoris dans les pages de détails (ExternalCourseDetail avec FavoriteButton)
 - [x] Page de favoris avec liste complète et gestion (FavoritesPage avec onglets Tous/Internes/Externes)
 - [x] Tests unitaires pour le système de favoris (favorites.test.ts avec 11 tests)
+
+
+## 📚 Intégration des Ressources Éducatives Libres (Nouvelle Session)
+- [ ] Schéma DB pour ressources libres (table freeResources avec plateforme, URL, catégorie, niveau)
+- [ ] Helpers DB pour récupérer et filtrer les ressources libres
+- [ ] Procédures tRPC pour lister, filtrer et rechercher les ressources libres
+- [ ] Composant de catalogue pour ressources libres (grille, cartes avec badges)
+- [ ] Page de ressources libres avec filtrage avancé (plateforme, catégorie, niveau)
+- [ ] Intégration dans le catalogue principal (onglet "Ressources Libres")
+- [ ] Tests unitaires pour les ressources libres
