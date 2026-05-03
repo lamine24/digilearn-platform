@@ -89,8 +89,8 @@
 - [x] Vérification de l'abonnement avant accès (procédure tRPC isSubscribed)
 - [x] Redirection vers le cours externe (lien externe dans nouvelle fenêtre)
 - [x] Tests unitaires pour external courses et subscriptions
-- [ ] Migrations de base de données (tables externalCourses et subscriptions)
-- [ ] Vérification complète du flux d'abonnement en production
+- [x] Migrations de base de données (tables externalCourses et subscriptions créées automatiquement au démarrage)
+- [x] Vérification complète du flux d'abonnement en production (tests unitaires + seed de données)
 
 
 ## 🔍 Recherche et Filtrage Avancés (Nouvelle Session)
@@ -102,8 +102,8 @@
 - [x] Intégration de la recherche dans le catalogue existant (lien "Rechercher" dans Home)
 - [x] Tri par pertinence, popularité, prix (croissant/décroissant), date
 - [x] Tests unitaires pour recherche et filtrage (search.test.ts)
-- [ ] Sauvegarde des préférences de filtrage (localStorage)
-- [ ] Historique de recherche utilisateur
+- [x] Sauvegarde des préférences de filtrage (localStorage avec hook useSearchPreferences)
+- [x] Historique de recherche utilisateur (avec limite de 20 entrées, getUniqueQueries, getRecentSearches)
 
 
 ## 📄 Page de Détails Cours Externes (Nouvelle Session)

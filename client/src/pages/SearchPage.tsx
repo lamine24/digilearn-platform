@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterPanel, type FilterState } from "@/components/FilterPanel";
+import { SearchHistoryComponent } from "@/components/SearchHistory";
+import { useSearchPreferences } from "@/hooks/useSearchPreferences";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +12,13 @@ import { ChevronLeft, ChevronRight, Grid, List } from "lucide-react";
 
 export function SearchPage() {
   const [location, navigate] = useLocation();
+  const { preferences, savePreferences, addToHistory, isLoaded } = useSearchPreferences();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState<FilterState>({});
+  const [filters, setFilters] = useState<FilterState>({
+    categoryId: preferences.category ? parseInt(preferences.category) : undefined,
+    level: preferences.level,
+    sortBy: (preferences.sortBy as any) || "relevance",
+  });
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 20;
@@ -46,10 +53,22 @@ export function SearchPage() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    if (query.trim()) {
+      addToHistory(query, {
+        category: filters.categoryId?.toString(),
+        level: filters.level,
+        sortBy: (filters.sortBy as any) || "relevance",
+      });
+    }
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
     setFilters(newFilters);
+    savePreferences({
+      category: newFilters.categoryId?.toString(),
+      level: newFilters.level,
+      sortBy: (newFilters.sortBy as any) || "relevance",
+    });
   };
 
   const totalPages = Math.ceil((searchQuery_trpc.data?.total || 0) / pageSize);
@@ -70,6 +89,11 @@ export function SearchPage() {
       </div>
 
       <div className="container mx-auto px-4 py-6">
+        {!searchQuery && (
+          <div className="mb-6">
+            <SearchHistoryComponent onSelectSearch={handleSearch} limit={5} />
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Filters */}
           <aside className="lg:col-span-1">
@@ -142,6 +166,7 @@ export function SearchPage() {
                   onClick={() => {
                     setSearchQuery("");
                     setFilters({});
+                    savePreferences({});
                   }}
                 >
                   Réinitialiser la recherche
