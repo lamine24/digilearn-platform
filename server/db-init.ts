@@ -1,5 +1,6 @@
 import { getDb } from "./db";
 import { seedExternalCourses } from "./seed-external-courses";
+import { seedFreeResources } from "./seed-free-resources";
 
 /**
  * Initialize database tables if they don't exist
@@ -62,6 +63,7 @@ export async function initializeDatabaseTables() {
     
     // Seed sample data
     await seedExternalCourses();
+    await seedFreeResources();
     
     return true;
   } catch (error) {

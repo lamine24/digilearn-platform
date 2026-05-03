@@ -127,10 +127,11 @@
 
 
 ## 📚 Intégration des Ressources Éducatives Libres (Nouvelle Session)
-- [ ] Schéma DB pour ressources libres (table freeResources avec plateforme, URL, catégorie, niveau)
-- [ ] Helpers DB pour récupérer et filtrer les ressources libres
-- [ ] Procédures tRPC pour lister, filtrer et rechercher les ressources libres
-- [ ] Composant de catalogue pour ressources libres (grille, cartes avec badges)
-- [ ] Page de ressources libres avec filtrage avancé (plateforme, catégorie, niveau)
-- [ ] Intégration dans le catalogue principal (onglet "Ressources Libres")
-- [ ] Tests unitaires pour les ressources libres
+- [x] Schéma DB pour ressources libres (table freeResources avec Khan Academy, MIT OCW, StatLearning, Open Learning Campus, Canal-U)
+- [x] Helpers DB pour récupérer et filtrer les ressources libres (getFreeResources, searchFreeResources, etc.)
+- [x] Procédures tRPC pour lister, filtrer et rechercher les ressources libres (list, getBySlug, getByPlatform, search, etc.)
+- [x] Composant de catalogue pour ressources libres (FreeResourceCard avec badges et infos)
+- [x] Page de ressources libres avec filtrage avancé (FreeResourcesPage avec plateforme/catégorie/niveau/tri)
+- [x] Intégration dans le catalogue principal (lien "Ressources Libres" dans Home)
+- [x] Tests unitaires pour les ressources libres (free-resources.test.ts avec 12 tests)
+- [x] Seed de données de test (9 ressources seedées au démarrage)

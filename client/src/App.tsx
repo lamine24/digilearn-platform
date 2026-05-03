@@ -26,6 +26,8 @@ import ExternalCoursesCatalog from "./pages/ExternalCoursesCatalog";
 import { ExternalCourseDetail } from "./pages/ExternalCourseDetail";
 import { SearchPage } from "./pages/SearchPage";
 import FavoritesPage from "./pages/FavoritesPage";
+import { FreeResourcesPage } from "./pages/FreeResourcesPage";
+import { FreeResourceDetail } from "./pages/FreeResourceDetail";
 
 function Router() {
   return (
@@ -51,6 +53,8 @@ function Router() {
       <Route path="/external-course/:slug" component={ExternalCourseDetail} />
       <Route path="/search" component={SearchPage} />
       <Route path="/favorites" component={FavoritesPage} />
+      <Route path="/free-resources" component={FreeResourcesPage} />
+      <Route path="/free-resource/:slug" component={FreeResourceDetail} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
