@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Clock, Users, Star, ExternalLink, Lock, Check } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useState } from "react";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 export function ExternalCourseDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -111,6 +112,13 @@ export function ExternalCourseDetail() {
                 <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                   {platformNames[course.source]}
                 </Badge>
+                <FavoriteButton
+                  externalCourseId={course.id}
+                  courseType="external"
+                  size="md"
+                  variant="ghost"
+                  className="text-white hover:text-blue-100 ml-auto"
+                />
               </div>
               <h1 className="text-4xl font-bold mb-3">{course.title}</h1>
               <p className="text-blue-100 text-lg">{course.shortDescription}</p>

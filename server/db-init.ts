@@ -54,6 +54,9 @@ export async function initializeDatabaseTables() {
 
     console.log("[DB Init] Tables initialized successfully");
     
+    // Initialize favorites table
+    await initializeFavoritesTable();
+    
     // Seed sample data
     await seedExternalCourses();
     
@@ -61,5 +64,31 @@ export async function initializeDatabaseTables() {
   } catch (error) {
     console.error("[DB Init] Error initializing tables:", error);
     return false;
+  }
+}
+
+// Create favorites table if not exists
+async function initializeFavoritesTable() {
+  const db = await getDb();
+  if (!db) return;
+
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        userId INT NOT NULL,
+        courseId INT,
+        externalCourseId INT,
+        courseType ENUM('internal', 'external') NOT NULL,
+        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_favorite (userId, courseId, externalCourseId, courseType),
+        FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+    console.log("[DB Init] Favorites table initialized successfully");
+  } catch (error: any) {
+    if (error.code !== "ER_TABLE_EXISTS_ERROR") {
+      console.error("[DB Init] Error creating favorites table:", error.message);
+    }
   }
 }

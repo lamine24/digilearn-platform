@@ -113,3 +113,14 @@
 - [x] Composants réutilisables (RatingBadge, PlatformBadge, CourseAccessButton)
 - [x] Intégration dans le catalogue (liens vers détails via /external-course/:slug)
 - [x] Tests unitaires pour page de détails (external-course-detail.test.ts)
+
+
+## ⭐ Système de Favoris (Nouvelle Session)
+- [x] Schéma DB pour favoris (table favorites avec userId, courseId, externalCourseId, courseType)
+- [x] Helpers DB pour ajouter/retirer/lister les favoris (addFavorite, removeFavorite, isFavorited, getUserFavorites, etc.)
+- [x] Procédures tRPC pour gérer les favoris (add, remove, list, isFavorited, listCourses, listExternalCourses, count, clear)
+- [x] Composant FavoriteButton réutilisable avec icône cœur (tailles sm/md/lg, variantes)
+- [x] Intégration des favoris dans le catalogue de cours (ExternalCoursesCatalog avec FavoriteButton)
+- [x] Intégration des favoris dans les pages de détails (ExternalCourseDetail avec FavoriteButton)
+- [x] Page de favoris avec liste complète et gestion (FavoritesPage avec onglets Tous/Internes/Externes)
+- [x] Tests unitaires pour le système de favoris (favorites.test.ts avec 11 tests)

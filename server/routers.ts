@@ -10,6 +10,7 @@ import { invokeLLM } from "./_core/llm";
 import { nanoid } from "nanoid";
 import { externalCoursesRouter, subscriptionsRouter } from "./external-courses-router";
 import { searchRouter } from "./search-router";
+import { favoritesRouter } from "./favorites-router";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -358,6 +359,7 @@ export const appRouter = router({
   externalCourses: externalCoursesRouter,
   subscriptions: subscriptionsRouter,
   search: searchRouter,
+  favorites: favoritesRouter,
 });
 
 export type AppRouter = typeof appRouter;

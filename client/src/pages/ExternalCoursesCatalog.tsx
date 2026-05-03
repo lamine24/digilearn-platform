@@ -8,6 +8,7 @@ import { Link } from "wouter";
 import { ExternalLink, Lock, CheckCircle } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 const SOURCE_ICONS: Record<string, string> = {
   udemy: "🎓",
@@ -167,9 +168,17 @@ export default function ExternalCoursesCatalog() {
                       <Badge variant="outline">
                         {SOURCE_ICONS[course.source]} {course.source}
                       </Badge>
-                      {course.requiresSubscription && !isSubscribed && (
-                        <Lock className="h-4 w-4 text-yellow-600" />
-                      )}
+                      <div className="flex gap-2">
+                        {course.requiresSubscription && !isSubscribed && (
+                          <Lock className="h-4 w-4 text-yellow-600" />
+                        )}
+                        <FavoriteButton
+                          externalCourseId={course.id}
+                          courseType="external"
+                          size="sm"
+                          variant="ghost"
+                        />
+                      </div>
                     </div>
                     <CardTitle className="text-lg">{course.title}</CardTitle>
                     <CardDescription>{LEVEL_LABELS[course.level]}</CardDescription>
