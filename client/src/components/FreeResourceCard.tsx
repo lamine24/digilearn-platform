@@ -41,6 +41,11 @@ export function FreeResourceCard({
 }: FreeResourceCardProps) {
   const platformInfo = getPlatformConfig(platform);
   const levelLabel = getLevelLabel(level);
+  
+  // Normalize numeric values from DB (may come as strings)
+  const ratingNum = typeof rating === 'number' ? rating : rating ? Number(rating) : null;
+  const enrollmentNum = typeof enrollmentCount === 'number' ? enrollmentCount : enrollmentCount ? Number(enrollmentCount) : null;
+  const durationNum = typeof duration === 'number' ? duration : duration ? Number(duration) : null;
 
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
@@ -70,10 +75,10 @@ export function FreeResourceCard({
         {shortDescription && <p className="text-sm text-muted-foreground line-clamp-2">{shortDescription}</p>}
 
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          {duration && <span>⏱️ {duration}h</span>}
+          {durationNum != null && !Number.isNaN(durationNum) && <span>⏱️ {durationNum}h</span>}
           {language && <span>🌐 {language.toUpperCase()}</span>}
-          {enrollmentCount !== undefined && <span>👥 {enrollmentCount.toLocaleString()} inscrits</span>}
-          {rating && <span>⭐ {rating.toFixed(1)}/5</span>}
+          {enrollmentNum != null && !Number.isNaN(enrollmentNum) && <span>👥 {enrollmentNum.toLocaleString()} inscrits</span>}
+          {ratingNum != null && !Number.isNaN(ratingNum) && <span>⭐ {ratingNum.toFixed(1)}/5</span>}
         </div>
 
         <div className="flex gap-2 mt-auto pt-2">
