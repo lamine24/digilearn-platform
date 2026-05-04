@@ -148,7 +148,22 @@ async function startServer() {
   app.post("/api/paytech/ipn", async (req, res) => {
     try {
       const { verifyPaytechIPN } = await import("../paytech");
-      const { getPaymentByRef, updatePaymentStatus, getEnrollment, createEnrollment, updateEnrollment, getCourseById, createNotification } = await import("../db");
+      const { getPaymentByRef, updatePaymentStatus, getEnrollment, createEnrollment, updateEnrollment, getCourseById, createNotification, createPremiumSubscription, recordPaymentError } = await import("../db");
+      const { validateIPNPayload, storeWebhookRequest, isWebhookProcessed, recordWebhookError, checkRateLimit } = await import("../webhook-security");
+      
+      // Rate limiting check
+      const clientIp = req.ip || "unknown";
+      if (!checkRateLimit(clientIp, 100, 60000)) {
+        console.warn(`[PayTech IPN] Rate limit exceeded for IP: ${clientIp}`);
+        return res.status(429).json({ error: "Too many requests" });
+      }
+
+      // Validate payload
+      const validation = validateIPNPayload(req.body);
+      if (!validation.valid) {
+        console.warn("[PayTech IPN] Invalid payload:", validation.errors);
+        return res.status(400).json({ error: "Invalid payload", errors: validation.errors });
+      }
       
       // Verify IPN signature
       if (!verifyPaytechIPN(req.body)) {
@@ -157,13 +172,21 @@ async function startServer() {
       }
       
       const { ref_command, type_event } = req.body;
-      if (!ref_command) {
-        return res.status(400).json({ error: "Missing ref_command" });
+      
+      // Check for duplicate webhooks (idempotency)
+      if (isWebhookProcessed(ref_command)) {
+        console.log(`[PayTech IPN] Webhook already processed for ref: ${ref_command}`);
+        return res.json({ success: true, message: "Webhook already processed" });
       }
+      
+      // Store webhook request for tracking
+      const webhook = storeWebhookRequest(req.body, req.body.sen_hash);
       
       const payment = await getPaymentByRef(ref_command);
       if (!payment) {
-        console.warn(`[PayTech IPN] Payment not found for ref: ${ref_command}`);
+        const errorMsg = `Payment not found for ref: ${ref_command}`;
+        console.warn(`[PayTech IPN] ${errorMsg}`);
+        recordWebhookError(ref_command, errorMsg);
         return res.status(404).json({ error: "Payment not found" });
       }
       
@@ -172,22 +195,50 @@ async function startServer() {
         console.log(`[PayTech IPN] Payment successful for ref: ${ref_command}`);
         await updatePaymentStatus(payment.id, "reussi", new Date());
         
-        // Create or update enrollment
-        const existing = await getEnrollment(payment.userId, payment.courseId);
-        if (!existing) {
-          await createEnrollment({ userId: payment.userId, courseId: payment.courseId, status: "actif" });
-        } else {
-          await updateEnrollment(existing.id, { status: "actif" } as any);
+        // Check if this is a premium subscription payment
+        if (ref_command.startsWith("premium-")) {
+          // Extract userId from ref_command format: premium-{userId}-{timestamp}
+          const parts = ref_command.split("-");
+          if (parts.length >= 2) {
+            const userId = parseInt(parts[1], 10);
+            if (!isNaN(userId)) {
+              try {
+                await createPremiumSubscription(userId, payment.id.toString());
+                console.log(`[PayTech IPN] Premium subscription activated for user: ${userId}`);
+                
+                // Send notification for premium subscription
+                await createNotification({
+                  userId,
+                  type: "certification",
+                  title: "Abonnement Premium activé",
+                  message: "Votre abonnement premium a été activé. Accédez à tous les contenus premium.",
+                });
+              } catch (error) {
+                const errorMsg = `Error activating premium subscription for user ${userId}: ${error}`;
+                console.error(`[PayTech IPN] ${errorMsg}`);
+                recordPaymentError(payment.id, errorMsg, 1);
+                recordWebhookError(ref_command, errorMsg);
+              }
+            }
+          }
+        } else if (payment.courseId) {
+          // Handle regular course enrollment
+          const existing = await getEnrollment(payment.userId, payment.courseId);
+          if (!existing) {
+            await createEnrollment({ userId: payment.userId, courseId: payment.courseId, status: "actif" });
+          } else {
+            await updateEnrollment(existing.id, { status: "actif" } as any);
+          }
+          
+          // Send notification for course enrollment
+          const course = await getCourseById(payment.courseId);
+          await createNotification({
+            userId: payment.userId,
+            type: "inscription",
+            title: "Inscription confirmée",
+            message: `Votre inscription à "${course?.title}" a été confirmée.`,
+          });
         }
-        
-        // Send notification
-        const course = await getCourseById(payment.courseId);
-        await createNotification({
-          userId: payment.userId,
-          type: "inscription",
-          title: "Inscription confirmée",
-          message: `Votre inscription a \"${course?.title}\" a ete confirmee.`,
-        });
       } 
       // Handle payment cancellation
       else if (type_event === "sale_canceled") {

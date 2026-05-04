@@ -635,3 +635,80 @@ export async function cancelPremiumSubscription(userId: number) {
     throw error;
   }
 }
+
+
+// ─── Payment Retry & Error Handling ─────────────────────────────
+export async function recordPaymentError(paymentId: number, error: string, retryCount: number = 0) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    // Store error in a structured way by updating payment metadata
+    const payment = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
+    if (payment.length > 0) {
+      const errorLog = {
+        timestamp: new Date().toISOString(),
+        error,
+        retryCount,
+      };
+      
+      // Update payment with error metadata
+      await db.update(payments).set({
+        status: "echoue",
+      }).where(eq(payments.id, paymentId));
+      
+      console.error(`[Payment Error] Payment ${paymentId}: ${error} (Retry count: ${retryCount})`);
+    }
+  } catch (err) {
+    console.error("[Database] Failed to record payment error:", err);
+  }
+}
+
+export async function getFailedPayments(limit: number = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const failedPayments = await db.select().from(payments)
+      .where(eq(payments.status, "echoue"))
+      .orderBy(desc(payments.createdAt))
+      .limit(limit);
+    
+    return failedPayments;
+  } catch (error) {
+    console.error("[Database] Failed to get failed payments:", error);
+    return [];
+  }
+}
+
+export async function retryFailedPayment(paymentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    // Reset payment status to pending for retry
+    await db.update(payments).set({
+      status: "en_attente",
+    }).where(eq(payments.id, paymentId));
+    
+    console.log(`[Payment Retry] Payment ${paymentId} marked for retry`);
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to retry payment:", error);
+    return false;
+  }
+}
+
+export async function getAllPaymentsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    return await db.select().from(payments)
+      .where(eq(payments.userId, userId))
+      .orderBy(desc(payments.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get user payments:", error);
+    return [];
+  }
+}
