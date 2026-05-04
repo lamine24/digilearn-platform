@@ -82,7 +82,7 @@ export default function Home() {
           </Link>
           <div className="hidden md:flex items-center gap-8">
             <a href="#catalogue" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Catalogue</a>
-            <Link href="/external-courses" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Cours Externes</Link>
+
             <Link href="/free-resources" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Ressources Libres</Link>
             <Link href="/search" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Rechercher</Link>
             <a href="#visualisation" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Visualisation</a>

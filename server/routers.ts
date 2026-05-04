@@ -8,9 +8,7 @@ import * as db from "./db";
 import { initiatePaytechPayment } from "./paytech";
 import { invokeLLM } from "./_core/llm";
 import { nanoid } from "nanoid";
-import { externalCoursesRouter, subscriptionsRouter } from "./external-courses-router";
 import { searchRouter } from "./search-router";
-import { favoritesRouter } from "./favorites-router";
 import { freeResourcesRouter } from "./free-resources-router";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -357,11 +355,34 @@ export const appRouter = router({
     })).mutation(async ({ input }) => ({ id: await db.createQuizQuestion(input) })),
   }),
 
-  externalCourses: externalCoursesRouter,
-  subscriptions: subscriptionsRouter,
   search: searchRouter,
-  favorites: favoritesRouter,
   freeResources: freeResourcesRouter,
+
+  premium: router({
+    getStatus: protectedProcedure.query(async ({ ctx }) => {
+      return db.getPremiumSubscriptionStatus(ctx.user.id);
+    }),
+    subscribe: protectedProcedure.input(z.object({
+      paymentMethod: z.enum(["paytech", "stripe"]).default("paytech"),
+    })).mutation(async ({ ctx, input }) => {
+      const baseUrl = process.env.VITE_FRONTEND_URL || "https://localhost:5173";
+      const result = await initiatePaytechPayment({
+        amount: 10000,
+        currency: "XOF",
+        itemName: "Abonnement Premium DigiLearn",
+        refCommand: `premium-${ctx.user.id}-${Date.now()}`,
+        commandName: `Abonnement Premium - ${ctx.user.name || "Utilisateur"}`,
+        successUrl: `${baseUrl}/payment/success`,
+        cancelUrl: `${baseUrl}/payment/cancel`,
+        ipnUrl: `${baseUrl}/api/paytech/ipn`,
+      });
+      return result;
+    }),
+    cancel: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.cancelPremiumSubscription(ctx.user.id);
+      return { success: true };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

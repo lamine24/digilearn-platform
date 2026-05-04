@@ -1,9 +1,11 @@
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { BackButton } from "@/components/BackButton";
+import { SocialShareButton } from "@/components/SocialShareButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ExternalLink, ArrowLeft, BookOpen, Clock, Users, Star } from "lucide-react";
+import { Loader2, ExternalLink, BookOpen, Clock, Users, Star } from "lucide-react";
 import { platformConfig, levelConfig, getPlatformConfig, getLevelLabel } from "@/lib/platformConfig";
 
 export function FreeResourceDetail() {
@@ -41,15 +43,9 @@ export function FreeResourceDetail() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate("/free-resources")}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour
-        </Button>
+        <div className="mb-6">
+          <BackButton label="Retour aux ressources" />
+        </div>
 
         {/* Header Card */}
         <Card className="mb-6">
@@ -139,8 +135,8 @@ export function FreeResourceDetail() {
               </div>
             )}
 
-            {/* CTA Button */}
-            <div className="pt-4 border-t">
+            {/* CTA Buttons */}
+            <div className="pt-4 border-t space-y-3">
               <Button
                 size="lg"
                 className="w-full"
@@ -149,6 +145,11 @@ export function FreeResourceDetail() {
                 <ExternalLink className="w-5 h-5 mr-2" />
                 Accéder à la ressource
               </Button>
+              <SocialShareButton
+                title={resource.title}
+                description={resource.shortDescription || ""}
+                className="w-full"
+              />
             </div>
           </CardContent>
         </Card>

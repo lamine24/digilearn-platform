@@ -553,3 +553,85 @@ export async function getFormateurStats(formateurId: number) {
     return { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0, avgCompletion: 0 };
   }
 }
+
+
+// ─── Premium Subscriptions ──────────────────────────────────────
+export async function getPremiumSubscriptionStatus(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const { premiumSubscriptions } = await import("../drizzle/schema");
+    const subscription = await db.select().from(premiumSubscriptions)
+      .where(eq(premiumSubscriptions.userId, userId))
+      .limit(1);
+    
+    if (subscription.length === 0) return null;
+    
+    const sub = subscription[0];
+    const now = new Date();
+    const isExpired = sub.endDate && new Date(sub.endDate) < now;
+    
+    return {
+      ...sub,
+      isActive: sub.status === "active" && !isExpired,
+      isExpired,
+      daysRemaining: sub.endDate ? Math.ceil((new Date(sub.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get premium subscription status:", error);
+    return null;
+  }
+}
+
+export async function createPremiumSubscription(userId: number, paymentId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { premiumSubscriptions } = await import("../drizzle/schema");
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    await db.insert(premiumSubscriptions).values({
+      userId,
+      price: "10000.00",
+      currency: "XOF",
+      startDate,
+      endDate,
+      status: "active",
+      paymentId,
+      autoRenew: true,
+    }).onDuplicateKeyUpdate({
+      set: {
+        startDate,
+        endDate,
+        status: "active",
+        paymentId,
+        autoRenew: true,
+      },
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to create premium subscription:", error);
+    throw error;
+  }
+}
+
+export async function cancelPremiumSubscription(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { premiumSubscriptions } = await import("../drizzle/schema");
+    await db.update(premiumSubscriptions)
+      .set({ status: "cancelled", autoRenew: false })
+      .where(eq(premiumSubscriptions.userId, userId));
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to cancel premium subscription:", error);
+    throw error;
+  }
+}

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { FreeResourceCard } from "@/components/FreeResourceCard";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -64,8 +65,16 @@ export function FreeResourcesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Navigation Bar */}
+      <div className="border-b bg-background/80 backdrop-blur-lg sticky top-0 z-40">
+        <div className="container flex h-16 items-center justify-between">
+          <h2 className="text-lg font-semibold">Ressources Libres</h2>
+          <BackButton />
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Ressources Éducatives Libres</h1>

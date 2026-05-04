@@ -1,5 +1,4 @@
 import { getDb } from "./db";
-import { seedExternalCourses } from "./seed-external-courses";
 import { seedFreeResources } from "./seed-free-resources";
 
 /**
@@ -10,37 +9,12 @@ export async function initializeDatabaseTables() {
   if (!db) return false;
 
   try {
-    // Create external_courses table
+    // Create premium_subscriptions table (10,000 FCFA/month)
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS external_courses (
+      CREATE TABLE IF NOT EXISTS premium_subscriptions (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        title VARCHAR(500) NOT NULL,
-        slug VARCHAR(500) NOT NULL UNIQUE,
-        description TEXT,
-        shortDescription TEXT,
-        thumbnailUrl TEXT,
-        externalUrl TEXT NOT NULL,
-        source ENUM('udemy','coursera','youtube','other') NOT NULL,
-        categoryId INT,
-        level ENUM('debutant','intermediaire','avance') NOT NULL DEFAULT 'debutant',
-        duration INT DEFAULT 0,
-        instructor VARCHAR(255),
-        rating DECIMAL(3,1) DEFAULT 0.0,
-        enrollmentCount INT DEFAULT 0,
-        requiresSubscription BOOLEAN NOT NULL DEFAULT true,
-        isActive BOOLEAN NOT NULL DEFAULT true,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Create subscriptions table
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS subscriptions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        userId INT NOT NULL,
-        planType ENUM('monthly','yearly','lifetime') NOT NULL DEFAULT 'monthly',
-        price DECIMAL(10,2) NOT NULL,
+        userId INT NOT NULL UNIQUE,
+        price DECIMAL(10,2) NOT NULL DEFAULT 10000.00,
         currency VARCHAR(10) NOT NULL DEFAULT 'XOF',
         startDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         endDate TIMESTAMP,
@@ -55,46 +29,16 @@ export async function initializeDatabaseTables() {
 
     console.log("[DB Init] Tables initialized successfully");
     
-    // Initialize favorites table
-    await initializeFavoritesTable();
-    
     // Initialize free resources table
     await initializeFreeResourcesTable();
     
     // Seed sample data
-    await seedExternalCourses();
     await seedFreeResources();
     
     return true;
   } catch (error) {
     console.error("[DB Init] Error initializing tables:", error);
     return false;
-  }
-}
-
-// Create favorites table if not exists
-async function initializeFavoritesTable() {
-  const db = await getDb();
-  if (!db) return;
-
-  try {
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS favorites (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        userId INT NOT NULL,
-        courseId INT,
-        externalCourseId INT,
-        courseType ENUM('internal', 'external') NOT NULL,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY unique_favorite (userId, courseId, externalCourseId, courseType),
-        FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `);
-    console.log("[DB Init] Favorites table initialized successfully");
-  } catch (error: any) {
-    if (error.code !== "ER_TABLE_EXISTS_ERROR") {
-      console.error("[DB Init] Error creating favorites table:", error.message);
-    }
   }
 }
 

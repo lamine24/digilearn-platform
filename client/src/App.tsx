@@ -20,14 +20,11 @@ import Onboarding from "./pages/Onboarding";
 import EditCourse from "./pages/EditCourse";
 import CreateCourse from "./pages/CreateCourse";
 import ReorderResources from "./pages/ReorderResources";
-import { AdminExternalCourses } from "./pages/AdminExternalCourses";
-import SubscriptionPage from "./pages/SubscriptionPage";
-import ExternalCoursesCatalog from "./pages/ExternalCoursesCatalog";
-import { ExternalCourseDetail } from "./pages/ExternalCourseDetail";
+
 import { SearchPage } from "./pages/SearchPage";
-import FavoritesPage from "./pages/FavoritesPage";
 import { FreeResourcesPage } from "./pages/FreeResourcesPage";
 import { FreeResourceDetail } from "./pages/FreeResourceDetail";
+import { PremiumSubscriptionPage } from "./pages/PremiumSubscriptionPage";
 
 function Router() {
   return (
@@ -47,14 +44,11 @@ function Router() {
       <Route path="/edit-course/:slug" component={EditCourse} />
       <Route path="/formateur/create-course" component={CreateCourse} />
       <Route path="/formateur/reorder-resources/:moduleId" component={ReorderResources} />
-      <Route path="/admin/external-courses" component={AdminExternalCourses} />
-      <Route path="/subscription" component={SubscriptionPage} />
-      <Route path="/external-courses" component={ExternalCoursesCatalog} />
-      <Route path="/external-course/:slug" component={ExternalCourseDetail} />
+
       <Route path="/search" component={SearchPage} />
-      <Route path="/favorites" component={FavoritesPage} />
       <Route path="/free-resources" component={FreeResourcesPage} />
       <Route path="/free-resource/:slug" component={FreeResourceDetail} />
+      <Route path="/premium" component={PremiumSubscriptionPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

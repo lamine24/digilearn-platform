@@ -153,3 +153,13 @@
 - [x] Intégration dans le catalogue (ExternalCoursesCatalog avec bouton Aperçu)
 - [x] Animations fluides et transitions (Dialog + Tabs)
 - [x] Tests unitaires pour la prévisualisation (course-preview.test.ts avec 18 tests)
+
+
+## 🔄 Refactoring Phase (Session Actuelle)
+- [x] Supprimer la section "Cours Externes" (pages, routes, composants)
+- [x] Supprimer les tables de base de données liées aux cours externes (externalCourses, subscriptions)
+- [x] Ajouter des boutons "Retour à l'accueil" dans toutes les pages (BackButton component)
+- [x] Ajouter plus de ressources libres au seed (30+ ressources au total)
+- [x] Implémenter le partage sur les réseaux sociaux (Facebook, LinkedIn, Twitter, WhatsApp, Email)
+- [x] Refactoriser le modèle d'abonnement à un seul plan 10 000 FCFA/mois
+- [x] Tester tous les flux et corriger les bugs (8/8 tests premium passent)

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { SearchBar } from "@/components/SearchBar";
+import { BackButton } from "@/components/BackButton";
 import { FilterPanel, type FilterState } from "@/components/FilterPanel";
 import { SearchHistoryComponent } from "@/components/SearchHistory";
 import { useSearchPreferences } from "@/hooks/useSearchPreferences";
@@ -78,8 +79,11 @@ export function SearchPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold mb-4">Rechercher des cours</h1>
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Rechercher des cours</h1>
+          <BackButton />
+        </div>
+        <div className="container mx-auto px-4 pb-4">
           <SearchBar
             onSearch={handleSearch}
             placeholder="Rechercher par titre, description, tags..."
