@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, BookOpen } from "lucide-react";
+import { platformConfig, levelConfig, getPlatformConfig, getLevelLabel } from "@/lib/platformConfig";
 
 interface FreeResourceCardProps {
   id: number;
@@ -11,7 +12,7 @@ interface FreeResourceCardProps {
   shortDescription?: string;
   thumbnailUrl?: string;
   externalUrl: string;
-  platform: "khan_academy" | "mit_ocw" | "statlearning" | "open_learning_campus" | "canal_u" | "other";
+  platform: "khan_academy" | "mit_ocw" | "statlearning" | "open_learning_campus" | "canal_u" | "openlearn" | "saylor_academy" | "auf" | "unesco_oer" | "bookdown" | "fun_mooc" | "other";
   category?: string;
   level?: "debutant" | "intermediaire" | "avance";
   duration?: number;
@@ -20,21 +21,6 @@ interface FreeResourceCardProps {
   enrollmentCount?: number;
   onViewDetails?: (slug: string) => void;
 }
-
-const platformConfig: Record<string, { label: string; color: string; icon: string }> = {
-  khan_academy: { label: "Khan Academy", color: "bg-blue-100 text-blue-800", icon: "📚" },
-  mit_ocw: { label: "MIT OCW", color: "bg-red-100 text-red-800", icon: "🎓" },
-  statlearning: { label: "StatLearning", color: "bg-purple-100 text-purple-800", icon: "📊" },
-  open_learning_campus: { label: "Open Learning Campus", color: "bg-green-100 text-green-800", icon: "🌍" },
-  canal_u: { label: "Canal-U", color: "bg-indigo-100 text-indigo-800", icon: "🎬" },
-  other: { label: "Autre", color: "bg-gray-100 text-gray-800", icon: "📖" },
-};
-
-const levelConfig: Record<string, string> = {
-  debutant: "Débutant",
-  intermediaire: "Intermédiaire",
-  avance: "Avancé",
-};
 
 export function FreeResourceCard({
   id,
@@ -53,8 +39,8 @@ export function FreeResourceCard({
   enrollmentCount,
   onViewDetails,
 }: FreeResourceCardProps) {
-  const platformInfo = platformConfig[platform];
-  const levelLabel = levelConfig[level];
+  const platformInfo = getPlatformConfig(platform);
+  const levelLabel = getLevelLabel(level);
 
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
@@ -70,8 +56,8 @@ export function FreeResourceCard({
 
       <CardHeader className="flex-1">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <Badge className={platformInfo.color}>
-            {platformInfo.icon} {platformInfo.label}
+          <Badge className={platformInfo?.color || "bg-gray-100 text-gray-800"}>
+            {platformInfo?.icon || "📖"} {platformInfo?.label || "Ressource"}
           </Badge>
           <Badge variant="outline">{levelLabel}</Badge>
         </div>

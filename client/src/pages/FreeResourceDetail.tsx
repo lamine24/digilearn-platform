@@ -4,21 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ExternalLink, ArrowLeft, BookOpen, Clock, Users, Star } from "lucide-react";
-
-const platformConfig: Record<string, { label: string; color: string }> = {
-  khan_academy: { label: "Khan Academy", color: "bg-blue-100 text-blue-800" },
-  mit_ocw: { label: "MIT OCW", color: "bg-red-100 text-red-800" },
-  statlearning: { label: "StatLearning", color: "bg-purple-100 text-purple-800" },
-  open_learning_campus: { label: "Open Learning Campus", color: "bg-green-100 text-green-800" },
-  canal_u: { label: "Canal-U", color: "bg-indigo-100 text-indigo-800" },
-  other: { label: "Autre", color: "bg-gray-100 text-gray-800" },
-};
-
-const levelConfig: Record<string, string> = {
-  debutant: "Débutant",
-  intermediaire: "Intermédiaire",
-  avance: "Avancé",
-};
+import { platformConfig, levelConfig, getPlatformConfig, getLevelLabel } from "@/lib/platformConfig";
 
 export function FreeResourceDetail() {
   const params = useParams<{ slug: string }>();
@@ -48,8 +34,8 @@ export function FreeResourceDetail() {
     );
   }
 
-  const platformInfo = platformConfig[resource.platform] || platformConfig.other;
-  const levelLabel = levelConfig[resource.level] || resource.level;
+  const platformInfo = getPlatformConfig(resource.platform);
+  const levelLabel = getLevelLabel(resource.level);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12">
