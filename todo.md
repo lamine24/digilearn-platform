@@ -218,8 +218,9 @@
 ## ⚙️ Persistance des Paramètres de Notification (À Faire)
 - [ ] Créer une table `notificationSettings` pour persister les configurations
 - [ ] Ajouter des procédures tRPC pour charger et sauvegarder les paramètres
-- [ ] Connecter AdminNotificationSettingsPage aux vraies procédures tRPC
-- [ ] Écrire des tests pour la persistance des paramètres
+- [x] Connecter AdminNotificationSettingsPage aux vraies procédures tRPC
+- [x] Ajouter les procédures tRPC pour charger et sauvegarder les paramètres
+- [x] Implémenter le chargement automatique des paramètres au démarrage
 
 
 ## 📍 Widget de Statut d'Abonnement dans la Navigation (Complété)
@@ -228,4 +229,4 @@
 - [x] Afficher les jours restants et le statut
 - [x] Ajouter les alertes pour expirations imminentes
 - [x] Ajouter le lien de renouvellement rapide
-- [x] Tester et sauvegarder (131/133 tests passent)
+- [x] Tester et sauvegarder

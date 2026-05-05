@@ -375,6 +375,21 @@ export const appRouter = router({
       await db.cancelPremiumSubscription(input.userId);
       return { success: true };
     }),
+    notificationSettings: adminProcedure.query(async () => {
+      return db.getNotificationSettings();
+    }),
+    updateNotificationSettings: adminProcedure.input(z.object({
+      expirationReminderEnabled: z.boolean().optional(),
+      expirationReminderDays: z.number().min(1).max(30).optional(),
+      expiredNotificationEnabled: z.boolean().optional(),
+      emailFrom: z.string().email().optional(),
+      supportEmail: z.string().email().optional(),
+      maxRetriesOnFailure: z.number().min(1).max(10).optional(),
+      retryDelayMinutes: z.number().min(5).max(1440).optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const updated = await db.updateNotificationSettings(input, ctx.user.name || `User ${ctx.user.id}`);
+      return updated;
+    }),
   }),
 
   quiz: router({

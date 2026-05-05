@@ -1089,3 +1089,96 @@ export async function getExpiredSubscriptions() {
     return [];
   }
 }
+
+
+// ─── Notification Settings Management ────────────────────────────
+export async function getNotificationSettings() {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const { notificationSettings } = await import("../drizzle/schema");
+    const settings = await db
+      .select()
+      .from(notificationSettings)
+      .limit(1);
+    
+    if (settings.length === 0) {
+      return {
+        id: 0,
+        expirationReminderEnabled: true,
+        expirationReminderDays: 7,
+        expiredNotificationEnabled: true,
+        emailFrom: "noreply@digilearn.manus.space",
+        supportEmail: "support@digilearn.manus.space",
+        maxRetriesOnFailure: 3,
+        retryDelayMinutes: 60,
+        updatedAt: new Date(),
+        updatedBy: null,
+      };
+    }
+    
+    return settings[0];
+  } catch (error) {
+    console.error("[Database] Failed to get notification settings:", error);
+    return null;
+  }
+}
+
+export async function updateNotificationSettings(
+  settings: {
+    expirationReminderEnabled?: boolean;
+    expirationReminderDays?: number;
+    expiredNotificationEnabled?: boolean;
+    emailFrom?: string;
+    supportEmail?: string;
+    maxRetriesOnFailure?: number;
+    retryDelayMinutes?: number;
+  },
+  updatedBy: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { notificationSettings } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    const current = await getNotificationSettings();
+    
+    if (!current || current.id === 0) {
+      // Insert new settings
+      await db.insert(notificationSettings).values({
+        expirationReminderEnabled: settings.expirationReminderEnabled ?? true,
+        expirationReminderDays: settings.expirationReminderDays ?? 7,
+        expiredNotificationEnabled: settings.expiredNotificationEnabled ?? true,
+        emailFrom: settings.emailFrom ?? "noreply@digilearn.manus.space",
+        supportEmail: settings.supportEmail ?? "support@digilearn.manus.space",
+        maxRetriesOnFailure: settings.maxRetriesOnFailure ?? 3,
+        retryDelayMinutes: settings.retryDelayMinutes ?? 60,
+        updatedBy,
+      });
+    } else {
+      // Update existing settings
+      await db
+        .update(notificationSettings)
+        .set({
+          expirationReminderEnabled: settings.expirationReminderEnabled,
+          expirationReminderDays: settings.expirationReminderDays,
+          expiredNotificationEnabled: settings.expiredNotificationEnabled,
+          emailFrom: settings.emailFrom,
+          supportEmail: settings.supportEmail,
+          maxRetriesOnFailure: settings.maxRetriesOnFailure,
+          retryDelayMinutes: settings.retryDelayMinutes,
+          updatedBy,
+          updatedAt: new Date(),
+        })
+        .where(eq(notificationSettings.id, current.id));
+    }
+    
+    return await getNotificationSettings();
+  } catch (error) {
+    console.error("[Database] Failed to update notification settings:", error);
+    throw error;
+  }
+}

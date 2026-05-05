@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, Clock, CheckCircle } from "lucide-react";
+import { Loader2, Mail, Clock, CheckCircle, AlertTriangle } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 export function AdminNotificationSettingsPage() {
   const [settings, setSettings] = useState({
@@ -21,18 +22,63 @@ export function AdminNotificationSettingsPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load current settings on mount
+  const { data: currentSettings, isLoading: isLoadingSettings } = trpc.admin.notificationSettings.useQuery();
+  
+  const updateMutation = trpc.admin.updateNotificationSettings.useMutation();
+
+  useEffect(() => {
+    if (currentSettings) {
+      setSettings({
+        expirationReminderEnabled: currentSettings.expirationReminderEnabled ?? true,
+        expirationReminderDays: currentSettings.expirationReminderDays ?? 7,
+        expiredNotificationEnabled: currentSettings.expiredNotificationEnabled ?? true,
+        emailFrom: currentSettings.emailFrom ?? "noreply@digilearn.manus.space",
+        supportEmail: currentSettings.supportEmail ?? "support@digilearn.manus.space",
+        maxRetriesOnFailure: currentSettings.maxRetriesOnFailure ?? 3,
+        retryDelayMinutes: currentSettings.retryDelayMinutes ?? 60,
+      });
+      setIsLoading(false);
+    }
+  }, [currentSettings]);
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveError(null);
+    
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await updateMutation.mutateAsync({
+        expirationReminderEnabled: settings.expirationReminderEnabled,
+        expirationReminderDays: settings.expirationReminderDays,
+        expiredNotificationEnabled: settings.expiredNotificationEnabled,
+        emailFrom: settings.emailFrom,
+        supportEmail: settings.supportEmail,
+        maxRetriesOnFailure: settings.maxRetriesOnFailure,
+        retryDelayMinutes: settings.retryDelayMinutes,
+      });
+      
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
     } finally {
       setIsSaving(false);
     }
   };
+
+  if (isLoading || isLoadingSettings) {
+    return (
+      <div className="min-h-screen bg-background p-8 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <p>Chargement des paramètres...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -49,6 +95,16 @@ export function AdminNotificationSettingsPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               Paramètres sauvegardés avec succès
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Alert */}
+        {saveError && (
+          <Alert className="bg-red-50 border-red-200">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              {saveError}
             </AlertDescription>
           </Alert>
         )}
@@ -178,14 +234,6 @@ export function AdminNotificationSettingsPage() {
                     Adresse de support affichée dans les emails
                   </p>
                 </div>
-
-                {/* Test Email Button */}
-                <div className="pt-4 border-t">
-                  <Button variant="outline">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Envoyer un email de test
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -245,27 +293,6 @@ export function AdminNotificationSettingsPage() {
                     {settings.retryDelayMinutes > 1 ? "s" : ""} avant de relancer
                   </p>
                 </div>
-
-                {/* Logs Section */}
-                <div className="pt-4 border-t space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-2">Logs de Notifications Récents</h3>
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-2 max-h-64 overflow-y-auto text-sm font-mono">
-                      <div className="text-green-600">
-                        ✓ [2026-05-05 10:30:00] Email envoyé à user@example.com
-                      </div>
-                      <div className="text-green-600">
-                        ✓ [2026-05-05 10:15:00] Email envoyé à another@example.com
-                      </div>
-                      <div className="text-red-600">
-                        ✗ [2026-05-05 10:00:00] Erreur: Invalid email address
-                      </div>
-                      <div className="text-yellow-600">
-                        ⟳ [2026-05-05 09:45:00] Retry 1/3 pour user2@example.com
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -273,10 +300,12 @@ export function AdminNotificationSettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end gap-4 pt-4 border-t">
-          <Button variant="outline">Annuler</Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isSaving ? "Sauvegarde..." : "Sauvegarder les paramètres"}
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Retour
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving || updateMutation.isPending}>
+            {(isSaving || updateMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isSaving || updateMutation.isPending ? "Sauvegarde..." : "Sauvegarder les paramètres"}
           </Button>
         </div>
       </div>
