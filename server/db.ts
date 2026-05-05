@@ -712,3 +712,187 @@ export async function getAllPaymentsByUser(userId: number) {
     return [];
   }
 }
+
+
+// ─── Admin Subscription Management ──────────────────────────────
+
+export async function getAllPremiumSubscriptions(limit = 100, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const { premiumSubscriptions, users } = await import("../drizzle/schema");
+    const { desc } = await import("drizzle-orm");
+    
+    const subscriptions = await db
+      .select({
+        id: premiumSubscriptions.id,
+        userId: premiumSubscriptions.userId,
+        userName: users.name,
+        userEmail: users.email,
+        price: premiumSubscriptions.price,
+        currency: premiumSubscriptions.currency,
+        startDate: premiumSubscriptions.startDate,
+        endDate: premiumSubscriptions.endDate,
+        status: premiumSubscriptions.status,
+        paymentId: premiumSubscriptions.paymentId,
+        autoRenew: premiumSubscriptions.autoRenew,
+        createdAt: premiumSubscriptions.createdAt,
+        updatedAt: premiumSubscriptions.updatedAt,
+      })
+      .from(premiumSubscriptions)
+      .leftJoin(users, eq(premiumSubscriptions.userId, users.id))
+      .orderBy(desc(premiumSubscriptions.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return subscriptions;
+  } catch (error) {
+    console.error("[Database] Failed to get all premium subscriptions:", error);
+    return [];
+  }
+}
+
+export async function getPremiumSubscriptionsCount() {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  try {
+    const { premiumSubscriptions } = await import("../drizzle/schema");
+    const { count } = await import("drizzle-orm");
+    
+    const result = await db
+      .select({ count: count() })
+      .from(premiumSubscriptions);
+    
+    return result[0]?.count || 0;
+  } catch (error) {
+    console.error("[Database] Failed to count premium subscriptions:", error);
+    return 0;
+  }
+}
+
+export async function getPremiumSubscriptionStats() {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const { premiumSubscriptions } = await import("../drizzle/schema");
+    const { count, sql } = await import("drizzle-orm");
+    
+    const now = new Date();
+    
+    // Get counts by status
+    const stats = await db
+      .select({
+        status: premiumSubscriptions.status,
+        count: count(),
+      })
+      .from(premiumSubscriptions)
+      .groupBy(premiumSubscriptions.status);
+    
+    // Get active subscriptions count
+    const activeCount = await db
+      .select({ count: count() })
+      .from(premiumSubscriptions)
+      .where(eq(premiumSubscriptions.status, "active"));
+    
+    // Get expiring soon (within 7 days)
+    const expiringCount = await db
+      .select({ count: count() })
+      .from(premiumSubscriptions)
+      .where(
+        and(
+          eq(premiumSubscriptions.status, "active"),
+          sql`${premiumSubscriptions.endDate} > ${now} AND ${premiumSubscriptions.endDate} < DATE_ADD(${now}, INTERVAL 7 DAY)`
+        )
+      );
+    
+    // Get total revenue
+    const revenue = await db
+      .select({
+        total: sql<string>`SUM(CAST(${premiumSubscriptions.price} AS DECIMAL(10,2)))`,
+      })
+      .from(premiumSubscriptions)
+      .where(eq(premiumSubscriptions.status, "active"));
+    
+    return {
+      byStatus: stats,
+      activeCount: activeCount[0]?.count || 0,
+      expiringCount: expiringCount[0]?.count || 0,
+      totalRevenue: revenue[0]?.total || "0",
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get premium subscription stats:", error);
+    return null;
+  }
+}
+
+export async function renewPremiumSubscription(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { premiumSubscriptions } = await import("../drizzle/schema");
+    const now = new Date();
+    const newEndDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    await db.update(premiumSubscriptions)
+      .set({
+        startDate: now,
+        endDate: newEndDate,
+        status: "active",
+        autoRenew: true,
+        updatedAt: now,
+      })
+      .where(eq(premiumSubscriptions.userId, userId));
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to renew premium subscription:", error);
+    throw error;
+  }
+}
+
+export async function searchPremiumSubscriptions(query: string, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const { premiumSubscriptions, users } = await import("../drizzle/schema");
+    const { desc, or, like } = await import("drizzle-orm");
+    
+    const subscriptions = await db
+      .select({
+        id: premiumSubscriptions.id,
+        userId: premiumSubscriptions.userId,
+        userName: users.name,
+        userEmail: users.email,
+        price: premiumSubscriptions.price,
+        currency: premiumSubscriptions.currency,
+        startDate: premiumSubscriptions.startDate,
+        endDate: premiumSubscriptions.endDate,
+        status: premiumSubscriptions.status,
+        paymentId: premiumSubscriptions.paymentId,
+        autoRenew: premiumSubscriptions.autoRenew,
+        createdAt: premiumSubscriptions.createdAt,
+        updatedAt: premiumSubscriptions.updatedAt,
+      })
+      .from(premiumSubscriptions)
+      .leftJoin(users, eq(premiumSubscriptions.userId, users.id))
+      .where(
+        or(
+          like(users.name, `%${query}%`),
+          like(users.email, `%${query}%`),
+          like(premiumSubscriptions.paymentId, `%${query}%`)
+        )
+      )
+      .orderBy(desc(premiumSubscriptions.createdAt))
+      .limit(limit);
+    
+    return subscriptions;
+  } catch (error) {
+    console.error("[Database] Failed to search premium subscriptions:", error);
+    return [];
+  }
+}

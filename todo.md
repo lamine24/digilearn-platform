@@ -195,3 +195,12 @@
 - [x] Ajouter redirection d'authentification pour utilisateurs non authentifiés
 - [x] Créer tests pour PremiumGate (composant, états de chargement, utilisateurs premium/non-premium)
 - [x] Vérifier que le serveur de développement fonctionne sans erreurs TypeScript
+
+
+## 📊 Tableau de Bord Administrateur pour Abonnements (Session Actuelle)
+- [x] Ajouter les procédures tRPC admin pour la gestion des abonnements
+- [x] Créer la page admin avec tableau des abonnements
+- [x] Ajouter filtrage, tri et recherche
+- [x] Implémenter les boutons d'action (renouveler, annuler, relancer webhook)
+- [x] Ajouter les statistiques et analytics d'abonnement
+- [x] Tester le tableau de bord admin (131/133 tests passent)

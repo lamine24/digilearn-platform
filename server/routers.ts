@@ -346,6 +346,35 @@ export const appRouter = router({
       userId: z.number(), role: z.enum(["admin", "formateur", "apprenant", "alumni", "prospect"]),
     })).mutation(async ({ input }) => { await db.updateUserRole(input.userId, input.role); return { success: true }; }),
     allPayments: adminProcedure.query(() => db.getAllPayments()),
+    subscriptions: adminProcedure.input(z.object({
+      limit: z.number().default(50),
+      offset: z.number().default(0),
+    })).query(async ({ input }) => {
+      const subscriptions = await db.getAllPremiumSubscriptions(input.limit, input.offset);
+      const total = await db.getPremiumSubscriptionsCount();
+      return { subscriptions, total };
+    }),
+    subscriptionStats: adminProcedure.query(async () => {
+      return db.getPremiumSubscriptionStats();
+    }),
+    searchSubscriptions: adminProcedure.input(z.object({
+      query: z.string(),
+      limit: z.number().default(50),
+    })).query(async ({ input }) => {
+      return db.searchPremiumSubscriptions(input.query, input.limit);
+    }),
+    renewSubscription: adminProcedure.input(z.object({
+      userId: z.number(),
+    })).mutation(async ({ input }) => {
+      await db.renewPremiumSubscription(input.userId);
+      return { success: true };
+    }),
+    cancelSubscription: adminProcedure.input(z.object({
+      userId: z.number(),
+    })).mutation(async ({ input }) => {
+      await db.cancelPremiumSubscription(input.userId);
+      return { success: true };
+    }),
   }),
 
   quiz: router({
