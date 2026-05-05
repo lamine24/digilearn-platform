@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { SearchBar } from "@/components/SearchBar";
 import { BackButton } from "@/components/BackButton";
+import { PremiumGate } from "@/components/PremiumGate";
 import { FilterPanel, type FilterState } from "@/components/FilterPanel";
 import { SearchHistoryComponent } from "@/components/SearchHistory";
 import { useSearchPreferences } from "@/hooks/useSearchPreferences";
@@ -76,8 +77,9 @@ export function SearchPage() {
   const hasResults = (searchQuery_trpc.data?.results?.length || 0) > 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <PremiumGate resourceName="ressources de recherche">
+      <div className="min-h-screen bg-background">
+        {/* Header */}
       <div className="sticky top-0 z-40 bg-background border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Rechercher des cours</h1>
@@ -286,7 +288,8 @@ export function SearchPage() {
             )}
           </main>
         </div>
+        </div>
       </div>
-    </div>
+    </PremiumGate>
   );
 }

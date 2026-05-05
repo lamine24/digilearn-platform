@@ -2,6 +2,7 @@ import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { BackButton } from "@/components/BackButton";
 import { SocialShareButton } from "@/components/SocialShareButton";
+import { PremiumGate, PremiumBadge } from "@/components/PremiumGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,22 +41,24 @@ export function FreeResourceDetail() {
   const levelLabel = getLevelLabel(resource.level);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <BackButton label="Retour aux ressources" />
-        </div>
+    <PremiumGate resourceName="ressource">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <div className="mb-6">
+            <BackButton label="Retour aux ressources" />
+          </div>
 
-        {/* Header Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className={platformInfo.color}>{platformInfo.label}</Badge>
-                  <Badge variant="outline">{levelLabel}</Badge>
-                </div>
+          {/* Header Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className={platformInfo.color}>{platformInfo.label}</Badge>
+                    <Badge variant="outline">{levelLabel}</Badge>
+                    <PremiumBadge />
+                  </div>
                 <CardTitle className="text-3xl mb-2">{resource.title}</CardTitle>
                 <CardDescription className="text-base">{resource.category}</CardDescription>
               </div>
@@ -153,7 +156,8 @@ export function FreeResourceDetail() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </PremiumGate>
   );
 }

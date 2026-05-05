@@ -1,9 +1,10 @@
 import React from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { usePremiumAccess, usePremiumStatus } from "@/hooks/usePremiumAccess";
+import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Lock, Clock } from "lucide-react";
+import { AlertCircle, Lock, Clock, LogIn } from "lucide-react";
 import { Link } from "wouter";
 
 interface PremiumGateProps {
@@ -15,6 +16,7 @@ interface PremiumGateProps {
 /**
  * Component to gate premium content
  * Shows content only to premium users or admins
+ * Redirects unauthenticated users to login
  * Shows upgrade prompt to non-premium users
  */
 export function PremiumGate({ children, fallback, resourceName = "contenu" }: PremiumGateProps) {
@@ -32,8 +34,39 @@ export function PremiumGate({ children, fallback, resourceName = "contenu" }: Pr
     );
   }
 
+  // Unauthenticated users need to log in
+  if (!user) {
+    return (
+      fallback || (
+        <Card className="border-blue-200 bg-blue-50 m-4">
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <LogIn className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div>
+                <CardTitle className="text-lg">Connexion requise</CardTitle>
+                <CardDescription>
+                  Veuillez vous connecter pour accéder à ce {resourceName}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Créez un compte ou connectez-vous pour accéder à nos contenus premium et ressources exclusives.
+            </p>
+            <a href={getLoginUrl()}>
+              <Button className="w-full" size="lg">
+                Se connecter
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
+      )
+    );
+  }
+
   // Admin and premium users can access
-  if (user?.role === "admin" || isPremium) {
+  if (user.role === "admin" || isPremium) {
     return <>{children}</>;
   }
 
