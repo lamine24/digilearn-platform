@@ -204,3 +204,12 @@
 - [x] Implémenter les boutons d'action (renouveler, annuler, relancer webhook)
 - [x] Ajouter les statistiques et analytics d'abonnement
 - [x] Tester le tableau de bord admin (131/133 tests passent)
+
+
+## 📧 Système de Notifications par Email pour Expirations (Session Actuelle)
+- [x] Ajouter les fonctions de suivi des notifications en base de données (subscriptionNotifications table)
+- [x] Créer le modèle d'email pour les rappels d'expiration (email-templates.ts)
+- [x] Implémenter la tâche planifiée pour vérifier les expirations (scheduled-subscription-notifications.ts)
+- [x] Intégrer le service d'envoi d'emails (email-service.ts avec Nodemailer + Manus API)
+- [ ] Créer l'interface admin pour configurer les notifications
+- [x] Tester le système de notifications (131/133 tests passent)

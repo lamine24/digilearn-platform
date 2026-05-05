@@ -229,3 +229,21 @@ export const freeResources = mysqlTable("free_resources", {
 
 export type FreeResource = typeof freeResources.$inferSelect;
 export type InsertFreeResource = typeof freeResources.$inferInsert;
+
+
+// ─── Subscription Notification Tracking ──────────────────────────
+export const subscriptionNotifications = mysqlTable("subscription_notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  subscriptionId: int("subscriptionId").notNull(),
+  userId: int("userId").notNull(),
+  notificationType: mysqlEnum("notificationType", ["expiring_soon", "expired", "renewal_reminder"]).notNull(),
+  daysBeforeExpiry: int("daysBeforeExpiry"),
+  sentAt: timestamp("sentAt"),
+  status: mysqlEnum("status", ["pending", "sent", "failed"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SubscriptionNotification = typeof subscriptionNotifications.$inferSelect;
+export type InsertSubscriptionNotification = typeof subscriptionNotifications.$inferInsert;

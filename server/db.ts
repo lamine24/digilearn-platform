@@ -896,3 +896,196 @@ export async function searchPremiumSubscriptions(query: string, limit = 50) {
     return [];
   }
 }
+
+
+// ─── Subscription Notification Tracking ────────────────────────────
+
+export async function getExpiringSubscriptions(daysThreshold = 7) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const { premiumSubscriptions, users } = await import("../drizzle/schema");
+    const { sql, and, eq } = await import("drizzle-orm");
+    
+    const now = new Date();
+    const thresholdDate = new Date(now.getTime() + daysThreshold * 24 * 60 * 60 * 1000);
+    
+    const expiringSubscriptions = await db
+      .select({
+        id: premiumSubscriptions.id,
+        userId: premiumSubscriptions.userId,
+        userName: users.name,
+        userEmail: users.email,
+        endDate: premiumSubscriptions.endDate,
+        daysRemaining: sql<number>`CEIL((UNIX_TIMESTAMP(${premiumSubscriptions.endDate}) - UNIX_TIMESTAMP(${now})) / 86400)`,
+      })
+      .from(premiumSubscriptions)
+      .leftJoin(users, eq(premiumSubscriptions.userId, users.id))
+      .where(
+        and(
+          eq(premiumSubscriptions.status, "active"),
+          sql`${premiumSubscriptions.endDate} > ${now}`,
+          sql`${premiumSubscriptions.endDate} <= ${thresholdDate}`
+        )
+      );
+    
+    return expiringSubscriptions;
+  } catch (error) {
+    console.error("[Database] Failed to get expiring subscriptions:", error);
+    return [];
+  }
+}
+
+export async function createNotificationRecord(
+  subscriptionId: number,
+  userId: number,
+  notificationType: "expiring_soon" | "expired" | "renewal_reminder",
+  daysBeforeExpiry: number | null = null
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { subscriptionNotifications } = await import("../drizzle/schema");
+    
+    await db.insert(subscriptionNotifications).values({
+      subscriptionId,
+      userId,
+      notificationType,
+      daysBeforeExpiry,
+      status: "pending",
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to create notification record:", error);
+    throw error;
+  }
+}
+
+export async function updateNotificationStatus(
+  notificationId: number,
+  status: "pending" | "sent" | "failed",
+  errorMessage: string | null = null
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { subscriptionNotifications } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    await db.update(subscriptionNotifications)
+      .set({
+        status,
+        errorMessage,
+        sentAt: status === "sent" ? new Date() : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptionNotifications.id, notificationId));
+    
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to update notification status:", error);
+    throw error;
+  }
+}
+
+export async function getPendingNotifications() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const { subscriptionNotifications, premiumSubscriptions, users } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    const pending = await db
+      .select({
+        id: subscriptionNotifications.id,
+        subscriptionId: subscriptionNotifications.subscriptionId,
+        userId: subscriptionNotifications.userId,
+        notificationType: subscriptionNotifications.notificationType,
+        daysBeforeExpiry: subscriptionNotifications.daysBeforeExpiry,
+        userName: users.name,
+        userEmail: users.email,
+        endDate: premiumSubscriptions.endDate,
+      })
+      .from(subscriptionNotifications)
+      .leftJoin(users, eq(subscriptionNotifications.userId, users.id))
+      .leftJoin(premiumSubscriptions, eq(subscriptionNotifications.subscriptionId, premiumSubscriptions.id))
+      .where(eq(subscriptionNotifications.status, "pending"))
+      .limit(100);
+    
+    return pending;
+  } catch (error) {
+    console.error("[Database] Failed to get pending notifications:", error);
+    return [];
+  }
+}
+
+export async function hasNotificationBeenSent(
+  subscriptionId: number,
+  notificationType: "expiring_soon" | "expired" | "renewal_reminder",
+  daysBeforeExpiry: number | null = null
+) {
+  const db = await getDb();
+  if (!db) return false;
+  
+  try {
+    const { subscriptionNotifications } = await import("../drizzle/schema");
+    const { and, eq } = await import("drizzle-orm");
+    
+    const existing = await db
+      .select({ id: subscriptionNotifications.id })
+      .from(subscriptionNotifications)
+      .where(
+        and(
+          eq(subscriptionNotifications.subscriptionId, subscriptionId),
+          eq(subscriptionNotifications.notificationType, notificationType),
+          eq(subscriptionNotifications.status, "sent")
+        )
+      )
+      .limit(1);
+    
+    return existing.length > 0;
+  } catch (error) {
+    console.error("[Database] Failed to check notification sent status:", error);
+    return false;
+  }
+}
+
+
+export async function getExpiredSubscriptions() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const { premiumSubscriptions, users } = await import("../drizzle/schema");
+    const { and, eq, sql } = await import("drizzle-orm");
+    
+    const now = new Date();
+    
+    const expiredSubscriptions = await db
+      .select({
+        id: premiumSubscriptions.id,
+        userId: premiumSubscriptions.userId,
+        userName: users.name,
+        userEmail: users.email,
+        endDate: premiumSubscriptions.endDate,
+      })
+      .from(premiumSubscriptions)
+      .leftJoin(users, eq(premiumSubscriptions.userId, users.id))
+      .where(
+        and(
+          eq(premiumSubscriptions.status, "active"),
+          sql`${premiumSubscriptions.endDate} <= ${now}`
+        )
+      );
+    
+    return expiredSubscriptions;
+  } catch (error) {
+    console.error("[Database] Failed to get expired subscriptions:", error);
+    return [];
+  }
+}

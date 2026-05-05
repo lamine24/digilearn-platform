@@ -198,3 +198,88 @@ export async function sendInactivityReminderEmail(
     text: `Vous êtes inactif depuis ${daysInactive} jours. Retournez à DigiLearn: https://digilearn.manus.space/dashboard`,
   });
 }
+
+
+/**
+ * Send subscription expiration reminder email
+ */
+export async function sendSubscriptionExpirationReminderEmail(
+  userName: string,
+  userEmail: string,
+  daysRemaining: number,
+  endDate: string,
+  renewalUrl: string
+): Promise<boolean> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #ff9800;">🔔 Rappel d'Expiration d'Abonnement</h1>
+      <p>Bonjour <strong>${userName}</strong>,</p>
+      <p>Nous vous contactons pour vous informer que votre abonnement premium DigiLearn expire bientôt.</p>
+      <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #856404;">⚠️ Votre abonnement expire dans ${daysRemaining} jour${daysRemaining > 1 ? "s" : ""}</p>
+        <p style="margin: 10px 0 0 0; color: #856404;">Date d'expiration : <strong>${endDate}</strong></p>
+      </div>
+      <p>Votre abonnement premium vous donne accès à :</p>
+      <ul>
+        <li>✅ Tous les cours certifiants (Data Science, Finance, Web Development, IA)</li>
+        <li>✅ Certificats reconnus professionnellement</li>
+        <li>✅ Support prioritaire et mentorat</li>
+        <li>✅ Accès à vie aux ressources premium</li>
+        <li>✅ Communauté exclusive d'apprenants</li>
+      </ul>
+      <p style="margin-top: 30px;">
+        <a href="${renewalUrl}" style="background-color: #ff9800; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+          Renouveler mon Abonnement
+        </a>
+      </p>
+      <p style="color: #999; font-size: 12px; margin-top: 30px;">
+        © 2026 DigiLearn. Tous droits réservés.
+      </p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: userEmail,
+    subject: `Rappel : Votre abonnement DigiLearn expire dans ${daysRemaining} jour${daysRemaining > 1 ? "s" : ""}`,
+    html,
+    text: `Bonjour ${userName},\n\nVotre abonnement premium DigiLearn expire dans ${daysRemaining} jour${daysRemaining > 1 ? "s" : ""} (${endDate}).\n\nRenouveler : ${renewalUrl}\n\nCordialement,\nL'équipe DigiLearn`,
+  });
+}
+
+/**
+ * Send subscription expired email
+ */
+export async function sendSubscriptionExpiredEmail(
+  userName: string,
+  userEmail: string,
+  endDate: string,
+  renewalUrl: string
+): Promise<boolean> {
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1 style="color: #d32f2f;">❌ Votre Abonnement a Expiré</h1>
+      <p>Bonjour <strong>${userName}</strong>,</p>
+      <p>Nous vous informons que votre abonnement premium DigiLearn a expiré.</p>
+      <div style="background: #ffebee; border-left: 4px solid #d32f2f; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0; font-weight: bold; color: #c62828;">Abonnement expiré le ${endDate}</p>
+        <p style="margin: 10px 0 0 0; color: #c62828;">Vous n'avez plus accès aux ressources premium.</p>
+      </div>
+      <p>Vous pouvez toujours accéder aux ressources libres, mais pour bénéficier de tous nos cours certifiants et services premium, veuillez renouveler votre abonnement.</p>
+      <p style="margin-top: 30px;">
+        <a href="${renewalUrl}" style="background-color: #d32f2f; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+          Renouveler mon Abonnement
+        </a>
+      </p>
+      <p style="color: #999; font-size: 12px; margin-top: 30px;">
+        © 2026 DigiLearn. Tous droits réservés.
+      </p>
+    </div>
+  `;
+
+  return sendEmail({
+    to: userEmail,
+    subject: "Votre abonnement DigiLearn a expiré - Renouvellement disponible",
+    html,
+    text: `Bonjour ${userName},\n\nVotre abonnement premium DigiLearn a expiré le ${endDate}.\n\nPour continuer à accéder aux ressources premium, veuillez renouveler :\n${renewalUrl}\n\nCordialement,\nL'équipe DigiLearn`,
+  });
+}
