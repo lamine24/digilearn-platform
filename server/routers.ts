@@ -10,6 +10,7 @@ import { invokeLLM } from "./_core/llm";
 import { nanoid } from "nanoid";
 import { searchRouter } from "./search-router";
 import { freeResourcesRouter } from "./free-resources-router";
+import { premiumResourcesRouter } from "./premium-resources-router";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -357,6 +358,7 @@ export const appRouter = router({
 
   search: searchRouter,
   freeResources: freeResourcesRouter,
+  premiumResources: premiumResourcesRouter,
 
   premium: router({
     getStatus: protectedProcedure.query(async ({ ctx }) => {
