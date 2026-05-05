@@ -26,6 +26,7 @@ import { FreeResourcesPage } from "./pages/FreeResourcesPage";
 import { FreeResourceDetail } from "./pages/FreeResourceDetail";
 import { PremiumSubscriptionPage } from "./pages/PremiumSubscriptionPage";
 import { AdminSubscriptionsPage } from "./pages/AdminSubscriptionsPage";
+import { AdminNotificationSettingsPage } from "./pages/AdminNotificationSettingsPage";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/subscriptions" component={AdminSubscriptionsPage} />
+      <Route path="/admin/notification-settings" component={AdminNotificationSettingsPage} />
       <Route path="/formateur" component={FormateurDashboard} />
       <Route path="/learn/:slug" component={Learn} />
       <Route path="/verify-certificate" component={VerifyCertificate} />

@@ -11,6 +11,7 @@ import {
   Play, Star, ChevronRight, Shield, Zap
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { SubscriptionStatusWidget } from "@/components/SubscriptionStatusWidget";
 import {
   ResponsiveContainer,
   BarChart,
@@ -92,9 +93,12 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
-              <Link href="/dashboard">
-                <Button>Mon espace <ChevronRight className="ml-1 h-4 w-4" /></Button>
-              </Link>
+              <>
+                <SubscriptionStatusWidget />
+                <Link href="/dashboard">
+                  <Button>Mon espace <ChevronRight className="ml-1 h-4 w-4" /></Button>
+                </Link>
+              </>
             ) : (
               <>
                 <Button variant="ghost" onClick={() => { window.location.href = getLoginUrl(); }}>Se connecter</Button>

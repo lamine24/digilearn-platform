@@ -247,3 +247,21 @@ export const subscriptionNotifications = mysqlTable("subscription_notifications"
 
 export type SubscriptionNotification = typeof subscriptionNotifications.$inferSelect;
 export type InsertSubscriptionNotification = typeof subscriptionNotifications.$inferInsert;
+
+
+// ─── Notification Settings (Admin Configuration) ────────────────────
+export const notificationSettings = mysqlTable("notification_settings", {
+  id: int("id").autoincrement().primaryKey(),
+  expirationReminderEnabled: boolean("expiration_reminder_enabled").default(true).notNull(),
+  expirationReminderDays: int("expiration_reminder_days").default(7).notNull(),
+  expiredNotificationEnabled: boolean("expired_notification_enabled").default(true).notNull(),
+  emailFrom: varchar("email_from", { length: 255 }).default("noreply@digilearn.manus.space").notNull(),
+  supportEmail: varchar("support_email", { length: 255 }).default("support@digilearn.manus.space").notNull(),
+  maxRetriesOnFailure: int("max_retries_on_failure").default(3).notNull(),
+  retryDelayMinutes: int("retry_delay_minutes").default(60).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedBy: varchar("updatedBy", { length: 255 }),
+});
+
+export type NotificationSettings = typeof notificationSettings.$inferSelect;
+export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;

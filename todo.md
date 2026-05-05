@@ -210,6 +210,22 @@
 - [x] Ajouter les fonctions de suivi des notifications en base de données (subscriptionNotifications table)
 - [x] Créer le modèle d'email pour les rappels d'expiration (email-templates.ts)
 - [x] Implémenter la tâche planifiée pour vérifier les expirations (scheduled-subscription-notifications.ts)
-- [x] Intégrer le service d'envoi d'emails (email-service.ts avec Nodemailer + Manus API)
-- [ ] Créer l'interface admin pour configurer les notifications
+- [x] Intégrer le service d'envoi d'emails (email-service.ts avec Nodemailer)
+- [x] Créer l'interface admin pour configurer les notifications (AdminNotificationSettingsPage.tsx)
 - [x] Tester le système de notifications (131/133 tests passent)
+
+
+## ⚙️ Persistance des Paramètres de Notification (À Faire)
+- [ ] Créer une table `notificationSettings` pour persister les configurations
+- [ ] Ajouter des procédures tRPC pour charger et sauvegarder les paramètres
+- [ ] Connecter AdminNotificationSettingsPage aux vraies procédures tRPC
+- [ ] Écrire des tests pour la persistance des paramètres
+
+
+## 📍 Widget de Statut d'Abonnement dans la Navigation (Complété)
+- [x] Créer le composant SubscriptionStatusWidget
+- [x] Intégrer dans la barre de navigation principale (Home.tsx)
+- [x] Afficher les jours restants et le statut
+- [x] Ajouter les alertes pour expirations imminentes
+- [x] Ajouter le lien de renouvellement rapide
+- [x] Tester et sauvegarder (131/133 tests passent)
