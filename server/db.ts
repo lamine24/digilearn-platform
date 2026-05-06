@@ -1182,3 +1182,228 @@ export async function updateNotificationSettings(
     throw error;
   }
 }
+
+
+// ─── Payment History Functions ──────────────────────────────────
+export async function recordPayment(data: {
+  userId: number;
+  subscriptionId?: number;
+  amount: string;
+  currency: string;
+  status: "pending" | "success" | "failed" | "cancelled";
+  paymentMethod: string;
+  transactionId?: string;
+  referenceCommand?: string;
+  errorMessage?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { paymentHistory } = await import("../drizzle/schema");
+    const result = await db.insert(paymentHistory).values({
+      userId: data.userId,
+      subscriptionId: data.subscriptionId,
+      amount: data.amount,
+      currency: data.currency,
+      status: data.status,
+      paymentMethod: data.paymentMethod,
+      transactionId: data.transactionId,
+      referenceCommand: data.referenceCommand,
+      errorMessage: data.errorMessage,
+      retryCount: 0,
+    });
+    return result[0].insertId;
+  } catch (error) {
+    console.error("[Database] Failed to record payment:", error);
+    throw error;
+  }
+}
+
+export async function getPaymentHistory(filters?: {
+  userId?: number;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+  minAmount?: string;
+  maxAmount?: string;
+  paymentMethod?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  try {
+    const { paymentHistory } = await import("../drizzle/schema");
+    const { eq, gte, lte, and } = await import("drizzle-orm");
+    
+    const conditions = [];
+
+    if (filters?.userId) {
+      conditions.push(eq(paymentHistory.userId, filters.userId));
+    }
+
+    if (filters?.status) {
+      conditions.push(eq(paymentHistory.status, filters.status as any));
+    }
+
+    if (filters?.paymentMethod) {
+      conditions.push(eq(paymentHistory.paymentMethod, filters.paymentMethod));
+    }
+
+    if (filters?.startDate) {
+      conditions.push(gte(paymentHistory.createdAt, filters.startDate));
+    }
+
+    if (filters?.endDate) {
+      conditions.push(lte(paymentHistory.createdAt, filters.endDate));
+    }
+
+    if (filters?.minAmount) {
+      conditions.push(gte(paymentHistory.amount, filters.minAmount));
+    }
+
+    if (filters?.maxAmount) {
+      conditions.push(lte(paymentHistory.amount, filters.maxAmount));
+    }
+
+    const limit = filters?.limit || 50;
+    const offset = filters?.offset || 0;
+
+    return db
+      .select()
+      .from(paymentHistory)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(paymentHistory.createdAt))
+      .limit(limit)
+      .offset(offset);
+  } catch (error) {
+    console.error("[Database] Failed to get payment history:", error);
+    return [];
+  }
+}
+
+export async function getPaymentHistoryCount(filters?: {
+  userId?: number;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+  minAmount?: string;
+  maxAmount?: string;
+  paymentMethod?: string;
+}) {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  try {
+    const { paymentHistory } = await import("../drizzle/schema");
+    const { eq, gte, lte, and } = await import("drizzle-orm");
+    
+    const conditions = [];
+
+    if (filters?.userId) {
+      conditions.push(eq(paymentHistory.userId, filters.userId));
+    }
+
+    if (filters?.status) {
+      conditions.push(eq(paymentHistory.status, filters.status as any));
+    }
+
+    if (filters?.paymentMethod) {
+      conditions.push(eq(paymentHistory.paymentMethod, filters.paymentMethod));
+    }
+
+    if (filters?.startDate) {
+      conditions.push(gte(paymentHistory.createdAt, filters.startDate));
+    }
+
+    if (filters?.endDate) {
+      conditions.push(lte(paymentHistory.createdAt, filters.endDate));
+    }
+
+    if (filters?.minAmount) {
+      conditions.push(gte(paymentHistory.amount, filters.minAmount));
+    }
+
+    if (filters?.maxAmount) {
+      conditions.push(lte(paymentHistory.amount, filters.maxAmount));
+    }
+
+    const result = await db
+      .select({ count: count() })
+      .from(paymentHistory)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    
+    return result[0]?.count || 0;
+  } catch (error) {
+    console.error("[Database] Failed to get payment history count:", error);
+    return 0;
+  }
+}
+
+export async function updatePaymentHistoryStatus(
+  paymentId: number,
+  status: "success" | "failed" | "cancelled",
+  transactionId?: string,
+  errorMessage?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  try {
+    const { paymentHistory } = await import("../drizzle/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    await db
+      .update(paymentHistory)
+      .set({
+        status,
+        transactionId,
+        errorMessage,
+        completedAt: new Date(),
+      })
+      .where(eq(paymentHistory.id, paymentId));
+  } catch (error) {
+    console.error("[Database] Failed to update payment status:", error);
+    throw error;
+  }
+}
+
+export async function getPaymentStatistics(filters?: {
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const { paymentHistory } = await import("../drizzle/schema");
+    const { gte, lte, sql, and } = await import("drizzle-orm");
+    
+    const conditions = [];
+
+    if (filters?.startDate) {
+      conditions.push(gte(paymentHistory.createdAt, filters.startDate));
+    }
+
+    if (filters?.endDate) {
+      conditions.push(lte(paymentHistory.createdAt, filters.endDate));
+    }
+
+    const result = await db
+      .select({
+        totalAmount: sum(paymentHistory.amount),
+        totalTransactions: count(),
+        successfulTransactions: count(sql`CASE WHEN status = 'success' THEN 1 END`),
+        failedTransactions: count(sql`CASE WHEN status = 'failed' THEN 1 END`),
+      })
+      .from(paymentHistory)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    
+    return result[0];
+  } catch (error) {
+    console.error("[Database] Failed to get payment statistics:", error);
+    return null;
+  }
+}

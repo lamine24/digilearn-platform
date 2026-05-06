@@ -265,3 +265,25 @@ export const notificationSettings = mysqlTable("notification_settings", {
 
 export type NotificationSettings = typeof notificationSettings.$inferSelect;
 export type InsertNotificationSettings = typeof notificationSettings.$inferInsert;
+
+// ─── Payment History ────────────────────────────────────────────
+export const paymentHistory = mysqlTable("payment_history", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id),
+  subscriptionId: int("subscription_id").references(() => premiumSubscriptions.id),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).default("XOF").notNull(),
+  status: mysqlEnum("status", ["pending", "success", "failed", "cancelled"]).default("pending").notNull(),
+  paymentMethod: varchar("payment_method", { length: 50 }).notNull(), // paytech, stripe, etc
+  transactionId: varchar("transaction_id", { length: 255 }).unique(),
+  referenceCommand: varchar("reference_command", { length: 255 }),
+  errorMessage: text("errorMessage"),
+  retryCount: int("retry_count").default(0).notNull(),
+  lastRetryAt: timestamp("last_retry_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaymentHistory = typeof paymentHistory.$inferSelect;
+export type InsertPaymentHistory = typeof paymentHistory.$inferInsert;

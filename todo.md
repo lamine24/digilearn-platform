@@ -216,8 +216,8 @@
 
 
 ## ⚙️ Persistance des Paramètres de Notification (À Faire)
-- [ ] Créer une table `notificationSettings` pour persister les configurations
-- [ ] Ajouter des procédures tRPC pour charger et sauvegarder les paramètres
+- [x] Créer une table `notificationSettings` pour persister les configurations (schema.ts)
+- [x] Ajouter des procédures tRPC pour charger et sauvegarder les paramètres (routers.ts)
 - [x] Connecter AdminNotificationSettingsPage aux vraies procédures tRPC
 - [x] Ajouter les procédures tRPC pour charger et sauvegarder les paramètres
 - [x] Implémenter le chargement automatique des paramètres au démarrage
@@ -230,3 +230,20 @@
 - [x] Ajouter les alertes pour expirations imminentes
 - [x] Ajouter le lien de renouvellement rapide
 - [x] Tester et sauvegarder
+
+
+## 💳 Historique des Paiements et Export (Complété)
+- [x] Créer une table pour tracker l'historique des paiements (paymentHistory dans schema.ts)
+- [x] Ajouter les fonctions DB pour récupérer l'historique (getPaymentHistory, getPaymentHistoryCount, getPaymentStatistics)
+- [x] Créer une page AdminPaymentHistoryPage avec détails des transactions
+- [x] Ajouter les filtres avancés (statut, date, montant, utilisateur)
+- [x] Implémenter le tri par colonne
+- [x] Ajouter l'export en CSV (csv-export.ts avec convertToCSV et exportPaymentHistoryToCSV)
+- [x] Tester et sauvegarder (TypeScript sans erreurs, serveur en cours d'exécution)
+
+
+## 🔧 Améliorations Nécessaires pour Historique des Paiements
+- [ ] Ajouter les filtres manquants (utilisateur, plage de dates, montant min/max) à AdminPaymentHistoryPage
+- [ ] Implémenter le tri par colonne (UI + état de tri + paramètres tRPC/DB)
+- [ ] Écrire et exécuter les tests Vitest pour les procédures tRPC de paymentHistory
+- [ ] Écrire et exécuter les tests Vitest pour AdminPaymentHistoryPage

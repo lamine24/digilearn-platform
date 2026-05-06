@@ -390,6 +390,40 @@ export const appRouter = router({
       const updated = await db.updateNotificationSettings(input, ctx.user.name || `User ${ctx.user.id}`);
       return updated;
     }),
+    paymentHistory: adminProcedure.input(z.object({
+      userId: z.number().optional(),
+      status: z.string().optional(),
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+      minAmount: z.string().optional(),
+      maxAmount: z.string().optional(),
+      paymentMethod: z.string().optional(),
+      limit: z.number().default(50),
+      offset: z.number().default(0),
+    })).query(async ({ input }) => {
+      const payments = await db.getPaymentHistory(input);
+      const total = await db.getPaymentHistoryCount(input);
+      return { payments, total };
+    }),
+    paymentStatistics: adminProcedure.input(z.object({
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+    })).query(async ({ input }) => {
+      return db.getPaymentStatistics(input);
+    }),
+    exportPaymentHistory: adminProcedure.input(z.object({
+      userId: z.number().optional(),
+      status: z.string().optional(),
+      startDate: z.date().optional(),
+      endDate: z.date().optional(),
+    })).mutation(async ({ input }) => {
+      const { exportPaymentHistoryToCSV, generateCSVFileName } = await import("./csv-export");
+      const csv = await exportPaymentHistoryToCSV(input);
+      return {
+        csv,
+        fileName: generateCSVFileName("payments"),
+      };
+    }),
   }),
 
   quiz: router({
