@@ -247,3 +247,13 @@
 - [ ] Implémenter le tri par colonne (UI + état de tri + paramètres tRPC/DB)
 - [ ] Écrire et exécuter les tests Vitest pour les procédures tRPC de paymentHistory
 - [ ] Écrire et exécuter les tests Vitest pour AdminPaymentHistoryPage
+
+
+## 🎯 Intégration Hybride des Ressources (Option 2B + Option 1) - Complétée
+- [x] Ajouter le champ `resourceType` (proprietary/external) et `downloadedUrl` aux ressources (schema.ts)
+- [x] Créer le service de téléchargement et stockage des ressources (simplifié)
+- [x] Modifier FreeResourceDetail pour désactiver les boutons d'accès pour non-premium
+- [x] Ajouter le bouton "Devenir Premium" dans les ressources libres avec CTA
+- [x] Ajouter les badges de type de contenu (Premium badge rouge)
+- [x] Tester le flux d'accès aux ressources premium (TypeScript sans erreurs)
+- [ ] Sauvegarder le checkpoint

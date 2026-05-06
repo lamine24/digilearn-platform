@@ -223,12 +223,32 @@ export const freeResources = mysqlTable("free_resources", {
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   enrollmentCount: int("enrollmentCount").default(0),
   isActive: boolean("isActive").default(true).notNull(),
+  resourceType: mysqlEnum("resourceType", ["proprietary", "external"]).default("external").notNull(),
+  downloadedUrl: text("downloadedUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type FreeResource = typeof freeResources.$inferSelect;
 export type InsertFreeResource = typeof freeResources.$inferInsert;
+
+// ─── Resource Downloads ─────────────────────────────────────────
+export const resourceDownloads = mysqlTable("resource_downloads", {
+  id: int("id").autoincrement().primaryKey(),
+  resourceId: int("resourceId").notNull(),
+  originalUrl: text("originalUrl").notNull(),
+  downloadedUrl: text("downloadedUrl").notNull(),
+  fileSize: int("fileSize"),
+  mimeType: varchar("mimeType", { length: 100 }),
+  status: mysqlEnum("status", ["pending", "success", "failed"]).default("pending").notNull(),
+  errorMessage: text("errorMessage"),
+  downloadedAt: timestamp("downloadedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ResourceDownload = typeof resourceDownloads.$inferSelect;
+export type InsertResourceDownload = typeof resourceDownloads.$inferInsert;
 
 
 // ─── Subscription Notification Tracking ──────────────────────────

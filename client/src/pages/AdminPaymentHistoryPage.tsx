@@ -5,13 +5,20 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+
+type SortField = "date" | "amount" | "status" | null;
+type SortOrder = "asc" | "desc";
 
 export function AdminPaymentHistoryPage() {
   const [page, setPage] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [methodFilter, setMethodFilter] = useState<string>("");
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [minAmount, setMinAmount] = useState<string>("");
+  const [maxAmount, setMaxAmount] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const limit = 20;
 
   // Fetch payment history
@@ -19,13 +26,63 @@ export function AdminPaymentHistoryPage() {
     limit,
     offset: page * limit,
     status: statusFilter || undefined,
+    minAmount: minAmount || undefined,
+    maxAmount: maxAmount || undefined,
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
   });
 
   // Fetch statistics
-  const { data: stats } = trpc.admin.paymentStatistics.useQuery({});
+  const { data: stats } = trpc.admin.paymentStatistics.useQuery({
+    startDate: startDate ? new Date(startDate) : undefined,
+    endDate: endDate ? new Date(endDate) : undefined,
+  });
 
   // Export mutation
   const exportMutation = trpc.admin.exportPaymentHistory.useMutation();
+
+  // Sort payments locally
+  const sortedPayments = useMemo(() => {
+    const payments = paymentData?.payments || [];
+    if (!sortField) return payments;
+
+    return [...payments].sort((a: any, b: any) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case "date":
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+        case "amount":
+          aValue = parseFloat(a.amount);
+          bValue = parseFloat(b.amount);
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+  }, [paymentData?.payments, sortField, sortOrder]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortOrder("desc");
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -34,7 +91,7 @@ export function AdminPaymentHistoryPage() {
       });
 
       // Create a blob and download
-      const blob = new Blob([result.csv], { type: "text/csv" });
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -46,7 +103,7 @@ export function AdminPaymentHistoryPage() {
     }
   };
 
-  const payments = paymentData?.payments || [];
+  const payments = sortedPayments;
   const total = paymentData?.total || 0;
   const totalPages = Math.ceil(total / limit);
 
@@ -58,6 +115,15 @@ export function AdminPaymentHistoryPage() {
       cancelled: "outline",
     };
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    return sortOrder === "asc" ? (
+      <ArrowUp className="h-4 w-4 ml-1" />
+    ) : (
+      <ArrowDown className="h-4 w-4 ml-1" />
+    );
   };
 
   return (
@@ -95,12 +161,12 @@ export function AdminPaymentHistoryPage() {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div>
             <label className="text-sm font-medium">Statut</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Tous les statuts" />
+                <SelectValue placeholder="Tous" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Tous les statuts</SelectItem>
@@ -112,17 +178,53 @@ export function AdminPaymentHistoryPage() {
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium">Méthode de Paiement</label>
-            <Select value={methodFilter} onValueChange={setMethodFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Toutes les méthodes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Toutes les méthodes</SelectItem>
-                <SelectItem value="paytech">PayTech</SelectItem>
-                <SelectItem value="stripe">Stripe</SelectItem>
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium">Montant Min</label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={minAmount}
+              onChange={(e) => setMinAmount(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Montant Max</label>
+            <Input
+              type="number"
+              placeholder="999999"
+              value={maxAmount}
+              onChange={(e) => setMaxAmount(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Date Début</label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Date Fin</label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <div className="flex items-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setStatusFilter("");
+                setMinAmount("");
+                setMaxAmount("");
+                setStartDate("");
+                setEndDate("");
+              }}
+            >
+              Réinitialiser
+            </Button>
           </div>
         </div>
       </Card>
@@ -135,11 +237,27 @@ export function AdminPaymentHistoryPage() {
               <tr>
                 <th className="px-4 py-3 text-left font-medium">ID</th>
                 <th className="px-4 py-3 text-left font-medium">Utilisateur</th>
-                <th className="px-4 py-3 text-left font-medium">Montant</th>
+                <th
+                  className="px-4 py-3 text-left font-medium cursor-pointer hover:bg-muted/80"
+                  onClick={() => handleSort("amount")}
+                >
+                  <div className="flex items-center">
+                    Montant
+                    {getSortIcon("amount")}
+                  </div>
+                </th>
                 <th className="px-4 py-3 text-left font-medium">Statut</th>
                 <th className="px-4 py-3 text-left font-medium">Méthode</th>
                 <th className="px-4 py-3 text-left font-medium">Transaction ID</th>
-                <th className="px-4 py-3 text-left font-medium">Date</th>
+                <th
+                  className="px-4 py-3 text-left font-medium cursor-pointer hover:bg-muted/80"
+                  onClick={() => handleSort("date")}
+                >
+                  <div className="flex items-center">
+                    Date
+                    {getSortIcon("date")}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -158,12 +276,14 @@ export function AdminPaymentHistoryPage() {
               ) : (
                 payments.map((payment: any) => (
                   <tr key={payment.id} className="border-b hover:bg-muted/50">
-                    <td className="px-4 py-3">{payment.id}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{payment.id}</td>
                     <td className="px-4 py-3">{payment.userId}</td>
-                    <td className="px-4 py-3 font-medium">{payment.amount} {payment.currency}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {payment.amount} {payment.currency}
+                    </td>
                     <td className="px-4 py-3">{getStatusBadge(payment.status)}</td>
                     <td className="px-4 py-3">{payment.paymentMethod}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
                       {payment.transactionId || "-"}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
