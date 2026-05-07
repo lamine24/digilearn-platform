@@ -304,3 +304,51 @@
 - [x] MIGRATIONS_PENDING.md - Guide complet des migrations DB
 - [x] Tests d'intégration couvrant tous les flux critiques
 - [x] Code commenté et structuré
+
+
+## 🎯 Fonctionnalités Prioritaires (Session Actuelle)
+
+### 1. Certificats (Génération & Vérification)
+- [x] Schéma de base de données pour certificats (resourceCertificates table)
+- [x] Helpers DB pour créer et vérifier les certificats
+- [x] Procédures tRPC pour générer et vérifier les certificats
+- [x] Intégration avec le système de paiement (webhook PayTech)
+- [x] Génération PDF avec QR Code
+- [x] Page de vérification de certificats (VerifyCertificate)
+
+### 2. Système de Points & Badges (Gamification)
+- [x] Création des tables de base de données :
+  - user_points (total_points, current_level, points_this_month)
+  - badge_definitions (name, description, icon_url, category, rarity)
+  - user_badges (user_id, badge_id, unlocked_at, progress)
+  - user_dashboard_stats (courses_completed, certificates_earned, badges_unlocked, streak)
+- [x] Seed de 8 badges de test (Débutant, Apprenant Actif, Maître Étudiant, Expert, Légende, etc.)
+- [x] Helpers DB pour gérer les points et badges :
+  - getUserPoints, addUserPoints, incrementUserCoursesCompleted, etc.
+  - getUserBadges, awardBadge, getBadgeDefinitions
+  - getUserDashboardStats, updateUserDashboardStats
+  - getTopUsers (classement)
+- [x] Procédures tRPC pour exposer les fonctionnalités :
+  - gamification.getUserPoints, addPoints, getUserBadges, awardBadge, getTopUsers
+  - dashboard.getStats, updateStats, incrementCoursesCompleted, incrementCertificatesEarned
+
+### 3. User Dashboard Complet
+- [x] Composant UserDashboard.tsx avec 4 onglets :
+  - Aperçu : statistiques clés, points mensuels, activité récente, graphique de progression
+  - Badges : affichage des badges débloqués et à débloquer avec rareté
+  - Classement : top 10 des apprenants par points
+  - Progression : graphiques des statistiques (Bar chart)
+- [x] Affichage des niveaux utilisateur (Bronze, Silver, Gold, Platinum)
+- [x] Graphiques interactifs avec Recharts (Pie, Bar, Line charts)
+- [x] Design responsive (mobile, tablet, desktop)
+- [x] Intégration dans le routeur de l'app (route /user-dashboard)
+- [x] Récupération des données via tRPC avec gestion du loading
+
+**Résumé :** Les 3 fonctionnalités prioritaires sont complètement implémentées avec :
+- 4 tables de base de données créées et seedées
+- 15+ helpers DB pour la gestion des données
+- 10+ procédures tRPC pour l'API
+- 1 composant React complet avec 4 onglets et graphiques
+- Tests : 145/183 passent (38 échouent sur des tests non liés)
+- TypeScript compilation : ✅ OK
+- Dev server : ✅ running

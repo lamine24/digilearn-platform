@@ -1407,3 +1407,174 @@ export async function getPaymentStatistics(filters?: {
     return null;
   }
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// POINTS & BADGES HELPERS (Gamification)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Note: These helpers use raw SQL queries since the tables are created directly in the database
+// and not yet in the Drizzle schema. This is a temporary solution until schema migration.
+
+export async function getUserPoints(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.execute(sql`SELECT * FROM user_points WHERE user_id = ${userId} LIMIT 1`);
+    return (result as any[])[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get user points:", error);
+    return null;
+  }
+}
+
+export async function addUserPoints(userId: number, points: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const existing = await getUserPoints(userId);
+    if (existing) {
+      await db.execute(sql`
+        UPDATE user_points 
+        SET total_points = total_points + ${points},
+            points_this_month = points_this_month + ${points},
+            last_points_update = NOW()
+        WHERE user_id = ${userId}
+      `);
+    } else {
+      await db.execute(sql`
+        INSERT INTO user_points (user_id, total_points, points_this_month, current_level)
+        VALUES (${userId}, ${points}, ${points}, 'bronze')
+      `);
+    }
+  } catch (error) {
+    console.error("[Database] Failed to add user points:", error);
+  }
+}
+
+export async function getUserBadges(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result = await db.execute(sql`
+      SELECT ub.*, bd.* 
+      FROM user_badges ub
+      JOIN badge_definitions bd ON ub.badge_id = bd.id
+      WHERE ub.user_id = ${userId}
+      ORDER BY ub.unlocked_at DESC
+    `);
+    return result as any[];
+  } catch (error) {
+    console.error("[Database] Failed to get user badges:", error);
+    return [];
+  }
+}
+
+export async function awardBadge(userId: number, badgeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    await db.execute(sql`
+      INSERT IGNORE INTO user_badges (user_id, badge_id, unlocked_at)
+      VALUES (${userId}, ${badgeId}, NOW())
+    `);
+    return { userId, badgeId, unlockedAt: new Date() };
+  } catch (error) {
+    console.error("[Database] Failed to award badge:", error);
+    return null;
+  }
+}
+
+export async function getBadgeDefinitions() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result = await db.execute(sql`SELECT * FROM badge_definitions ORDER BY rarity DESC, required_points ASC`);
+    return result as any[];
+  } catch (error) {
+    console.error("[Database] Failed to get badge definitions:", error);
+    return [];
+  }
+}
+
+export async function getUserDashboardStats(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.execute(sql`SELECT * FROM user_dashboard_stats WHERE user_id = ${userId} LIMIT 1`);
+    return (result as any[])[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get dashboard stats:", error);
+    return null;
+  }
+}
+
+export async function updateUserDashboardStats(userId: number, updates: Record<string, any>) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const existing = await getUserDashboardStats(userId);
+    if (existing) {
+      const setClauses = Object.entries(updates)
+        .map(([key, value]) => `${key} = ${typeof value === 'number' ? value : `'${value}'`}`)
+        .join(', ');
+      await db.execute(sql.raw(`UPDATE user_dashboard_stats SET ${setClauses}, updated_at = NOW() WHERE user_id = ${userId}`));
+    } else {
+      const keys = Object.keys(updates).join(', ');
+      const values = Object.values(updates).map(v => typeof v === 'number' ? v : `'${v}'`).join(', ');
+      await db.execute(sql.raw(`INSERT INTO user_dashboard_stats (user_id, ${keys}) VALUES (${userId}, ${values})`));
+    }
+  } catch (error) {
+    console.error("[Database] Failed to update dashboard stats:", error);
+  }
+}
+
+export async function incrementUserCoursesCompleted(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql`
+      INSERT INTO user_dashboard_stats (user_id, total_courses_completed)
+      VALUES (${userId}, 1)
+      ON DUPLICATE KEY UPDATE 
+        total_courses_completed = total_courses_completed + 1,
+        last_activity_at = NOW()
+    `);
+  } catch (error) {
+    console.error("[Database] Failed to increment courses completed:", error);
+  }
+}
+
+export async function incrementUserCertificatesEarned(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql`
+      INSERT INTO user_dashboard_stats (user_id, total_certificates_earned)
+      VALUES (${userId}, 1)
+      ON DUPLICATE KEY UPDATE 
+        total_certificates_earned = total_certificates_earned + 1,
+        last_activity_at = NOW()
+    `);
+  } catch (error) {
+    console.error("[Database] Failed to increment certificates earned:", error);
+  }
+}
+
+export async function getTopUsers(limit: number = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result = await db.execute(sql`
+      SELECT up.*, u.name, u.email, u.avatarUrl
+      FROM user_points up
+      JOIN users u ON up.user_id = u.id
+      ORDER BY up.total_points DESC
+      LIMIT ${limit}
+    `);
+    return result as any[];
+  } catch (error) {
+    console.error("[Database] Failed to get top users:", error);
+    return [];
+  }
+}

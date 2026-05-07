@@ -307,3 +307,62 @@ export const paymentHistory = mysqlTable("payment_history", {
 
 export type PaymentHistory = typeof paymentHistory.$inferSelect;
 export type InsertPaymentHistory = typeof paymentHistory.$inferInsert;
+
+
+// ─── User Points (Gamification) ─────────────────────────────────
+export const userPoints = mysqlTable("user_points", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id),
+  totalPoints: int("total_points").default(0).notNull(),
+  currentLevel: varchar("current_level", { length: 50 }).default("bronze").notNull(), // bronze, silver, gold, platinum
+  pointsThisMonth: int("points_this_month").default(0).notNull(),
+  lastPointsUpdate: timestamp("last_points_update").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPoints = typeof userPoints.$inferSelect;
+export type InsertUserPoints = typeof userPoints.$inferInsert;
+
+// ─── Badge Definitions ──────────────────────────────────────────
+export const badgeDefinitions = mysqlTable("badge_definitions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  iconUrl: text("icon_url"),
+  category: varchar("category", { length: 50 }).notNull(), // achievement, milestone, social, learning
+  requiredPoints: int("required_points").default(0).notNull(),
+  rarity: mysqlEnum("rarity", ["common", "uncommon", "rare", "epic", "legendary"]).default("common").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type BadgeDefinition = typeof badgeDefinitions.$inferSelect;
+export type InsertBadgeDefinition = typeof badgeDefinitions.$inferInsert;
+
+// ─── User Badges ────────────────────────────────────────────────
+export const userBadges = mysqlTable("user_badges", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id),
+  badgeId: int("badge_id").notNull().references(() => badgeDefinitions.id),
+  unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+  progress: int("progress").default(0), // 0-100 for badges in progress
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = typeof userBadges.$inferInsert;
+
+// ─── User Dashboard Stats ───────────────────────────────────────
+export const userDashboardStats = mysqlTable("user_dashboard_stats", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull().references(() => users.id).unique(),
+  totalCoursesCompleted: int("total_courses_completed").default(0).notNull(),
+  totalCertificatesEarned: int("total_certificates_earned").default(0).notNull(),
+  totalBadgesUnlocked: int("total_badges_unlocked").default(0).notNull(),
+  totalPointsEarned: int("total_points_earned").default(0).notNull(),
+  currentStreak: int("current_streak").default(0).notNull(), // days of consecutive activity
+  lastActivityAt: timestamp("last_activity_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserDashboardStats = typeof userDashboardStats.$inferSelect;
+export type InsertUserDashboardStats = typeof userDashboardStats.$inferInsert;

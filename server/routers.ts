@@ -463,6 +463,63 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GAMIFICATION & DASHBOARD ROUTERS
+  // ═══════════════════════════════════════════════════════════════════════════
+  gamification: router({
+    getUserPoints: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserPoints(ctx.user.id);
+    }),
+    
+    addPoints: protectedProcedure.input(z.object({ points: z.number().min(1) })).mutation(async ({ ctx, input }) => {
+      await db.addUserPoints(ctx.user.id, input.points);
+      return { success: true };
+    }),
+    
+    getUserBadges: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserBadges(ctx.user.id);
+    }),
+    
+    getBadgeDefinitions: publicProcedure.query(async () => {
+      return await db.getBadgeDefinitions();
+    }),
+    
+    awardBadge: protectedProcedure.input(z.object({ badgeId: z.number() })).mutation(async ({ ctx, input }) => {
+      return await db.awardBadge(ctx.user.id, input.badgeId);
+    }),
+    
+    getTopUsers: publicProcedure.input(z.object({ limit: z.number().min(1).max(100) }).optional()).query(async ({ input }) => {
+      return await db.getTopUsers(input?.limit || 10);
+    }),
+  }),
+  
+  dashboard: router({
+    getStats: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getUserDashboardStats(ctx.user.id);
+    }),
+    
+    updateStats: protectedProcedure.input(z.object({
+      totalCoursesCompleted: z.number().optional(),
+      totalCertificatesEarned: z.number().optional(),
+      totalBadgesUnlocked: z.number().optional(),
+      totalPointsEarned: z.number().optional(),
+      currentStreak: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      await db.updateUserDashboardStats(ctx.user.id, input);
+      return { success: true };
+    }),
+    
+    incrementCoursesCompleted: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.incrementUserCoursesCompleted(ctx.user.id);
+      return { success: true };
+    }),
+    
+    incrementCertificatesEarned: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.incrementUserCertificatesEarned(ctx.user.id);
+      return { success: true };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

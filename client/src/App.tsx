@@ -28,6 +28,7 @@ import { PremiumSubscriptionPage } from "./pages/PremiumSubscriptionPage";
 import { AdminSubscriptionsPage } from "./pages/AdminSubscriptionsPage";
 import { AdminNotificationSettingsPage } from "./pages/AdminNotificationSettingsPage";
 import { AdminPaymentHistoryPage } from "./pages/AdminPaymentHistoryPage";
+import UserDashboard from "./pages/UserDashboard";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/free-resources" component={FreeResourcesPage} />
       <Route path="/free-resource/:slug" component={FreeResourceDetail} />
       <Route path="/premium" component={PremiumSubscriptionPage} />
+      <Route path="/user-dashboard" component={UserDashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
