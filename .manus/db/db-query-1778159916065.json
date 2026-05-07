@@ -1,0 +1,75 @@
+{
+  "query": "SELECT id, title, platform FROM free_resources WHERE platform = '' OR platform IS NULL LIMIT 15;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute SELECT id, title, platform FROM free_resources WHERE platform = '' OR platform IS NULL LIMIT 15;",
+  "rows": [
+    {
+      "id": "28",
+      "title": "Fondamentaux de la Gestion",
+      "platform": ""
+    },
+    {
+      "id": "29",
+      "title": "Économie Microéconomique",
+      "platform": ""
+    },
+    {
+      "id": "30",
+      "title": "Gouvernance et Politiques Publiques en Afrique",
+      "platform": ""
+    },
+    {
+      "id": "31",
+      "title": "Ressources Éducatives Libres en Sciences",
+      "platform": ""
+    },
+    {
+      "id": "32",
+      "title": "R pour l'Analyse Statistique",
+      "platform": ""
+    },
+    {
+      "id": "33",
+      "title": "Introduction à la Science des Données",
+      "platform": ""
+    },
+    {
+      "id": "180050",
+      "title": "Entrepreneuriat et Innovation",
+      "platform": ""
+    },
+    {
+      "id": "180051",
+      "title": "Développement Personnel et Leadership",
+      "platform": ""
+    },
+    {
+      "id": "180053",
+      "title": "Macroéconomie",
+      "platform": ""
+    },
+    {
+      "id": "180054",
+      "title": "Comptabilité Financière",
+      "platform": ""
+    },
+    {
+      "id": "180057",
+      "title": "Ressources Éducatives Libres en Mathématiques",
+      "platform": ""
+    },
+    {
+      "id": "180060",
+      "title": "Python pour les Débutants",
+      "platform": ""
+    },
+    {
+      "id": "180061",
+      "title": "Bases de Données SQL",
+      "platform": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tplatform\n28\tFondamentaux de la Gestion\t\n29\tÉconomie Microéconomique\t\n30\tGouvernance et Politiques Publiques en Afrique\t\n31\tRessources Éducatives Libres en Sciences\t\n32\tR pour l'Analyse Statistique\t\n33\tIntroduction à la Science des Données\t\n180050\tEntrepreneuriat et Innovation\t\n180051\tDéveloppement Personnel et Leadership\t\n180053\tMacroéconomie\t\n180054\tComptabilité Financière\t\n180057\tRessources Éducatives Libres en Mathématiques\t\n180060\tPython pour les Débutants\t\n180061\tBases de Données SQL\t\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}
