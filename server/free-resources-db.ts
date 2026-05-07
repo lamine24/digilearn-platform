@@ -19,45 +19,43 @@ export async function getFreeResources(filters?: {
   if (!db) return [];
 
   try {
-    // Build WHERE clause
-    const whereClauses = ["isActive = 1"];
-    
+    const conditions: any[] = [eq(freeResources.isActive, true)];
+
     if (filters?.platform) {
-      whereClauses.push(`platform = '${filters.platform}'`);
+      conditions.push(eq(freeResources.platform, filters.platform as any));
     }
     if (filters?.category) {
-      whereClauses.push(`category = '${filters.category}'`);
+      conditions.push(eq(freeResources.category, filters.category));
     }
     if (filters?.level) {
-      whereClauses.push(`level = '${filters.level}'`);
+      conditions.push(eq(freeResources.level, filters.level as any));
     }
     if (filters?.language) {
-      whereClauses.push(`language = '${filters.language}'`);
+      conditions.push(eq(freeResources.language, filters.language));
     }
     if (filters?.search) {
-      whereClauses.push(`title LIKE '%${filters.search}%'`);
+      conditions.push(like(freeResources.title, `%${filters.search}%`));
     }
 
-    // Build ORDER BY clause
-    let orderBy = "createdAt DESC";
-    if (filters?.sortBy === "rating") {
-      orderBy = "rating DESC";
-    } else if (filters?.sortBy === "popular") {
-      orderBy = "enrollmentCount DESC";
-    }
+    const sortField =
+      filters?.sortBy === "rating"
+        ? desc(freeResources.rating)
+        : filters?.sortBy === "popular"
+          ? desc(freeResources.enrollmentCount)
+          : desc(freeResources.createdAt);
 
     const limit = filters?.limit || 100;
     const offset = filters?.offset || 0;
 
-    const query = `
-      SELECT * FROM free_resources 
-      WHERE ${whereClauses.join(" AND ")}
-      ORDER BY ${orderBy}
-      LIMIT ${limit} OFFSET ${offset}
-    `;
+    const result = await db
+      .select()
+      .from(freeResources)
+      .where(and(...conditions))
+      .orderBy(sortField)
+      .limit(limit)
+      .offset(offset);
 
-    const result = await db.execute(sql.raw(query));
-    return result as any[];
+    return result;
   } catch (error) {
     console.error("[Database] Error in getFreeResources:", error);
     return [];

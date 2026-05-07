@@ -11,6 +11,7 @@ import { nanoid } from "nanoid";
 import { searchRouter } from "./search-router";
 import { freeResourcesRouter } from "./free-resources-router";
 import { premiumResourcesRouter } from "./premium-resources-router";
+import * as subscriptionDb from "./subscription-db";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -518,6 +519,57 @@ export const appRouter = router({
     incrementCertificatesEarned: protectedProcedure.mutation(async ({ ctx }) => {
       await db.incrementUserCertificatesEarned(ctx.user.id);
       return { success: true };
+    }),
+  }),
+
+  subscription: router({
+    getPlans: publicProcedure.query(async () => {
+      return await subscriptionDb.getSubscriptionPlans();
+    }),
+
+    getPremiumStatus: protectedProcedure.query(async ({ ctx }) => {
+      const isPremium = await subscriptionDb.checkUserPremiumStatus(ctx.user.id);
+      const activeSubscription = await subscriptionDb.getUserActiveSubscription(ctx.user.id);
+      return { isPremium, activeSubscription };
+    }),
+
+    createSubscription: protectedProcedure.input(z.object({
+      planType: z.enum(["monthly", "quarterly", "annual"]),
+    })).mutation(async ({ ctx, input }) => {
+      const plan = await subscriptionDb.getSubscriptionPlanByType(input.planType);
+      if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Plan non trouve" });
+
+      const subscription = await subscriptionDb.createSubscription({
+        userId: ctx.user.id,
+        subscriptionType: input.planType,
+        amount: plan.price,
+        currency: plan.currency,
+      });
+
+      if (!subscription) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      return {
+        subscriptionId: subscription.id,
+        message: "Subscription created successfully",
+      };
+    }),
+
+    checkResourceAccess: protectedProcedure.input(z.object({
+      resourceId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      const hasAccess = await subscriptionDb.checkResourceAccess(ctx.user.id, input.resourceId);
+      return { hasAccess };
+    }),
+
+    grantResourceAccess: protectedProcedure.input(z.object({
+      resourceId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      const success = await subscriptionDb.grantResourceAccess(ctx.user.id, input.resourceId);
+      return { success };
+    }),
+
+    getAccessedResources: protectedProcedure.query(async ({ ctx }) => {
+      return await subscriptionDb.getUserAccessedResources(ctx.user.id);
     }),
   }),
 });

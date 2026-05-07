@@ -223,8 +223,6 @@ export const freeResources = mysqlTable("free_resources", {
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   enrollmentCount: int("enrollmentCount").default(0),
   isActive: boolean("isActive").default(true).notNull(),
-  resourceType: mysqlEnum("resourceType", ["proprietary", "external"]).default("external").notNull(),
-  downloadedUrl: text("downloadedUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

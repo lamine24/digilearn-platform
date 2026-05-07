@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, Filter } from "lucide-react";
+import { PremiumAccessGuide } from "@/components/PremiumAccessGuide";
 
 const platformOptions = [
   { value: "khan_academy", label: "Khan Academy" },
@@ -75,6 +76,11 @@ export function FreeResourcesPage() {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Premium Access Guide */}
+        <div className="mb-8">
+          <PremiumAccessGuide />
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Ressources Éducatives Libres</h1>
