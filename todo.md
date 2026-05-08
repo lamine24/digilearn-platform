@@ -404,3 +404,12 @@
 - [x] Tests : 145/183 passent
 - [x] Dev server : running
 - [x] Aucun changement cassant
+
+
+## 🌐 Accès Public aux Ressources (Session Actuelle)
+- [x] Rendre la page Ressources Libres publique (sans authentification)
+- [x] Afficher toutes les formations sans accès au contenu
+- [x] Bouton "Se connecter" pour utilisateurs non authentifiés
+- [x] Redirection vers login avec paramètre redirect
+- [x] Système Premium intact (accès bloqué jusqu'à abonnement)
+- [x] Voir tous les détails (titre, description, plateforme, niveau, etc.)

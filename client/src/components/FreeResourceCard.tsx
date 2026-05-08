@@ -44,7 +44,7 @@ export function FreeResourceCard({
   onViewDetails,
 }: FreeResourceCardProps) {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const { data: user } = trpc.auth.me.useQuery();
+  const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery();
   const { data: premiumStatus } = trpc.subscription.getPremiumStatus.useQuery(undefined, { enabled: !!user });
   const { data: hasAccess } = trpc.subscription.checkResourceAccess.useQuery({ resourceId: id }, { enabled: !!user });
   
@@ -52,6 +52,7 @@ export function FreeResourceCard({
   const levelLabel = getLevelLabel(level);
   
   const canAccess = premiumStatus?.isPremium || hasAccess?.hasAccess;
+  const isAuthenticated = !!user && !userLoading;
   
   // Normalize numeric values from DB (may come as strings)
   const ratingNum = typeof rating === 'number' ? rating : rating ? Number(rating) : null;
@@ -106,15 +107,23 @@ export function FreeResourceCard({
               <BookOpen className="w-4 h-4 mr-1" />
               Détails
             </Button>
-            <Button
-              size="sm"
-              className="flex-1"
-              disabled={!canAccess}
-              onClick={() => canAccess ? window.open(externalUrl, "_blank") : setShowSubscriptionModal(true)}
-            >
-              <ExternalLink className="w-4 h-4 mr-1" />
-              {canAccess ? "Accéder" : "S'abonner"}
-            </Button>
+          <Button
+            size="sm"
+            className="flex-1"
+            disabled={!isAuthenticated || !canAccess}
+            onClick={() => {
+              if (!isAuthenticated) {
+                window.location.href = `/login?redirect=/free-resources`;
+              } else if (canAccess) {
+                window.open(externalUrl, "_blank");
+              } else {
+                setShowSubscriptionModal(true);
+              }
+            }}
+          >
+            <ExternalLink className="w-4 h-4 mr-1" />
+            {!isAuthenticated ? "Se connecter" : canAccess ? "Accéder" : "S'abonner"}
+          </Button>
           </div>
         </CardContent>
       </Card>
