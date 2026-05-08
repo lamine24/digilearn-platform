@@ -36,6 +36,10 @@ export default function CourseDetail() {
     { courseId: data?.course?.id || 0 },
     { enabled: !!data?.course?.id && isAuthenticated }
   );
+  const { data: preview } = trpc.courses.getPreview.useQuery(
+    { courseId: data?.course?.id || 0 },
+    { enabled: !!data?.course?.id }
+  );
   const enrollMutation = trpc.enrollments.enroll.useMutation({
     onSuccess: (result) => {
       if (result.paymentRequired) {
@@ -129,6 +133,21 @@ export default function CourseDetail() {
               <div className="flex items-center gap-2"><Clock className="h-4 w-4" /> {course.duration} min</div>
               <div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> {modules.length} modules</div>
             </div>
+
+            <Separator className="mb-8" />
+
+            {/* Preview Section */}
+            {preview?.previewContent && (
+              <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <BookOpen className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-lg font-semibold text-blue-900">Aperçu gratuit</h2>
+                </div>
+                <div className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
+                  {preview.previewContent}
+                </div>
+              </div>
+            )}
 
             <Separator className="mb-8" />
 

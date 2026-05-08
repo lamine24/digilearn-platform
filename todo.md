@@ -413,3 +413,13 @@
 - [x] Redirection vers login avec paramètre redirect
 - [x] Système Premium intact (accès bloqué jusqu'à abonnement)
 - [x] Voir tous les détails (titre, description, plateforme, niveau, etc.)
+
+
+## 👁️ Aperçu Gratuit pour Formations (Session Actuelle)
+- [x] Ajouter colonne `previewContent` à la table `courses`
+- [x] Créer des aperçus gratuits pour les formations existantes
+- [x] Afficher l'aperçu sur la page de détails de la formation
+- [x] Permettre aux utilisateurs non premium de voir l'aperçu
+- [x] Bloquer l'accès au contenu complet jusqu'à l'abonnement
+- [x] Ajouter procédure tRPC pour récupérer l'aperçu
+- [x] Modifier CourseDetail pour afficher l'aperçu

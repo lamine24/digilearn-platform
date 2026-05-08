@@ -37,6 +37,7 @@ export const courses = mysqlTable("courses", {
   slug: varchar("slug", { length: 500 }).notNull().unique(),
   description: text("description"),
   shortDescription: text("shortDescription"),
+  previewContent: text("previewContent"),
   thumbnailUrl: text("thumbnailUrl"),
   categoryId: int("categoryId"),
   formateurId: int("formateurId"),
