@@ -423,3 +423,16 @@
 - [x] Bloquer l'accès au contenu complet jusqu'à l'abonnement
 - [x] Ajouter procédure tRPC pour récupérer l'aperçu
 - [x] Modifier CourseDetail pour afficher l'aperçu
+
+
+## 🍌 Vidéos d'Aperçu pour Formations (Session Actuelle)
+- [x] Ajouter colonne `previewVideoUrl` à la table `courses`
+- [x] Créer des vidéos d'aperçu YouTube pour les formations existantes
+- [x] Créer composant VideoPlayer réutilisable (YouTube, MP4, WebM)
+- [x] Afficher le lecteur vidéo dans la section d'aperçu
+- [x] Supporter extraction d'ID YouTube automatique
+- [x] Design responsive avec ratio 16:9
+- [x] Fallback si pas de vidéo (afficher juste le texte)
+- [x] Mettre à jour procédure tRPC `courses.getPreview` pour inclure vidéo
+- [x] Modifier CourseDetail pour afficher le lecteur vidéo
+- [x] Tester l'intégration complète

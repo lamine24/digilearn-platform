@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE courses SET previewVideoUrl = CASE \n  WHEN title LIKE '%Data%' THEN 'https://www.youtube.com/watch?v=ua-CiDNNj30'\n  WHEN title LIKE '%Finance%' THEN 'https://www.youtube.com/watch?v=WxDlWwcJlFI'\n  WHEN title LIKE '%Web%' THEN 'https://www.youtube.com/watch?v=qz0aGYrrlhU'\n  WHEN title LIKE '%IA%' OR title LIKE '%Intelligence%' THEN 'https://www.youtube.com/watch?v=Ad79nDPuVGc'\n  ELSE NULL\nEND WHERE previewVideoUrl IS NULL",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute UPDATE courses SET previewVideoUrl = CASE \n  WHEN title LIKE '%Data%' THEN 'https://www.youtube.com/watch?v=ua-CiDNNj30'\n  WHEN title LIKE '%Finance%' THEN 'https://www.youtube.com/watch?v=WxDlWwcJlFI'\n  WHEN title LIKE '%Web%' THEN 'https://www.youtube.com/watch?v=qz0aGYrrlhU'\n  WHEN title LIKE '%IA%' OR title LIKE '%Intelligence%' THEN 'https://www.youtube.com/watch?v=Ad79nDPuVGc'\n  ELSE NULL\nEND WHERE previewVideoUrl IS NULL",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 59
+}

@@ -68,7 +68,10 @@ export const appRouter = router({
     getPreview: publicProcedure.input(z.object({ courseId: z.number() })).query(async ({ input }) => {
       const course = await db.getCourseById(input.courseId);
       if (!course) throw new TRPCError({ code: "NOT_FOUND", message: "Formation introuvable" });
-      return { previewContent: course.previewContent || "Apercu non disponible" };
+      return { 
+        previewContent: course.previewContent || null,
+        previewVideoUrl: course.previewVideoUrl || null
+      };
     }),
     all: adminProcedure.query(() => db.getAllCourses()),
     create: formateurProcedure.input(z.object({

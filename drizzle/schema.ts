@@ -38,6 +38,7 @@ export const courses = mysqlTable("courses", {
   description: text("description"),
   shortDescription: text("shortDescription"),
   previewContent: text("previewContent"),
+  previewVideoUrl: text("previewVideoUrl"),
   thumbnailUrl: text("thumbnailUrl"),
   categoryId: int("categoryId"),
   formateurId: int("formateurId"),
