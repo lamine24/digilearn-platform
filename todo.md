@@ -388,6 +388,17 @@
   - [x] Information sécurité Paytech
   - [x] Design professionnel et institutionnel
 
+## 🖼️ Images Illustratives pour Modules (Session Actuelle)
+- [x] Génération de 5 images professionnelles
+  - [x] Data Science (Dashboard avec graphiques)
+  - [x] Finance (Marché boursier et investissements)
+  - [x] Web Development (Code editor et design)
+  - [x] AI/Machine Learning (Réseaux de neurones)
+  - [x] Business (Équipe et croissance)
+- [x] Intégration des images aux modules en base de données
+- [x] Assignation automatique par titre de cours
+- [x] Affichage dans le catalogue et page d'accueil
+
 ## ✅ Qualité & Tests (Session Actuelle)
 - [x] TypeScript compilation OK
 - [x] Tests : 145/183 passent
