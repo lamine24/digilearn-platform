@@ -13,6 +13,7 @@ import { freeResourcesRouter } from "./free-resources-router";
 import { premiumResourcesRouter } from "./premium-resources-router";
 import * as subscriptionDb from "./subscription-db";
 import * as studioDb from "./studio-db";
+import { studioCapsuleDb } from "./studio-capsule-db";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -674,6 +675,57 @@ export const appRouter = router({
       offset: z.number().default(0),
     })).query(async ({ input }) => {
       return await studioDb.getPublishedListings(input.limit, input.offset);
+    }),
+
+    // Capsule preview procedures
+    getCapsulePreview: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      const capsule = await studioCapsuleDb.getCapsuleComplete(input.capsuleId);
+      if (!capsule) throw new TRPCError({ code: "NOT_FOUND" });
+      return capsule;
+    }),
+
+    getCapsuleMetadata: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      const metadata = await studioCapsuleDb.getCapsuleMetadata(input.capsuleId);
+      if (!metadata) throw new TRPCError({ code: "NOT_FOUND" });
+      return metadata;
+    }),
+
+    getCapsuleVersions: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      return await studioCapsuleDb.getCapsuleVersions(input.capsuleId);
+    }),
+
+    getCapsuleH5PElements: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      return await studioCapsuleDb.getCapsuleH5PElements(input.capsuleId);
+    }),
+
+    getCapsuleExports: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      return await studioCapsuleDb.getCapsuleExports(input.capsuleId);
+    }),
+
+    recordCapsuleView: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+      watchDuration: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioCapsuleDb.recordCapsuleView(input.capsuleId, ctx.user.id, input.watchDuration);
+      return { success: true };
+    }),
+
+    updateCapsuleStatus: protectedProcedure.input(z.object({
+      capsuleId: z.number(),
+      status: z.enum(["draft", "ready", "published", "archived"]),
+    })).mutation(async ({ ctx, input }) => {
+      const capsule = await studioCapsuleDb.updateCapsuleStatus(input.capsuleId, input.status);
+      return capsule;
     }),
   }),
 });

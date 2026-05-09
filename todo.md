@@ -491,3 +491,18 @@
 - [x] Marketplace de formations
 - [x] Système de revenus (70/30)
 - [x] Gestion des accès aux projets
+
+
+## 🎥 Prévisualisation en Direct des Capsules Vidéo (Session Actuelle)
+- [x] Créer les DB helpers pour récupérer les capsules et leurs métadonnées
+- [x] Créer les tRPC procedures pour la prévisualisation (getCapsule, getCapsuleVersions, etc.)
+- [x] Créer la page CapsulePreview avec lecteur vidéo intégré
+- [x] Implémenter le lecteur vidéo avec contrôles complets
+- [x] Afficher les métadonnées de la capsule (titre, description, durée, créateur)
+- [x] Afficher les éléments interactifs H5P prévisualisés
+- [x] Créer les boutons d'action (Éditer, Exporter, Publier)
+- [x] Afficher l'historique des versions de la capsule
+- [x] Ajouter les tests unitaires pour la prévisualisation (17 tests passants)
+- [x] Intégrer la prévisualisation dans StudioDashboard (route /studio/capsule/:id)
+- [x] Compilation TypeScript OK
+- [x] Dev server running
