@@ -436,3 +436,26 @@
 - [x] Mettre à jour procédure tRPC `courses.getPreview` pour inclure vidéo
 - [x] Modifier CourseDetail pour afficher le lecteur vidéo
 - [x] Tester l'intégration complète
+
+
+## 📱 Boutons de Partage Social (Session Actuelle)
+- [ ] Créer composant ShareButtons réutilisable
+- [ ] Supporter Facebook, Twitter/X, LinkedIn, WhatsApp, Email
+- [ ] Générer URLs de partage avec titre et description
+- [ ] Design professionnel avec icônes
+- [ ] Hover effects et animations
+- [ ] Responsive sur mobile et desktop
+- [ ] Intégrer dans CourseDetail sous la vidéo
+- [ ] Tester les liens de partage
+
+
+## 🎯 Aper\u00e7u Gratuit pour Ressources Externes (Session Actuelle)
+- [x] Ajouter colonnes `previewContent` et `previewVideoUrl` \u00e0 `free_resources`
+- [x] Cr\u00e9er aper\u00e7us gratuits pour les 31 ressources
+- [x] Afficher section d'aper\u00e7u dans FreeResourceDetail
+- [x] Afficher vid\u00e9o d'aper\u00e7u (YouTube embed)
+- [x] Afficher texte d'aper\u00e7u
+- [x] Design professionnel avec fond bleu
+- [x] Message "Contenu complet apr\u00e8s abonnement"
+- [x] Compilation TypeScript OK
+- [x] Redémarrage du serveur appliqué

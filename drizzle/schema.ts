@@ -214,6 +214,8 @@ export const freeResources = mysqlTable("free_resources", {
   slug: varchar("slug", { length: 500 }).notNull().unique(),
   description: text("description"),
   shortDescription: text("shortDescription"),
+  previewContent: text("previewContent"),
+  previewVideoUrl: text("previewVideoUrl"),
   thumbnailUrl: text("thumbnailUrl"),
   externalUrl: text("externalUrl").notNull(),
   platform: mysqlEnum("platform", ["khan_academy", "mit_ocw", "statlearning", "open_learning_campus", "canal_u", "other"]).notNull(),

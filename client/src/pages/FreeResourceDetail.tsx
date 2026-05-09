@@ -127,6 +127,36 @@ export function FreeResourceDetail() {
               )}
             </div>
 
+            {/* Preview Section */}
+            {(resource.previewContent || resource.previewVideoUrl) && (
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 space-y-4">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  Apercu Gratuit
+                </h3>
+                
+                {resource.previewVideoUrl && (
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                    <iframe
+                      src={resource.previewVideoUrl}
+                      title="Apercu video"
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                  </div>
+                )}
+                
+                {resource.previewContent && (
+                  <div className="bg-white rounded-lg p-4 border border-blue-100">
+                    <p className="text-gray-700 leading-relaxed">{resource.previewContent}</p>
+                  </div>
+                )}
+                
+                <p className="text-xs text-gray-600 italic">Contenu complet disponible apres abonnement premium</p>
+              </div>
+            )}
+
             {/* Tags */}
             {resource.tags && (
               <div>

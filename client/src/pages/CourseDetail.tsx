@@ -9,6 +9,7 @@ import { getLoginUrl } from "@/const";
 import { Link, useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { ShareButtons } from "@/components/ShareButtons";
 import {
   GraduationCap, BookOpen, Play, Clock, ArrowLeft, Lock, CheckCircle2,
   FileText, HelpCircle, PenTool, Video, ChevronRight, CreditCard
@@ -154,6 +155,18 @@ export default function CourseDetail() {
                 {preview?.previewContent && (
                   <div className="text-sm text-blue-800 whitespace-pre-wrap leading-relaxed">
                     {preview.previewContent}
+                  </div>
+                )}
+                
+                {/* Share Buttons */}
+                {preview?.previewVideoUrl && (
+                  <div className="mt-4 pt-4 border-t border-blue-200">
+                    <p className="text-xs text-blue-700 mb-2">Recommander cette formation :</p>
+                    <ShareButtons 
+                      title={course.title}
+                      description={course.shortDescription || course.description || ""}
+                      url={typeof window !== "undefined" ? window.location.href : ""}
+                    />
                   </div>
                 )}
               </div>
