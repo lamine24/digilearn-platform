@@ -459,3 +459,35 @@
 - [x] Message "Contenu complet apr\u00e8s abonnement"
 - [x] Compilation TypeScript OK
 - [x] Redémarrage du serveur appliqué
+
+
+## 🎬 DigiLearn Studio Integration (Session Actuelle)
+- [x] Analyser l'architecture existante
+- [x] Créer les tables de base de données (9 tables)
+  - studio_projects
+  - studio_documents
+  - studio_scenarios
+  - studio_capsules
+  - studio_h5p_elements
+  - studio_exports
+  - studio_marketplace_listings
+  - studio_revenue_transactions
+  - studio_project_access
+- [x] Créer les DB helpers (30+ fonctions)
+- [x] Créer les tRPC procedures (9 procédures)
+- [x] Créer la page StudioDashboard
+- [x] Ajouter les routes Studio (/studio, /studio/:slug)
+- [x] Intégrer à App.tsx
+- [x] Compilation TypeScript OK
+- [x] Dev server running
+
+### Fonctionnalités Studio Implémentées
+- [x] Création de projets de formation
+- [x] Upload de documents (PDF, DOCX, PPTX, TXT)
+- [x] Génération de scénarios pédagogiques
+- [x] Production de capsules vidéo
+- [x] Éléments interactifs H5P
+- [x] Exports SCORM/LTI
+- [x] Marketplace de formations
+- [x] Système de revenus (70/30)
+- [x] Gestion des accès aux projets

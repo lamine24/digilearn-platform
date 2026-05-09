@@ -12,6 +12,7 @@ import { searchRouter } from "./search-router";
 import { freeResourcesRouter } from "./free-resources-router";
 import { premiumResourcesRouter } from "./premium-resources-router";
 import * as subscriptionDb from "./subscription-db";
+import * as studioDb from "./studio-db";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -580,6 +581,100 @@ export const appRouter = router({
       return await subscriptionDb.getUserAccessedResources(ctx.user.id);
     }),
   }),
-});
 
+  studio: router({
+    createProject: protectedProcedure.input(z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      pedagogicalModel: z.enum(["bloom", "addie", "gagne"]).optional(),
+      targetAudience: z.string().optional(),
+      estimatedDuration: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const slug = input.title.toLowerCase().replace(/\s+/g, "-") + "-" + nanoid(6);
+      await studioDb.createStudioProject({
+        userId: ctx.user.id,
+        title: input.title,
+        description: input.description,
+        slug,
+        pedagogicalModel: input.pedagogicalModel,
+        targetAudience: input.targetAudience,
+        estimatedDuration: input.estimatedDuration,
+      });
+      return { success: true, slug };
+    }),
+
+    getUserProjects: protectedProcedure.query(async ({ ctx }) => {
+      return await studioDb.getUserStudioProjects(ctx.user.id);
+    }),
+
+    getProjectBySlug: protectedProcedure.input(z.object({
+      slug: z.string(),
+    })).query(async ({ ctx, input }) => {
+      const project = await studioDb.getStudioProjectBySlug(input.slug);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      return project;
+    }),
+
+    uploadDocument: protectedProcedure.input(z.object({
+      projectId: z.number(),
+      fileName: z.string(),
+      fileKey: z.string(),
+      fileUrl: z.string(),
+      fileType: z.enum(["pdf", "docx", "pptx", "txt"]),
+      fileSize: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.uploadDocument(input);
+      return { success: true };
+    }),
+
+    getProjectDocuments: protectedProcedure.input(z.object({
+      projectId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      return await studioDb.getProjectDocuments(input.projectId);
+    }),
+
+    createScenario: protectedProcedure.input(z.object({
+      projectId: z.number(),
+      title: z.string(),
+      description: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.createScenario({
+        projectId: input.projectId,
+        title: input.title,
+        description: input.description,
+        generatedBy: "manual",
+      });
+      return { success: true };
+    }),
+
+    getProjectScenarios: protectedProcedure.input(z.object({
+      projectId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      return await studioDb.getProjectScenarios(input.projectId);
+    }),
+
+    publishToMarketplace: protectedProcedure.input(z.object({
+      projectId: z.number(),
+      title: z.string(),
+      description: z.string(),
+      price: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.createMarketplaceListing({
+        projectId: input.projectId,
+        userId: ctx.user.id,
+        title: input.title,
+        description: input.description,
+        price: input.price,
+      });
+      return { success: true };
+    }),
+
+    getPublishedListings: publicProcedure.input(z.object({
+      limit: z.number().default(20),
+      offset: z.number().default(0),
+    })).query(async ({ input }) => {
+      return await studioDb.getPublishedListings(input.limit, input.offset);
+    }),
+  }),
+});
 export type AppRouter = typeof appRouter;
