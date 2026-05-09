@@ -30,6 +30,7 @@ import { AdminNotificationSettingsPage } from "./pages/AdminNotificationSettings
 import { AdminPaymentHistoryPage } from "./pages/AdminPaymentHistoryPage";
 import UserDashboard from "./pages/UserDashboard";
 import StudioDashboard from "./pages/StudioDashboard";
+import StudioProject from "./pages/StudioProject";
 import { CapsulePreview } from "./pages/CapsulePreview";
 
 function Router() {
@@ -60,8 +61,8 @@ function Router() {
       <Route path="/premium" component={PremiumSubscriptionPage} />
       <Route path="/user-dashboard" component={UserDashboard} />
       <Route path="/studio" component={StudioDashboard} />
-      <Route path="/studio/:slug" component={StudioDashboard} />
       <Route path="/studio/capsule/:id" component={CapsulePreview} />
+      <Route path="/studio/:slug" component={StudioProject} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
