@@ -142,9 +142,9 @@ export default function StudioDashboard() {
           <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           </div>
-        ) : projectsQuery.data && projectsQuery.data.length > 0 ? (
+        ) : projectsQuery.data?.projects && projectsQuery.data.projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projectsQuery.data.map((project: any) => (
+            {projectsQuery.data.projects.map((project: any) => (
               <Card
                 key={project.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer"

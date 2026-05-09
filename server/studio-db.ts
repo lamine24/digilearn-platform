@@ -23,14 +23,30 @@ export async function createStudioProject(data: {
   return result;
 }
 
-export async function getUserStudioProjects(userId: number) {
+export async function getUserStudioProjects(userId: number, options?: { limit?: number; offset?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  const limit = Math.min(options?.limit || 50, 100);
+  const offset = options?.offset || 0;
+  
+  const result = await db.execute(
+    sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE userId = ${userId} ORDER BY createdAt DESC LIMIT ${limit} OFFSET ${offset}`
+  );
+  
+  if (!result || !Array.isArray(result)) return [];
+  return result.filter((item: any) => item && typeof item.id === "number");
+}
+
+export async function getUserStudioProjectsCount(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
   
   const result = await db.execute(
-    sql`SELECT * FROM studio_projects WHERE userId = ${userId} ORDER BY createdAt DESC`
+    sql`SELECT COUNT(*) as count FROM studio_projects WHERE userId = ${userId}`
   );
-  return result || [];
+  
+  return (result as any)?.[0]?.count || 0;
 }
 
 export async function getStudioProjectBySlug(slug: string) {

@@ -604,8 +604,16 @@ export const appRouter = router({
       return { success: true, slug };
     }),
 
-    getUserProjects: protectedProcedure.query(async ({ ctx }) => {
-      return await studioDb.getUserStudioProjects(ctx.user.id);
+    getUserProjects: protectedProcedure.input(z.object({
+      limit: z.number().min(1).max(100).optional(),
+      offset: z.number().min(0).optional(),
+    }).optional()).query(async ({ ctx, input }) => {
+      const projects = await studioDb.getUserStudioProjects(ctx.user.id, {
+        limit: input?.limit,
+        offset: input?.offset,
+      });
+      const total = await studioDb.getUserStudioProjectsCount(ctx.user.id);
+      return { projects, total };
     }),
 
     getProjectBySlug: protectedProcedure.input(z.object({
