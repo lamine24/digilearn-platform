@@ -586,3 +586,30 @@
 - [x] Corriger les handlers de création de capsules
 - [x] Ajouter gestion d'erreurs appropriée
 - [x] Tester le flux end-to-end
+
+
+## 🔧 Modification et Suppression de Scénarios (Session Actuelle)
+- [ ] Ajouter procédure tRPC pour supprimer un scénario (deleteScenario)
+- [ ] Ajouter procédure tRPC pour modifier un scénario (updateScenario)
+- [ ] Ajouter boutons de suppression/modification dans l'UI StudioProject
+- [ ] Implémenter la confirmation avant suppression
+
+## 🎬 Correction Génération de Capsules (Session Actuelle)
+- [ ] Déboguer pourquoi la création de capsule échoue
+- [ ] Vérifier que le scenarioId est correctement passé
+- [ ] Ajouter affichage des capsules créées
+- [ ] Ajouter boutons de suppression pour les capsules
+
+
+## 🔧 Modification et Suppression de Scénarios + Affichage des Capsules (Session Actuelle)
+- [x] Ajouter fonction deleteScenario en studio-db.ts
+- [x] Ajouter fonction updateScenario en studio-db.ts
+- [x] Ajouter procédures tRPC deleteScenario et updateScenario
+- [x] Ajouter mutations dans StudioProject.tsx
+- [x] Ajouter boutons de suppression/modification pour les scénarios
+- [x] Ajouter fonction getProjectCapsules en studio-db.ts
+- [x] Ajouter procédure tRPC getProjectCapsules
+- [x] Ajouter query tRPC capsulesQuery dans StudioProject.tsx
+- [x] Afficher la liste des capsules créées dans l'UI
+- [x] TypeScript compilation: OK
+- [x] Dev server: Running

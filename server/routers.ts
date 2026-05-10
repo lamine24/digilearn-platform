@@ -676,6 +676,31 @@ export const appRouter = router({
       return await studioDb.getProjectScenarios(input.projectId);
     }),
 
+    deleteScenario: protectedProcedure.input(z.object({
+      scenarioId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.deleteScenario(input.scenarioId);
+      return { success: true };
+    }),
+
+    updateScenario: protectedProcedure.input(z.object({
+      scenarioId: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.updateScenario(input.scenarioId, {
+        title: input.title,
+        description: input.description,
+      });
+      return { success: true };
+    }),
+
+    getProjectCapsules: protectedProcedure.input(z.object({
+      projectId: z.number(),
+    })).query(async ({ ctx, input }) => {
+      return await studioDb.getProjectCapsules(input.projectId);
+    }),
+
     publishToMarketplace: protectedProcedure.input(z.object({
       projectId: z.number(),
       title: z.string(),

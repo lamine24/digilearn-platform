@@ -28,8 +28,15 @@ export default function StudioProject() {
 
   const deleteProjectMutation = trpc.studio.deleteProject.useMutation();
   const deleteDocumentMutation = trpc.studio.deleteDocument.useMutation();
+  const deleteScenarioMutation = trpc.studio.deleteScenario.useMutation();
+  const updateScenarioMutation = trpc.studio.updateScenario.useMutation();
 
   const scenariosQuery = trpc.studio.getProjectScenarios.useQuery(
+    { projectId: projectQuery.data?.id || 0 },
+    { enabled: !!projectQuery.data?.id }
+  );
+
+  const capsulesQuery = trpc.studio.getProjectCapsules.useQuery(
     { projectId: projectQuery.data?.id || 0 },
     { enabled: !!projectQuery.data?.id }
   );
@@ -40,7 +47,9 @@ export default function StudioProject() {
       const path = window.location.pathname;
       const match = path.match(/\/studio\/([^/]+)/);
       if (match) {
-        setSlug(match[1]);
+        // Decode URL-encoded slug (e.g., %C3%A9 -> é)
+        const decodedSlug = decodeURIComponent(match[1]);
+        setSlug(decodedSlug);
       }
     }
   }, [slug]);
@@ -464,6 +473,137 @@ export default function StudioProject() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Scenarios Section */}
+        {scenariosQuery.data && scenariosQuery.data.length > 0 && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Zap className="mr-2 h-5 w-5 text-amber-600" />
+                  Scénarios Générés ({scenariosQuery.data.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {scenariosQuery.data.map((scenario: any) => (
+                    <div
+                      key={scenario.id}
+                      className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {scenario.title || `Scénario ${scenario.id}`}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {scenario.description || "Scénario généré automatiquement"}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Créé le {new Date(scenario.createdAt).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newTitle = prompt("Nouveau titre:", scenario.title);
+                              if (newTitle) {
+                                updateScenarioMutation.mutate(
+                                  { scenarioId: scenario.id, title: newTitle },
+                                  {
+                                    onSuccess: () => scenariosQuery.refetch()
+                                  }
+                                );
+                              }
+                            }}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            ✏️
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm("Confirmer la suppression du scénario ?")) {
+                                deleteScenarioMutation.mutate(
+                                  { scenarioId: scenario.id },
+                                  {
+                                    onSuccess: () => scenariosQuery.refetch()
+                                  }
+                                );
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Capsules Section */}
+        {capsulesQuery.data && capsulesQuery.data.length > 0 && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5 text-purple-600" />
+                  Capsules Vidéo ({capsulesQuery.data.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {capsulesQuery.data.map((capsule: any) => (
+                    <div
+                      key={capsule.id}
+                      className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:bg-purple-100 transition"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">
+                            {capsule.title}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {capsule.description || "Capsule vidéo"}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-2">
+                            Statut: <span className="font-semibold">{capsule.videoStatus || "pending"}</span>
+                          </p>
+                        </div>
+                        <div className="flex gap-2 ml-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => alert("Édition de capsule en développement")}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            ✏️
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => alert("Suppression de capsule en développement")}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Documents List Section */}
         {documentsQuery.data && documentsQuery.data.length > 0 && (

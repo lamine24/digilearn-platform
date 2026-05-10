@@ -91,24 +91,34 @@ export async function getStudioProjectBySlug(slug: string) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
   
-  const result = await db.execute(
-    sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE slug = ${slug} LIMIT 1`
-  );
-  
-  // Normalize result to get rows array
-  const rows = normalizeDbResult(result);
-  const project = rows[0] || null;
-  
-  if (!project) {
-    console.error("No project found for slug:", slug);
-    return null;
+  try {
+    console.log("Querying project with slug:", slug);
+    const result = await db.execute(
+      sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE slug = ${slug} LIMIT 1`
+    );
+    
+    console.log("Query result:", result);
+    
+    // Normalize result to get rows array
+    const rows = normalizeDbResult(result);
+    console.log("Normalized rows:", rows);
+    
+    const project = rows[0] || null;
+    
+    if (!project) {
+      console.error("No project found for slug:", slug);
+      return null;
+    }
+    
+    if (!project.id) {
+      console.error("Project data missing id:", project, "Raw result:", result);
+    }
+    
+    return project;
+  } catch (error) {
+    console.error("Error in getStudioProjectBySlug:", error);
+    throw error;
   }
-  
-  if (!project.id) {
-    console.error("Project data missing id:", project, "Raw result:", result);
-  }
-  
-  return project;
 }
 
 export async function updateStudioProject(
@@ -231,6 +241,58 @@ export async function getProjectScenarios(projectId: number) {
   return normalizeDbResult(result);
 }
 
+export async function deleteScenario(scenarioId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  const result = await db.execute(
+    sql`DELETE FROM studio_scenarios WHERE id = ${scenarioId}`
+  );
+  return result;
+}
+
+export async function updateScenario(
+  scenarioId: number,
+  data: Partial<{
+    title: string;
+    description: string;
+    learningObjectives: any[];
+    contentStructure: any;
+    interactiveElements: any;
+  }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  // Build the update query dynamically
+  const setClauses: string[] = [];
+  
+  if (data.title !== undefined) {
+    setClauses.push(`title = ${data.title ? "'" + data.title.replace(/'/g, "''") + "'" : "NULL"}`);
+  }
+  if (data.description !== undefined) {
+    setClauses.push(`description = ${data.description ? "'" + data.description.replace(/'/g, "''") + "'" : "NULL"}`);
+  }
+  if (data.learningObjectives !== undefined) {
+    const jsonStr = JSON.stringify(data.learningObjectives).replace(/'/g, "''");
+    setClauses.push(`learningObjectives = '${jsonStr}'`);
+  }
+  if (data.contentStructure !== undefined) {
+    const jsonStr = JSON.stringify(data.contentStructure).replace(/'/g, "''");
+    setClauses.push(`contentStructure = '${jsonStr}'`);
+  }
+  if (data.interactiveElements !== undefined) {
+    const jsonStr = JSON.stringify(data.interactiveElements).replace(/'/g, "''");
+    setClauses.push(`interactiveElements = '${jsonStr}'`);
+  }
+  
+  if (setClauses.length === 0) return null;
+  
+  const updateSQL = `UPDATE studio_scenarios SET ${setClauses.join(", ")} WHERE id = ${scenarioId}`;
+  const result = await db.execute(updateSQL);
+  return result;
+}
+
 export async function updateScenarioGeneration(
   scenarioId: number,
   data: {
@@ -277,6 +339,16 @@ export async function createCapsule(data: {
   return result;
 }
 
+export async function getProjectCapsules(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  const result = await db.execute(
+    sql`SELECT * FROM studio_capsules WHERE projectId = ${projectId} ORDER BY createdAt DESC`
+  );
+  return normalizeDbResult(result);
+}
+
 export async function getScenarioCapsules(scenarioId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
@@ -284,7 +356,7 @@ export async function getScenarioCapsules(scenarioId: number) {
   const result = await db.execute(
     sql`SELECT * FROM studio_capsules WHERE scenarioId = ${scenarioId} ORDER BY createdAt DESC`
   );
-  return result || [];
+  return normalizeDbResult(result);
 }
 
 export async function updateCapsuleVideo(
