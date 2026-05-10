@@ -1,13 +1,28 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Upload, Zap, FileText } from "lucide-react";
 
 export default function StudioProject() {
+  const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [slug, setSlug] = useState<string>("");
+
+  // Redirect if not formateur or admin
+  if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Accès Refusé</h1>
+          <p className="text-muted-foreground mb-6">Seuls les formateurs et administrateurs peuvent accéder au Studio.</p>
+          <Button onClick={() => setLocation("/dashboard")}>Retour au Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
 
   // Get slug from URL
   if (!slug) {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +11,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, BookOpen, Loader2 } from "lucide-react";
 
 export default function StudioDashboard() {
+  const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [isCreating, setIsCreating] = useState(false);
+
+  // Redirect if not formateur or admin
+  if (!loading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Accès Refusé</h1>
+          <p className="text-muted-foreground mb-6">Seuls les formateurs et administrateurs peuvent accéder au Studio.</p>
+          <Button onClick={() => setLocation("/dashboard")}>Retour au Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
