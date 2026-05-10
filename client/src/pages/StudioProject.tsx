@@ -5,11 +5,15 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Upload, Zap, FileText } from "lucide-react";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function StudioProject() {
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [slug, setSlug] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+  const [isCreatingCapsule, setIsCreatingCapsule] = useState(false);
 
   // Redirect if not formateur or admin
   if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
@@ -37,6 +41,122 @@ export default function StudioProject() {
     { slug },
     { enabled: !!slug }
   );
+
+  // Upload document handler
+  const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || !projectQuery.data) return;
+
+    const file = files[0];
+    const project = projectQuery.data as any;
+
+    setIsUploading(true);
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("projectId", project.id);
+
+      // Call backend API to upload document
+      const response = await fetch("/api/studio/upload-document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const result = await response.json();
+      console.log("Document uploaded successfully:", result);
+      
+      // Refresh project data to show new document
+      projectQuery.refetch();
+    } catch (error) {
+      console.error("Upload failed:", error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Generate scenario handler
+  const handleGenerateScenario = async () => {
+    if (!projectQuery.data) return;
+
+    setIsGeneratingScenario(true);
+    try {
+      const project = projectQuery.data as any;
+      
+      // Call backend API to generate scenario using LLM
+      const response = await fetch("/api/studio/generate-scenario", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: project.id,
+          pedagogicalModel: project.pedagogicalModel || "ADDIE",
+          targetAudience: project.targetAudience,
+          estimatedDuration: project.estimatedDuration,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Scenario generation failed");
+      }
+
+      const result = await response.json();
+      console.log("Scenario generated successfully:", result);
+      
+      // Refresh project data to show new scenario
+      projectQuery.refetch();
+    } catch (error) {
+      console.error("Scenario generation failed:", error);
+    } finally {
+      setIsGeneratingScenario(false);
+    }
+  };
+
+  // Create capsule handler
+  const handleCreateCapsule = async () => {
+    if (!projectQuery.data) return;
+
+    setIsCreatingCapsule(true);
+    try {
+      const project = projectQuery.data as any;
+      
+      // Call backend API to create capsule video
+      const response = await fetch("/api/studio/create-capsule", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: project.id,
+          title: project.title,
+          description: project.description,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Capsule creation failed");
+      }
+
+      const result = await response.json();
+      console.log("Capsule created successfully:", result);
+      
+      // Redirect to capsule preview
+      if (result.capsuleId) {
+        setLocation(`/studio/capsule/${result.capsuleId}`);
+      } else {
+        projectQuery.refetch();
+      }
+    } catch (error) {
+      console.error("Capsule creation failed:", error);
+    } finally {
+      setIsCreatingCapsule(false);
+    }
+  };
 
   if (!slug) {
     return (
@@ -90,6 +210,11 @@ export default function StudioProject() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-12">
+        <Breadcrumbs items={[
+          { label: "Studio", path: "/studio" },
+          { label: project.title, isActive: true }
+        ]} />
+        
         {/* Header */}
         <div className="mb-8">
           <Button
@@ -109,180 +234,147 @@ export default function StudioProject() {
                 </h1>
                 <p className="text-gray-600">{project.description}</p>
               </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  project.status === "published"
-                    ? "bg-green-100 text-green-800"
-                    : project.status === "completed"
-                      ? "bg-blue-100 text-blue-800"
-                      : project.status === "in_progress"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {project.status}
-              </span>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-sm text-gray-600">Modèle pédagogique</p>
-                <p className="font-semibold text-gray-900">
-                  {project.pedagogicalModel?.toUpperCase() || "N/A"}
-                </p>
+                <p className="text-gray-600">Modèle</p>
+                <p className="font-semibold">{project.pedagogicalModel?.toUpperCase() || "ADDIE"}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Public cible</p>
-                <p className="font-semibold text-gray-900">
-                  {project.targetAudience || "Non spécifié"}
-                </p>
+                <p className="text-gray-600">Public Cible</p>
+                <p className="font-semibold">{project.targetAudience || "N/A"}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Durée estimée</p>
-                <p className="font-semibold text-gray-900">
-                  {project.estimatedDuration ? `${project.estimatedDuration} min` : "N/A"}
-                </p>
+                <p className="text-gray-600">Durée Estimée</p>
+                <p className="font-semibold">{project.estimatedDuration || 0} min</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Langue</p>
-                <p className="font-semibold text-gray-900">
-                  {project.language?.toUpperCase() || "FR"}
-                </p>
+                <p className="text-gray-600">Statut</p>
+                <p className="font-semibold capitalize">{project.status || "draft"}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Actions */}
-          <div className="lg:col-span-2">
-            <div className="space-y-6">
-              {/* Documents Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <FileText className="mr-2 h-5 w-5 text-blue-600" />
-                    Documents
-                  </CardTitle>
-                  <CardDescription>
-                    Gérez les documents de votre projet
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Ajouter un document
-                  </Button>
-                  <p className="text-sm text-gray-600 mt-4">
-                    Formats supportés: PDF, DOCX, PPTX, TXT
-                  </p>
-                </CardContent>
-              </Card>
+        {/* Action Cards */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Upload Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Upload className="mr-2 h-5 w-5 text-blue-600" />
+                Documents
+              </CardTitle>
+              <CardDescription>
+                Gérez les documents de votre projet
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  id="document-upload"
+                  accept=".pdf,.docx,.pptx,.txt"
+                  onChange={handleUploadDocument}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+                <Button
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  onClick={() => document.getElementById("document-upload")?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Téléchargement...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Ajouter un document
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-sm text-gray-600 mt-4">
+                Formats supportés: PDF, DOCX, PPTX, TXT
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Scenario Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Zap className="mr-2 h-5 w-5 text-amber-600" />
-                    Scénario Pédagogique
-                  </CardTitle>
-                  <CardDescription>
-                    Générez un scénario basé sur vos documents
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                  >
+          {/* Scenario Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Zap className="mr-2 h-5 w-5 text-amber-600" />
+                Scénario Pédagogique
+              </CardTitle>
+              <CardDescription>
+                Générez un scénario basé sur vos documents
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleGenerateScenario}
+                disabled={isGeneratingScenario}
+              >
+                {isGeneratingScenario ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Génération en cours...
+                  </>
+                ) : (
+                  <>
                     <Zap className="mr-2 h-4 w-4" />
                     Générer un scénario
-                  </Button>
-                  <p className="text-sm text-gray-600 mt-4">
-                    Modèle: {project.pedagogicalModel?.toUpperCase() || "ADDIE"}
-                  </p>
-                </CardContent>
-              </Card>
+                  </>
+                )}
+              </Button>
+              <p className="text-sm text-gray-600 mt-4">
+                Modèle: {project.pedagogicalModel?.toUpperCase() || "ADDIE"}
+              </p>
+            </CardContent>
+          </Card>
 
-              {/* Capsule Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Loader2 className="mr-2 h-5 w-5 text-purple-600" />
-                    Capsules Vidéo
-                  </CardTitle>
-                  <CardDescription>
-                    Créez et gérez vos capsules vidéo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    className="w-full"
-                    variant="outline"
-                  >
+          {/* Capsule Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="mr-2 h-5 w-5 text-purple-600" />
+                Capsules Vidéo
+              </CardTitle>
+              <CardDescription>
+                Créez et gérez vos capsules vidéo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleCreateCapsule}
+                disabled={isCreatingCapsule}
+              >
+                {isCreatingCapsule ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Création en cours...
+                  </>
+                ) : (
+                  <>
                     <Zap className="mr-2 h-4 w-4" />
                     Créer une capsule
-                  </Button>
-                  <p className="text-sm text-gray-600 mt-4">
-                    Générez des vidéos interactives avec l'IA
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Right Column - Info */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations du Projet</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600">ID</p>
-                  <p className="font-mono text-sm text-gray-900">{project.id}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Slug</p>
-                  <p className="font-mono text-sm text-gray-900 break-all">
-                    {project.slug}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Créé</p>
-                  <p className="text-sm text-gray-900">
-                    {new Date(project.createdAt).toLocaleDateString("fr-FR")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Mis à jour</p>
-                  <p className="text-sm text-gray-900">
-                    {new Date(project.updatedAt).toLocaleDateString("fr-FR")}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full">
-                  Éditer le projet
-                </Button>
-                <Button variant="outline" className="w-full">
-                  Dupliquer
-                </Button>
-                <Button variant="destructive" className="w-full">
-                  Supprimer
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                  </>
+                )}
+              </Button>
+              <p className="text-sm text-gray-600 mt-4">
+                Générez des vidéos interactives avec l'IA
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

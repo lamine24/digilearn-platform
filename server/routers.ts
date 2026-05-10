@@ -735,6 +735,78 @@ export const appRouter = router({
       const capsule = await studioCapsuleDb.updateCapsuleStatus(input.capsuleId, input.status);
       return capsule;
     }),
+
+    // Generate scenario using LLM
+    generateScenarioWithLLM: formateurProcedure.input(z.object({
+      projectId: z.number(),
+      pedagogicalModel: z.enum(["addie", "bloom", "gagne"]).optional(),
+      targetAudience: z.string().optional(),
+      estimatedDuration: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        const documents = await studioDb.getProjectDocuments(input.projectId);
+        const docArray = Array.isArray(documents) ? documents : [];
+        if (docArray.length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Aucun document trouvé" });
+        }
+
+        const documentContext = (Array.isArray(documents) ? documents : []).map((d: any) => `${d.fileName || ""}: ${d.description || ""}`).join("\n");
+
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `Tu es un expert en conception pédagogique. Génère un scénario basé sur le modèle ${input.pedagogicalModel?.toUpperCase() || "ADDIE"}.`,
+            },
+            {
+              role: "user",
+              content: `Documents:\n${documentContext}\n\nGénère un scénario structuré.`,
+            },
+          ],
+        });
+
+        const scenarioContent = typeof response.choices[0]?.message?.content === 'string' ? response.choices[0].message.content : "";
+
+        await studioDb.createScenario({
+          projectId: input.projectId,
+          title: `Scénario ${input.pedagogicalModel?.toUpperCase() || "ADDIE"}`,
+          description: scenarioContent.substring(0, 500),
+          generatedBy: "manual",
+        });
+
+        return { success: true, scenario: scenarioContent };
+      } catch (error) {
+        console.error("LLM scenario generation failed:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la génération" });
+      }
+    }),
+
+    // Create capsule video
+    createCapsuleVideo: formateurProcedure.input(z.object({
+      projectId: z.number(),
+      title: z.string(),
+      description: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        // For now, create a placeholder capsule
+        // In production, this would generate a video using an AI video service
+        const capsule = await studioDb.createCapsule({
+          projectId: input.projectId,
+          scenarioId: 0, // TODO: Get from selected scenario
+          title: input.title,
+          description: input.description,
+          generatedBy: "manual",
+        });
+
+        return {
+          success: true,
+          message: "Capsule créée avec succès. Vous pouvez maintenant ajouter du contenu.",
+        };
+      } catch (error) {
+        console.error("Capsule creation failed:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la création" });
+      }
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;
