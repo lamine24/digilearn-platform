@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import { extractDocumentContent } from "./document-extraction";
 import { updateDocumentExtraction } from "./studio-db";
 import { storageGetSignedUrl } from "./storage";
+import { ENV } from "./_core/env";
 import os from "os";
 
 const TEMP_DIR = path.join(os.tmpdir(), "digilearn-extraction");
@@ -79,7 +80,7 @@ async function processDocuments() {
 }
 
 /**
- * Process a single document
+ * Process a single document with primary and fallback methods
  */
 async function processDocument(doc: any) {
   const db = await getDb();
@@ -105,47 +106,38 @@ async function processDocument(doc: any) {
   let filePath: string | null = null;
 
   try {
-    // Determine download URL based on available fields
-    let downloadUrl: string;
-
-    if (doc.fileKey) {
-      // Use fileKey to get signed URL from Forge
-      console.log(`Getting signed URL for fileKey: ${doc.fileKey}`);
-      try {
-        downloadUrl = await storageGetSignedUrl(doc.fileKey);
-        console.log(`Got signed URL for file`);
-      } catch (signError) {
-        console.error(`Error getting signed URL for ${doc.fileKey}:`, signError);
-        throw new Error(`Failed to get signed URL: ${(signError as Error).message}`);
-      }
-    } else {
-      throw new Error('Document has no fileKey');
-    }
-
-    console.log(`Resolved download URL: ${downloadUrl}`);
-
-    let response: Response;
+    // Try primary method: download from signed URL
+    console.log(`[Primary Method] Attempting to download file via signed URL`);
     try {
-      response = await fetch(downloadUrl);
-    } catch (fetchError) {
-      console.error(`Error fetching from storage URL:`, fetchError);
-      throw new Error(`Failed to fetch from storage: ${(fetchError as Error).message}`);
+      filePath = await downloadFileViaPrimaryMethod(doc);
+      if (filePath) {
+        console.log(`[Primary Method] Success: Downloaded file to ${filePath}`);
+      }
+    } catch (primaryError) {
+      console.warn(`[Primary Method] Failed: ${(primaryError as Error).message}`);
+      console.log(`[Fallback Method] Attempting to extract via Manus API`);
+      
+      // Try fallback method: use Manus API
+      try {
+        filePath = await downloadFileViaManusAPI(doc);
+        if (filePath) {
+          console.log(`[Fallback Method] Success: Downloaded file to ${filePath}`);
+        }
+      } catch (fallbackError) {
+        console.error(`[Fallback Method] Failed: ${(fallbackError as Error).message}`);
+        throw new Error(
+          `Both extraction methods failed. Primary: ${(primaryError as Error).message}, Fallback: ${(fallbackError as Error).message}`
+        );
+      }
     }
 
-    if (!response.ok) {
-      const responseText = await response.text().catch(() => "<no response body>");
-      console.error(`Storage response error: status=${response.status}, statusText=${response.statusText}, body=${responseText}`);
-      throw new Error(`Failed to download file from storage: ${response.status} ${response.statusText}`);
+    if (!filePath) {
+      throw new Error("Failed to download file with both methods");
     }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    filePath = path.join(TEMP_DIR, `${doc.id}-${Date.now()}-${doc.fileName}`);
-    fs.writeFileSync(filePath, buffer);
-    console.log(`Downloaded file: ${doc.fileName} -> ${filePath}`);
 
     // Determine MIME type from fileType
     const mimeType = getMimeType(doc.fileType);
-    
+
     // Extract content from file
     console.log(`Extracting content from: ${doc.fileName}`);
     const extractedContent = await extractDocumentContent(filePath, mimeType);
@@ -168,6 +160,101 @@ async function processDocument(doc: any) {
       }
     }
   }
+}
+
+/**
+ * Primary method: Download file via signed URL from Forge
+ */
+async function downloadFileViaPrimaryMethod(doc: any): Promise<string | null> {
+  if (!doc.fileKey) {
+    throw new Error("Document has no fileKey for primary method");
+  }
+
+  // Get signed URL from Forge
+  console.log(`Getting signed URL for fileKey: ${doc.fileKey}`);
+  let downloadUrl: string;
+  try {
+    downloadUrl = await storageGetSignedUrl(doc.fileKey);
+    console.log(`Got signed URL for file`);
+  } catch (signError) {
+    throw new Error(`Failed to get signed URL: ${(signError as Error).message}`);
+  }
+
+  console.log(`Resolved download URL (truncated): ${downloadUrl.substring(0, 100)}...`);
+
+  // Download file from signed URL
+  let response: Response;
+  try {
+    response = await fetch(downloadUrl, {
+      timeout: 30000, // 30 second timeout
+    } as any);
+  } catch (fetchError) {
+    throw new Error(`Failed to fetch from storage: ${(fetchError as Error).message}`);
+  }
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => "<no response body>");
+    throw new Error(
+      `Failed to download file from storage: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  const filePath = path.join(TEMP_DIR, `${doc.id}-${Date.now()}-${doc.fileName}`);
+  fs.writeFileSync(filePath, buffer);
+  console.log(`Downloaded file via primary method: ${filePath}`);
+
+  return filePath;
+}
+
+/**
+ * Fallback method: Download file via manus-storage proxy endpoint
+ */
+async function downloadFileViaManusAPI(doc: any): Promise<string | null> {
+  if (!doc.fileKey) {
+    throw new Error("Document has no fileKey for fallback method");
+  }
+
+  // Use the manus-storage proxy endpoint which handles S3 access internally
+  console.log(`Using manus-storage proxy endpoint to retrieve file: ${doc.fileKey}`);
+
+  const publicDomain = process.env.PUBLIC_DOMAIN || 'https://3000-ipcgfpgxsajtw7hxkpldt-b2e5a23c.us2.manus.computer';
+  const downloadUrl = `${publicDomain}/manus-storage/${doc.fileKey}`;
+
+  console.log(`Fallback download URL: ${downloadUrl}`);
+
+  let response: Response;
+  try {
+    response = await fetch(downloadUrl, {
+      timeout: 30000, // 30 second timeout
+      // Follow redirects automatically
+      redirect: 'follow',
+    } as any);
+  } catch (fetchError) {
+    throw new Error(
+      `Failed to fetch from manus-storage proxy: ${(fetchError as Error).message}`
+    );
+  }
+
+  if (!response.ok) {
+    const responseText = await response.text().catch(() => "<no response body>");
+    throw new Error(
+      `manus-storage proxy returned error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  // Get file content from response
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  if (buffer.length === 0) {
+    throw new Error("manus-storage proxy returned empty file content");
+  }
+
+  const filePath = path.join(TEMP_DIR, `${doc.id}-${Date.now()}-${doc.fileName}`);
+  fs.writeFileSync(filePath, buffer);
+  console.log(`Downloaded file via manus-storage proxy fallback: ${filePath}`);
+
+  return filePath;
 }
 
 /**
