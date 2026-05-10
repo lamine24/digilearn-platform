@@ -549,3 +549,26 @@ export async function checkProjectAccess(projectId: number, userId: number) {
   );
   return result?.[0] || null;
 }
+
+
+export async function getScenarioById(scenarioId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  const result = await db.execute(
+    sql`SELECT * FROM studio_scenarios WHERE id = ${scenarioId} LIMIT 1`
+  );
+  const rows = normalizeDbResult(result);
+  return rows?.[0] || null;
+}
+
+export async function getStudioProjectById(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  const result = await db.execute(
+    sql`SELECT * FROM studio_projects WHERE id = ${projectId} LIMIT 1`
+  );
+  const rows = normalizeDbResult(result);
+  return rows?.[0] || null;
+}

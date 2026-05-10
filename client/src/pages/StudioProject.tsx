@@ -30,6 +30,7 @@ export default function StudioProject() {
   const deleteDocumentMutation = trpc.studio.deleteDocument.useMutation();
   const deleteScenarioMutation = trpc.studio.deleteScenario.useMutation();
   const updateScenarioMutation = trpc.studio.updateScenario.useMutation();
+  const exportScenarioMutation = trpc.studio.exportScenario.useMutation();
 
   const scenariosQuery = trpc.studio.getProjectScenarios.useQuery(
     { projectId: projectQuery.data?.id || 0 },
@@ -239,6 +240,38 @@ export default function StudioProject() {
       alert("Erreur lors de la création de la capsule");
     } finally {
       setIsCreatingCapsule(false);
+    }
+  };
+
+  const handleExportScenario = async (scenarioId: number, format: 'pdf' | 'docx') => {
+    try {
+      const result = await exportScenarioMutation.mutateAsync({
+        scenarioId,
+        format,
+      });
+
+      if (result.success && result.buffer) {
+        const binaryString = atob(result.buffer);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], {
+          type: format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = result.filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Erreur lors de l\'export du scenario');
     }
   };
 
@@ -503,7 +536,25 @@ export default function StudioProject() {
                             Créé le {new Date(scenario.createdAt).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
-                        <div className="flex gap-2 ml-2">
+                        <div className="flex gap-2 ml-2 flex-wrap justify-end">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleExportScenario(scenario.id, 'pdf')}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Exporter en PDF"
+                          >
+                            📄 PDF
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleExportScenario(scenario.id, 'docx')}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            title="Exporter en Word"
+                          >
+                            📝 Word
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

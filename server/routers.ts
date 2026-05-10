@@ -846,6 +846,41 @@ export const appRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la création" });
       }
     }),
+
+    exportScenario: protectedProcedure.input(z.object({
+      scenarioId: z.number(),
+      format: z.enum(["pdf", "docx"]),
+    })).mutation(async ({ ctx, input }) => {
+      const { exportScenarioToWord, exportScenarioPdf, generateExportFilename } = await import("./scenario-export");
+      const scenario = await studioDb.getScenarioById(input.scenarioId);
+      if (!scenario) throw new TRPCError({ code: "NOT_FOUND" });
+      
+      const project = await studioDb.getStudioProjectById((scenario as any).projectId);
+      if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+      
+      const exportData = {
+        title: (scenario as any).title,
+        description: (scenario as any).description || "",
+        pedagogicalModel: (project as any).pedagogicalModel || "N/A",
+        estimatedDuration: (project as any).estimatedDuration || 0,
+        createdAt: (scenario as any).createdAt,
+        projectTitle: (project as any).title,
+      };
+      
+      let buffer: Buffer;
+      if (input.format === "pdf") {
+        buffer = await exportScenarioPdf(exportData);
+      } else {
+        buffer = await exportScenarioToWord(exportData);
+      }
+      
+      const filename = generateExportFilename((scenario as any).title, input.format);
+      return {
+        success: true,
+        filename,
+        buffer: buffer.toString("base64"),
+      };
+    }),
   }),
 });
 export type AppRouter = typeof appRouter;

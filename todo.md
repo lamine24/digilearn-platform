@@ -613,3 +613,16 @@
 - [x] Afficher la liste des capsules créées dans l'UI
 - [x] TypeScript compilation: OK
 - [x] Dev server: Running
+
+
+## 📤 Export de Scénarios en PDF et Word (Session Actuelle)
+- [x] Installer docx et html-to-text
+- [x] Créer le service scenario-export.ts avec exportScenarioToWord et exportScenarioPdf
+- [x] Ajouter les fonctions getScenarioById et getStudioProjectById en studio-db.ts
+- [x] Ajouter la procédure tRPC exportScenario
+- [x] Ajouter la mutation exportScenarioMutation dans StudioProject.tsx
+- [x] Ajouter le handler handleExportScenario
+- [x] Ajouter les boutons d'export PDF et Word pour chaque scénario
+- [x] Implémenter le téléchargement des fichiers (conversion base64 -> blob)
+- [x] TypeScript compilation: OK
+- [x] Dev server: Running
