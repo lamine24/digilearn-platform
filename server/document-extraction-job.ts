@@ -1,12 +1,19 @@
 import { getDb } from "./db";
 import { extractDocumentContent, sanitizeExtractedText } from "./document-extraction";
+import { storageGetSignedUrl } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 import { sql } from "drizzle-orm";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
+const TEMP_DIR = path.join(os.tmpdir(), "digilearn-extraction");
 const EXTRACTION_INTERVAL = 30000; // Run every 30 seconds
 let isRunning = false;
+
+// Ensure temp directory exists
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
 
 /**
  * Start the document extraction job
@@ -43,7 +50,7 @@ async function processDocuments() {
   try {
     const db = await getDb();
     if (!db) {
-      console.log("Database not available");
+      console.error("Database not available");
       isRunning = false;
       return;
     }
@@ -78,9 +85,16 @@ async function processDocuments() {
       } catch (error) {
         console.error(`Error processing document ${doc.id}:`, error);
         // Mark as failed
-        await db.execute(
-          sql`UPDATE studio_documents SET extractionStatus = 'failed' WHERE id = ${doc.id}`
-        );
+        try {
+          const db = await getDb();
+          if (db) {
+            await db.execute(
+              sql`UPDATE studio_documents SET extractionStatus = 'failed' WHERE id = ${doc.id}`
+            );
+          }
+        } catch (updateError) {
+          console.error(`Error marking document as failed:`, updateError);
+        }
       }
     }
   } catch (error) {
@@ -108,47 +122,72 @@ async function processDocument(doc: any) {
 
   console.log(`Processing document: ${doc.fileName}`);
 
-  // Construct file path
-  const filePath = path.join(UPLOAD_DIR, doc.fileKey);
+  let filePath: string | null = null;
 
-  // Check if file exists
-  if (!fs.existsSync(filePath)) {
-    console.warn(`File not found: ${filePath}`);
-    await db.execute(
-      sql`UPDATE studio_documents SET extractionStatus = 'failed' WHERE id = ${doc.id}`
-    );
-    return;
-  }
-
-  // Extract content
-  // Map fileType to MIME type
-  const mimeTypeMap: Record<string, string> = {
-    pdf: "application/pdf",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    txt: "text/plain",
-  };
-  const mimeType = mimeTypeMap[doc.fileType] || "application/octet-stream";
-  const content = await extractDocumentContent(filePath, mimeType);
-  const sanitized = sanitizeExtractedText(content);
-
-  // Update document with extracted content
   try {
-    await db.execute(
-      sql`UPDATE studio_documents SET extractionStatus = 'extracted', extractedContent = ${sanitized} WHERE id = ${doc.id}`
-    );
+    // Download file from S3
+    console.log(`Downloading file from S3: ${doc.fileKey}`);
+    const signedUrl = await storageGetSignedUrl(doc.fileKey);
+    const response = await fetch(signedUrl);
+
+    if (!response.ok) {
+      throw new Error(`Failed to download file from S3: ${response.statusText}`);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    filePath = path.join(TEMP_DIR, `${doc.id}-${Date.now()}-${doc.fileName}`);
+    fs.writeFileSync(filePath, buffer);
+    console.log(`Downloaded file from S3: ${doc.fileKey} -> ${filePath}`);
+
+    // Extract content
+    // Map fileType to MIME type
+    const mimeTypeMap: Record<string, string> = {
+      pdf: "application/pdf",
+      docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      txt: "text/plain",
+    };
+    const mimeType = mimeTypeMap[doc.fileType?.toLowerCase() || ""] || "application/octet-stream";
+
+    let content: string;
+    try {
+      content = await extractDocumentContent(filePath, mimeType);
+    } catch (error) {
+      console.error(`Error extracting content from ${filePath}:`, error);
+      throw error;
+    }
+
+    const sanitized = sanitizeExtractedText(content);
+
+    // Update document with extracted content
+    try {
+      await db.execute(
+        sql`UPDATE studio_documents SET extractionStatus = 'extracted', extractedContent = ${sanitized} WHERE id = ${doc.id}`
+      );
+      console.log(`Successfully updated document ${doc.id} with extracted content (${sanitized.length} chars)`);
+    } catch (error) {
+      console.error(`Error updating document ${doc.id}:`, error);
+      throw error;
+    }
   } catch (error) {
-    console.error(`Error updating document ${doc.id}:`, error);
-    throw error;
+    console.error(`Error processing document ${doc.id}:`, error);
+    // Mark as failed
+    try {
+      await db.execute(
+        sql`UPDATE studio_documents SET extractionStatus = 'failed' WHERE id = ${doc.id}`
+      );
+    } catch (updateError) {
+      console.error(`Error marking document as failed:`, updateError);
+    }
+  } finally {
+    // Clean up temp file
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        console.log(`Cleaned up temp file: ${filePath}`);
+      } catch (error) {
+        console.warn(`Failed to clean up temp file: ${filePath}`, error);
+      }
+    }
   }
-
-  console.log(`Document ${doc.id} extraction completed (${sanitized.length} chars)`);
-}
-
-/**
- * Stop the document extraction job
- */
-export function stopDocumentExtractionJob() {
-  console.log("Stopping document extraction job...");
-  // The interval will continue running, but we can add cleanup logic here if needed
 }
