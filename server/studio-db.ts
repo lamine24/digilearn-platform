@@ -54,9 +54,13 @@ export async function getStudioProjectBySlug(slug: string) {
   if (!db) throw new Error("Database connection failed");
   
   const result = await db.execute(
-    sql`SELECT * FROM studio_projects WHERE slug = ${slug} LIMIT 1`
+    sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE slug = ${slug} LIMIT 1`
   );
-  return result?.[0] || null;
+  const project = (result as any)?.[0] || null;
+  if (project && !project.id) {
+    console.error("Project data missing id:", project);
+  }
+  return project;
 }
 
 export async function updateStudioProject(
