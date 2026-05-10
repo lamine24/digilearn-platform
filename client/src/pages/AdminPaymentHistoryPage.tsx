@@ -12,6 +12,7 @@ type SortOrder = "asc" | "desc";
 
 export function AdminPaymentHistoryPage() {
   const [page, setPage] = useState(0);
+  const [userFilter, setUserFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [sortField, setSortField] = useState<SortField>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -25,6 +26,7 @@ export function AdminPaymentHistoryPage() {
   const { data: paymentData, isLoading } = trpc.admin.paymentHistory.useQuery({
     limit,
     offset: page * limit,
+    userId: userFilter ? parseInt(userFilter) : undefined,
     status: statusFilter || undefined,
     minAmount: minAmount || undefined,
     maxAmount: maxAmount || undefined,
@@ -161,7 +163,16 @@ export function AdminPaymentHistoryPage() {
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+          <div>
+            <label className="text-sm font-medium">Utilisateur (ID)</label>
+            <Input
+              type="number"
+              placeholder="ID utilisateur"
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value)}
+            />
+          </div>
           <div>
             <label className="text-sm font-medium">Statut</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -216,6 +227,7 @@ export function AdminPaymentHistoryPage() {
               variant="outline"
               size="sm"
               onClick={() => {
+                setUserFilter("");
                 setStatusFilter("");
                 setMinAmount("");
                 setMaxAmount("");

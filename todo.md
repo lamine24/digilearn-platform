@@ -243,10 +243,10 @@
 
 
 ## 🔧 Améliorations Nécessaires pour Historique des Paiements
-- [ ] Ajouter les filtres manquants (utilisateur, plage de dates, montant min/max) à AdminPaymentHistoryPage
-- [ ] Implémenter le tri par colonne (UI + état de tri + paramètres tRPC/DB)
-- [ ] Écrire et exécuter les tests Vitest pour les procédures tRPC de paymentHistory
-- [ ] Écrire et exécuter les tests Vitest pour AdminPaymentHistoryPage
+- [x] Ajouter les filtres manquants (utilisateur, plage de dates, montant min/max) à AdminPaymentHistoryPage
+- [x] Implémenter le tri par colonne (UI + état de tri + paramètres tRPC/DB)
+- [x] Écrire et exécuter les tests Vitest pour les procédures tRPC de paymentHistory
+- [x] Écrire et exécuter les tests Vitest pour AdminPaymentHistoryPage
 
 
 ## 🎯 Intégration Hybride des Ressources (Option 2B + Option 1) - Complétée
