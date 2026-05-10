@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +10,7 @@ import {
   Play, Star, ChevronRight, Shield, Zap
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { SubscriptionStatusWidget } from "@/components/SubscriptionStatusWidget";
 import {
   ResponsiveContainer,
@@ -90,6 +90,11 @@ export default function Home() {
             <a href="#avantages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Avantages</a>
             <a href="#temoignages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Témoignages</a>
             <Link href="/verify-certificate" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Vérifier un certificat</Link>
+            {isAuthenticated && (
+              <Link href="/studio" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                <Code className="h-4 w-4" /> Studio
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
