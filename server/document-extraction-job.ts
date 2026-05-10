@@ -115,7 +115,7 @@ async function processDocument(doc: any) {
   }
 
   // Validate document has required fields
-  if (!doc.id || !doc.fileKey || !doc.fileName) {
+  if (!doc.id || !doc.fileUrl || !doc.fileName) {
     console.warn(`Invalid document: missing required fields`, doc);
     return;
   }
@@ -125,13 +125,33 @@ async function processDocument(doc: any) {
   let filePath: string | null = null;
 
   try {
-    // Download file from S3
-    console.log(`Downloading file from S3: ${doc.fileKey}`);
-    const signedUrl = await storageGetSignedUrl(doc.fileKey);
-    const response = await fetch(signedUrl);
+    // Download file from Manus storage URL
+    console.log(`Downloading file from storage: ${doc.fileUrl}`);
+    let downloadUrl: string;
+    
+    // If fileUrl is relative, make it absolute using the public domain
+    if (doc.fileUrl.startsWith('/')) {
+      // Use the public domain to download
+      const publicDomain = process.env.PUBLIC_DOMAIN || 'https://3000-ipcgfpgxsajtw7hxkpldt-b2e5a23c.us2.manus.computer';
+      downloadUrl = `${publicDomain}${doc.fileUrl}`;
+    } else {
+      downloadUrl = doc.fileUrl;
+    }
+    
+    console.log(`Resolved download URL: ${downloadUrl}`);
+    
+    let response: Response;
+    try {
+      response = await fetch(downloadUrl);
+    } catch (fetchError) {
+      console.error(`Error fetching from storage URL:`, fetchError);
+      throw new Error(`Failed to fetch from storage: ${(fetchError as Error).message}`);
+    }
 
     if (!response.ok) {
-      throw new Error(`Failed to download file from S3: ${response.statusText}`);
+      const responseText = await response.text().catch(() => "<no response body>");
+      console.error(`Storage response error: status=${response.status}, statusText=${response.statusText}, body=${responseText}`);
+      throw new Error(`Failed to download file from storage: ${response.status} ${response.statusText}`);
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
