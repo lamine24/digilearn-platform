@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Upload, Zap, FileText } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useEffect } from "react";
 
 export default function StudioProject() {
+  // All hooks MUST be called at the top level, before any conditional returns
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [slug, setSlug] = useState<string>("");
@@ -15,6 +17,23 @@ export default function StudioProject() {
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [isCreatingCapsule, setIsCreatingCapsule] = useState(false);
 
+  const projectQuery = trpc.studio.getProjectBySlug.useQuery(
+    { slug },
+    { enabled: !!slug }
+  );
+
+  // Extract slug from URL using useEffect, not during render
+  useEffect(() => {
+    if (!slug) {
+      const path = window.location.pathname;
+      const match = path.match(/\/studio\/([^/]+)/);
+      if (match) {
+        setSlug(match[1]);
+      }
+    }
+  }, [slug]);
+
+  // Conditional rendering happens AFTER hooks
   // Redirect if not formateur or admin
   if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
     return (
@@ -27,20 +46,6 @@ export default function StudioProject() {
       </div>
     );
   }
-
-  // Get slug from URL
-  if (!slug) {
-    const path = window.location.pathname;
-    const match = path.match(/\/studio\/([^/]+)/);
-    if (match) {
-      setSlug(match[1]);
-    }
-  }
-
-  const projectQuery = trpc.studio.getProjectBySlug.useQuery(
-    { slug },
-    { enabled: !!slug }
-  );
 
   // Upload document handler
   const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {

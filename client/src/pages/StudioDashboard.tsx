@@ -11,10 +11,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, BookOpen, Loader2 } from "lucide-react";
 
 export default function StudioDashboard() {
+  // All hooks MUST be called at the top level, before any conditional returns
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    pedagogicalModel: "addie" as const,
+    targetAudience: "",
+    estimatedDuration: "",
+  });
 
+  const projectsQuery = trpc.studio.getUserProjects.useQuery();
+  const createProjectMutation = trpc.studio.createProject.useMutation({
+    onSuccess: (data) => {
+      setFormData({ title: "", description: "", pedagogicalModel: "addie", targetAudience: "", estimatedDuration: "" });
+      setIsCreating(false);
+      projectsQuery.refetch();
+      setLocation(`/studio/${data.slug}`);
+    },
+  });
+
+  // Conditional rendering happens AFTER hooks
   // Redirect if not formateur or admin
   if (!loading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
     return (
@@ -35,24 +54,6 @@ export default function StudioDashboard() {
       </div>
     );
   }
-
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    pedagogicalModel: "addie" as const,
-    targetAudience: "",
-    estimatedDuration: "",
-  });
-
-  const projectsQuery = trpc.studio.getUserProjects.useQuery();
-  const createProjectMutation = trpc.studio.createProject.useMutation({
-    onSuccess: (data) => {
-      setFormData({ title: "", description: "", pedagogicalModel: "addie", targetAudience: "", estimatedDuration: "" });
-      setIsCreating(false);
-      projectsQuery.refetch();
-      setLocation(`/studio/${data.slug}`);
-    },
-  });
 
   const handleCreateProject = async () => {
     if (!formData.title.trim()) return;
