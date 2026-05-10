@@ -5,21 +5,32 @@ import { sdk } from "./_core/sdk";
 import { invokeLLM } from "./_core/llm";
 import * as studioDb from "./studio-db";
 
+// File size limits in bytes
+const FILE_SIZE_LIMITS = {
+  PDF: 100 * 1024 * 1024, // 100MB
+  DOCX: 50 * 1024 * 1024, // 50MB
+  PPTX: 200 * 1024 * 1024, // 200MB
+  TXT: 10 * 1024 * 1024, // 10MB
+};
+
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB absolute limit
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+  limits: { fileSize: MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
-    const allowedMimes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      "text/plain",
-    ];
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error(`File type ${file.mimetype} not allowed`));
+    const allowedMimes: Record<string, string> = {
+      "application/pdf": "PDF",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation": "PPTX",
+      "text/plain": "TXT",
+    };
+    
+    if (!allowedMimes[file.mimetype]) {
+      return cb(new Error(`Type de fichier non autorisé: ${file.mimetype}. Formats acceptés: PDF, DOCX, PPTX, TXT`));
     }
+    
+    cb(null, true);
   },
 });
 
@@ -32,6 +43,35 @@ async function getAuthenticatedUser(req: Request) {
 }
 
 export function setupStudioRoutes(app: Express) {
+  // Error handler for multer
+  const handleMulterError = (err: any, res: Response) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        return res.status(413).json({
+          error: "Fichier trop volumineux",
+          message: `La taille du fichier dépasse la limite maximale de ${MAX_FILE_SIZE / (1024 * 1024)}MB. Veuillez télécharger un fichier plus petit.`,
+          maxSize: `${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+        });
+      }
+      if (err.code === "LIMIT_FILE_COUNT") {
+        return res.status(400).json({
+          error: "Trop de fichiers",
+          message: "Un seul fichier peut être téléchargé à la fois.",
+        });
+      }
+    }
+    if (err instanceof Error) {
+      return res.status(400).json({
+        error: "Erreur de téléchargement",
+        message: err.message,
+      });
+    }
+    return res.status(500).json({
+      error: "Erreur interne",
+      message: "Une erreur est survenue lors du téléchargement.",
+    });
+  };
+
   // Upload document endpoint
   app.post("/api/studio/upload-document", upload.single("file"), async (req: Request, res: Response) => {
     try {
@@ -41,12 +81,38 @@ export function setupStudioRoutes(app: Express) {
       }
 
       if (!req.file) {
-        return res.status(400).json({ error: "No file provided" });
+        return res.status(400).json({
+          error: "Aucun fichier fourni",
+          message: "Veuillez sélectionner un fichier à télécharger.",
+        });
+      }
+
+      // Validate file size based on type
+      const fileType = req.file.mimetype.includes("pdf")
+        ? "PDF"
+        : req.file.mimetype.includes("word")
+          ? "DOCX"
+          : req.file.mimetype.includes("presentation")
+            ? "PPTX"
+            : "TXT";
+
+      const sizeLimit = FILE_SIZE_LIMITS[fileType as keyof typeof FILE_SIZE_LIMITS] || MAX_FILE_SIZE;
+      if (req.file.size > sizeLimit) {
+        return res.status(413).json({
+          error: "Fichier trop volumineux",
+          message: `La taille du fichier ${req.file.originalname} (${(req.file.size / (1024 * 1024)).toFixed(2)}MB) dépasse la limite de ${sizeLimit / (1024 * 1024)}MB pour les fichiers ${fileType}.`,
+          fileSize: `${(req.file.size / (1024 * 1024)).toFixed(2)}MB`,
+          maxSize: `${sizeLimit / (1024 * 1024)}MB`,
+          fileType,
+        });
       }
 
       const projectId = parseInt(req.body.projectId);
       if (!projectId) {
-        return res.status(400).json({ error: "Project ID required" });
+        return res.status(400).json({
+          error: "ID de projet manquant",
+          message: "L'ID du projet est requis pour télécharger un fichier.",
+        });
       }
 
       // Upload file to S3
@@ -54,15 +120,13 @@ export function setupStudioRoutes(app: Express) {
       const { url, key } = await storagePut(fileKey, req.file.buffer, req.file.mimetype);
 
       // Save document metadata to database
-      const fileType = req.file.mimetype.includes('pdf') ? 'pdf' : 
-                       req.file.mimetype.includes('word') ? 'docx' :
-                       req.file.mimetype.includes('presentation') ? 'pptx' : 'txt';
+      const dbFileType = fileType.toLowerCase() as 'pdf' | 'docx' | 'pptx' | 'txt';
       
       await studioDb.uploadDocument({
         projectId,
         fileName: req.file.originalname,
         fileSize: req.file.size,
-        fileType: fileType as 'pdf' | 'docx' | 'pptx' | 'txt',
+        fileType: dbFileType,
         fileUrl: url,
         fileKey: key,
       });
@@ -73,12 +137,20 @@ export function setupStudioRoutes(app: Express) {
         key,
         fileName: req.file.originalname,
         fileSize: req.file.size,
-        fileType,
+        fileType: dbFileType,
       });
     } catch (error) {
       console.error("Document upload failed:", error);
-      res.status(500).json({ error: "Upload failed", details: (error as Error).message });
+      return handleMulterError(error, res);
     }
+  });
+
+  // Error handler middleware for multer errors
+  app.use((err: any, _req: Request, res: Response, next: any) => {
+    if (err instanceof multer.MulterError || err.message?.includes("File type")) {
+      return handleMulterError(err, res);
+    }
+    next(err);
   });
 
   // Generate scenario endpoint
