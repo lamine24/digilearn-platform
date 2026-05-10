@@ -626,3 +626,13 @@
 - [x] Implémenter le téléchargement des fichiers (conversion base64 -> blob)
 - [x] TypeScript compilation: OK
 - [x] Dev server: Running
+
+
+## 🔄 Job d'Extraction de Contenu des Documents (Session Actuelle)
+- [x] Créer le service d'extraction de contenu (document-extraction.ts)
+- [x] Implémenter l'extraction de texte depuis PDF, DOCX, PPTX
+- [x] Créer le job d'arrière-plan pour traiter les documents en attente
+- [x] Ajouter la mise à jour du statut de "pending" à "extracted"
+- [x] Intégrer le job au démarrage du serveur
+- [ ] Ajouter le refresh automatique du statut dans l'interface
+- [ ] Tester l'extraction avec différents formats de fichiers
