@@ -64,16 +64,23 @@ export default function StudioProject() {
       });
 
       if (!response.ok) {
-        throw new Error("Upload failed");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || `Upload failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       console.log("Document uploaded successfully:", result);
       
+      // Show success message
+      alert(`Document "${result.fileName}" telecharge avec succes!`);
+      
       // Refresh project data to show new document
       projectQuery.refetch();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Une erreur est survenue lors du telechargement";
       console.error("Upload failed:", error);
+      alert(`Erreur: ${errorMessage}`);
     } finally {
       setIsUploading(false);
     }
