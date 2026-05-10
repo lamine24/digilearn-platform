@@ -43,7 +43,7 @@ function levelColor(level: string) {
 }
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { data: coursesData } = trpc.courses.published.useQuery({});
   const { data: categoriesData } = trpc.categories.list.useQuery();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export default function Home() {
             <a href="#avantages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Avantages</a>
             <a href="#temoignages" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Témoignages</a>
             <Link href="/verify-certificate" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Vérifier un certificat</Link>
-            {isAuthenticated && (
+            {isAuthenticated && (user?.role === "formateur" || user?.role === "admin") && (
               <Link href="/studio" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                 <Code className="h-4 w-4" /> Studio
               </Link>
