@@ -634,5 +634,5 @@
 - [x] Créer le job d'arrière-plan pour traiter les documents en attente
 - [x] Ajouter la mise à jour du statut de "pending" à "extracted"
 - [x] Intégrer le job au démarrage du serveur
-- [ ] Ajouter le refresh automatique du statut dans l'interface
-- [ ] Tester l'extraction avec différents formats de fichiers
+- [x] Ajouter le refresh automatique du statut dans l'interface (polling automatique via React Query)
+- [x] Tester l'extraction avec différents formats de fichiers (PDF, DOCX, PPTX, TXT)

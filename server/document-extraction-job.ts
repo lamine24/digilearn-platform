@@ -53,7 +53,16 @@ async function processDocuments() {
       sql`SELECT id, fileName, fileKey, extractionStatus, fileType FROM studio_documents WHERE extractionStatus = 'pending' LIMIT 10`
     );
 
-    const docs = Array.isArray(pendingDocuments) ? pendingDocuments : [];
+    // Normalize result to handle different formats from MySQL/TiDB
+    let docs: any[] = [];
+    if (Array.isArray(pendingDocuments)) {
+      // If it's an array with 2 elements and first is array (mysql2 format)
+      if (pendingDocuments.length === 2 && Array.isArray(pendingDocuments[0])) {
+        docs = pendingDocuments[0];
+      } else {
+        docs = pendingDocuments;
+      }
+    }
 
     if (!docs || docs.length === 0) {
       console.log("No pending documents to process");
@@ -88,6 +97,12 @@ async function processDocument(doc: any) {
   const db = await getDb();
   if (!db) {
     console.error("Database not available");
+    return;
+  }
+
+  // Validate document has required fields
+  if (!doc.id || !doc.fileKey || !doc.fileName) {
+    console.warn(`Invalid document: missing required fields`, doc);
     return;
   }
 
