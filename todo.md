@@ -537,3 +537,35 @@
 - ✅ Tests: 17/17 passants
 - ✅ Réduction du payload: 30-40%
 - ✅ Temps de requête: < 1s
+
+
+## 🐛 Corrections de Bugs Critiques - DigiLearn Studio (Session Actuelle)
+- [x] Corriger le problème d'ID de projet manquant lors de l'upload
+  - Modifié studio-db.ts pour retourner l'ID du projet créé
+  - Corrigé getStudioProjectBySlug pour sélectionner explicitement la colonne id
+- [x] Corriger la sauvegarde du modèle pédagogique et de la durée
+  - Normalisé les valeurs pédagogiques (Bloom/ADDIE) en minuscules en base
+  - Corrigé l'affichage du modèle pédagogique dans StudioProject.tsx
+  - Corrigé l'affichage de la durée estimée avec formatage correct
+- [x] Implémenter le refresh automatique des données après upload
+  - Ajouté query tRPC pour getProjectDocuments
+  - Implémenté l'invalidation du cache après upload
+  - Ajouté la liste des documents téléchargés dans l'UI
+  - Affichage automatique des documents après upload
+- [x] Corriger les violations de règles React hooks
+  - Tous les hooks déclarés au top niveau
+  - Pas de conditional returns avant les hooks
+  - Logique d'extraction du slug dans useEffect
+- [x] Corriger les tests unitaires
+  - Modifié studio-routes.test.ts pour mocker la méthode app.use
+  - Tests de routes Studio maintenant passants
+
+### Résultats des Corrections
+- ✅ TypeScript: 0 erreurs
+- ✅ Dev Server: Running
+- ✅ Compilation: Successful
+- ✅ Project ID: Correctement retourné après création
+- ✅ Bloom model: Affichage correct (BLOOM ou ADDIE)
+- ✅ Duration: Affichage correct (ex: "20 min")
+- ✅ Document list: Affichage automatique après upload
+- ✅ Auto-refresh: Fonctionne après upload de document
