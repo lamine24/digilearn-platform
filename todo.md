@@ -589,16 +589,16 @@
 
 
 ## 🔧 Modification et Suppression de Scénarios (Session Actuelle)
-- [ ] Ajouter procédure tRPC pour supprimer un scénario (deleteScenario)
-- [ ] Ajouter procédure tRPC pour modifier un scénario (updateScenario)
-- [ ] Ajouter boutons de suppression/modification dans l'UI StudioProject
-- [ ] Implémenter la confirmation avant suppression
+- [x] Ajouter procédure tRPC pour supprimer un scénario (deleteScenario)
+- [x] Ajouter procédure tRPC pour modifier un scénario (updateScenario)
+- [x] Ajouter boutons de suppression/modification dans l'UI StudioProject
+- [x] Implémenter la confirmation avant suppression
 
-## 🎬 Correction Génération de Capsules (Session Actuelle)
-- [ ] Déboguer pourquoi la création de capsule échoue
-- [ ] Vérifier que le scenarioId est correctement passé
-- [ ] Ajouter affichage des capsules créées
-- [ ] Ajouter boutons de suppression pour les capsules
+## 🌟 Affichage des Capsules Vidéo Générées (Session Actuelle)
+- [x] Déboguer pourquoi la création de capsule échoue
+- [x] Vérifier que le scenarioId est correctement passé
+- [x] Ajouter affichage des capsules créées
+- [x] Ajouter boutons de suppression pour les capsules
 
 
 ## 🔧 Modification et Suppression de Scénarios + Affichage des Capsules (Session Actuelle)
