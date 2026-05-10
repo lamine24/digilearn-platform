@@ -49,14 +49,22 @@ export default function StudioProject() {
 
     const file = files[0];
     const project = projectQuery.data as any;
+    const projectId = project.id || project.projectId;
+
+    if (!projectId) {
+      alert("Erreur: L'ID du projet est manquant. Veuillez rafraichir la page.");
+      return;
+    }
 
     setIsUploading(true);
     try {
       // Create FormData for file upload
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("projectId", project.id);
+      formData.append("projectId", String(projectId));
 
+      console.log("Uploading document with projectId:", projectId);
+      
       // Call backend API to upload document
       const response = await fetch("/api/studio/upload-document", {
         method: "POST",
