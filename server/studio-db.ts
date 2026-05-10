@@ -20,7 +20,13 @@ export async function createStudioProject(data: {
     sql`INSERT INTO studio_projects (userId, title, description, slug, pedagogicalModel, targetAudience, estimatedDuration, language)
         VALUES (${data.userId}, ${data.title}, ${data.description || null}, ${data.slug}, ${data.pedagogicalModel || "addie"}, ${data.targetAudience || null}, ${data.estimatedDuration || null}, ${data.language || "fr"})`
   );
-  return result;
+  
+  // Return the created project with ID
+  const createdProject = await db.execute(
+    sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE slug = ${data.slug} LIMIT 1`
+  );
+  
+  return (createdProject as any)?.[0] || result;
 }
 
 export async function getUserStudioProjects(userId: number, options?: { limit?: number; offset?: number }) {

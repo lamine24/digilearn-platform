@@ -592,7 +592,7 @@ export const appRouter = router({
       estimatedDuration: z.number().optional(),
     })).mutation(async ({ ctx, input }) => {
       const slug = input.title.toLowerCase().replace(/\s+/g, "-") + "-" + nanoid(6);
-      await studioDb.createStudioProject({
+      const project = await studioDb.createStudioProject({
         userId: ctx.user.id,
         title: input.title,
         description: input.description,
@@ -601,7 +601,7 @@ export const appRouter = router({
         targetAudience: input.targetAudience,
         estimatedDuration: input.estimatedDuration,
       });
-      return { success: true, slug };
+      return { success: true, slug, id: (project as any)?.id };
     }),
 
     getUserProjects: protectedProcedure.input(z.object({
