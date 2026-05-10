@@ -569,3 +569,20 @@
 - ✅ Duration: Affichage correct (ex: "20 min")
 - ✅ Document list: Affichage automatique après upload
 - ✅ Auto-refresh: Fonctionne après upload de document
+
+
+## 🗑️ Suppression de Projets et Documents (Session Actuelle)
+- [x] Ajouter procédure tRPC pour supprimer un projet (deleteProject)
+- [x] Ajouter procédure tRPC pour supprimer un document (deleteDocument)
+- [x] Ajouter boutons de suppression dans l'UI StudioProject
+- [x] Implémenter la confirmation avant suppression
+- [x] Redirection vers le Studio après suppression du projet
+- [x] Rafraîchissement de la liste après suppression du document
+
+## 🔧 Correction Génération de Scénarios et Création de Capsules (Session Actuelle)
+- [x] Vérifier l'endpoint /api/studio/generate-scenario
+- [x] Vérifier l'endpoint /api/studio/create-capsule
+- [x] Corriger les handlers de génération de scénarios
+- [x] Corriger les handlers de création de capsules
+- [x] Ajouter gestion d'erreurs appropriée
+- [x] Tester le flux end-to-end

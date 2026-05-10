@@ -1,12 +1,11 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Upload, Zap, FileText } from "lucide-react";
+import { Loader2, ArrowLeft, Upload, Zap, FileText, Trash2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function StudioProject() {
   // All hooks MUST be called at the top level, before any conditional returns
@@ -20,6 +19,19 @@ export default function StudioProject() {
   const projectQuery = trpc.studio.getProjectBySlug.useQuery(
     { slug },
     { enabled: !!slug }
+  );
+
+  const documentsQuery = trpc.studio.getProjectDocuments.useQuery(
+    { projectId: projectQuery.data?.id || 0 },
+    { enabled: !!projectQuery.data?.id }
+  );
+
+  const deleteProjectMutation = trpc.studio.deleteProject.useMutation();
+  const deleteDocumentMutation = trpc.studio.deleteDocument.useMutation();
+
+  const scenariosQuery = trpc.studio.getProjectScenarios.useQuery(
+    { projectId: projectQuery.data?.id || 0 },
+    { enabled: !!projectQuery.data?.id }
   );
 
   // Extract slug from URL using useEffect, not during render
@@ -128,24 +140,65 @@ export default function StudioProject() {
       const result = await response.json();
       console.log("Scenario generated successfully:", result);
       
-      // Refresh project data to show new scenario
-      projectQuery.refetch();
+      // Refresh scenarios list
+      scenariosQuery.refetch();
+      // Show success message
+      alert("Scénario généré avec succès !");
     } catch (error) {
       console.error("Scenario generation failed:", error);
+      alert("Erreur lors de la génération du scénario");
     } finally {
       setIsGeneratingScenario(false);
     }
   };
 
+  // Delete project handler
+  const handleDeleteProject = async () => {
+    if (!projectQuery.data) return;
+    
+    const confirmed = window.confirm(
+      "Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible."
+    );
+    if (!confirmed) return;
+
+    try {
+      const project = projectQuery.data as any;
+      await deleteProjectMutation.mutateAsync({ projectId: project.id });
+      alert("Projet supprimé avec succès");
+      setLocation("/studio");
+    } catch (error) {
+      console.error("Delete project failed:", error);
+      alert("Erreur lors de la suppression du projet");
+    }
+  };
+
+  // Delete document handler
+  const handleDeleteDocument = async (documentId: number, fileName: string) => {
+    const confirmed = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer "${fileName}" ? Cette action est irréversible.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteDocumentMutation.mutateAsync({ documentId });
+      documentsQuery.refetch();
+      alert("Document supprimé avec succès");
+    } catch (error) {
+      console.error("Delete document failed:", error);
+      alert("Erreur lors de la suppression du document");
+    }
+  };
+
   // Create capsule handler
   const handleCreateCapsule = async () => {
-    if (!projectQuery.data) return;
+    if (!projectQuery.data || !scenariosQuery.data?.length) return;
 
     setIsCreatingCapsule(true);
     try {
       const project = projectQuery.data as any;
+      const firstScenario = scenariosQuery.data[0] as any;
       
-      // Call backend API to create capsule video
+      // Call backend API to create capsule
       const response = await fetch("/api/studio/create-capsule", {
         method: "POST",
         headers: {
@@ -153,8 +206,9 @@ export default function StudioProject() {
         },
         body: JSON.stringify({
           projectId: project.id,
-          title: project.title,
-          description: project.description,
+          scenarioId: firstScenario.id,
+          title: `Capsule ${new Date().toLocaleDateString()}`,
+          description: "Nouvelle capsule vidéo",
         }),
       });
 
@@ -173,6 +227,7 @@ export default function StudioProject() {
       }
     } catch (error) {
       console.error("Capsule creation failed:", error);
+      alert("Erreur lors de la création de la capsule");
     } finally {
       setIsCreatingCapsule(false);
     }
@@ -254,6 +309,15 @@ export default function StudioProject() {
                 </h1>
                 <p className="text-gray-600">{project.description}</p>
               </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteProject}
+                disabled={deleteProjectMutation.isPending}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -337,10 +401,9 @@ export default function StudioProject() {
             </CardHeader>
             <CardContent>
               <Button
-                className="w-full"
-                variant="outline"
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
                 onClick={handleGenerateScenario}
-                disabled={isGeneratingScenario}
+                disabled={isGeneratingScenario || !documentsQuery.data?.length}
               >
                 {isGeneratingScenario ? (
                   <>
@@ -357,6 +420,11 @@ export default function StudioProject() {
               <p className="text-sm text-gray-600 mt-4">
                 Modèle: {project.pedagogicalModel?.toUpperCase() || "ADDIE"}
               </p>
+              {!documentsQuery.data?.length && (
+                <p className="text-xs text-amber-600 mt-2">
+                  ⚠️ Téléchargez d'abord un document
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -396,6 +464,56 @@ export default function StudioProject() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Documents List Section */}
+        {documentsQuery.data && documentsQuery.data.length > 0 && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="mr-2 h-5 w-5 text-blue-600" />
+                  Documents Téléchargés ({documentsQuery.data.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {documentsQuery.data.map((doc: any) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+                    >
+                      <div className="flex items-center flex-1">
+                        <FileText className="h-4 w-4 text-blue-600 mr-3" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {doc.fileName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(doc.fileSize / 1024).toFixed(2)} KB • {doc.fileType.toUpperCase()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {doc.extractionStatus || "pending"}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteDocument(doc.id, doc.fileName)}
+                          disabled={deleteDocumentMutation.isPending}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

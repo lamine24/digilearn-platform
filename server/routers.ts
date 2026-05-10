@@ -624,6 +624,13 @@ export const appRouter = router({
       return project;
     }),
 
+    deleteProject: protectedProcedure.input(z.object({
+      projectId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.deleteStudioProject(input.projectId);
+      return { success: true };
+    }),
+
     uploadDocument: protectedProcedure.input(z.object({
       projectId: z.number(),
       fileName: z.string(),
@@ -640,6 +647,13 @@ export const appRouter = router({
       projectId: z.number(),
     })).query(async ({ ctx, input }) => {
       return await studioDb.getProjectDocuments(input.projectId);
+    }),
+
+    deleteDocument: protectedProcedure.input(z.object({
+      documentId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      await studioDb.deleteDocument(input.documentId);
+      return { success: true };
     }),
 
     createScenario: protectedProcedure.input(z.object({

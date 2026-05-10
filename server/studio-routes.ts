@@ -221,15 +221,26 @@ export function setupStudioRoutes(app: Express) {
         return res.status(403).json({ error: "Unauthorized" });
       }
 
-      const { projectId, title, description } = req.body;
+      const { projectId, title, description, scenarioId } = req.body;
       if (!projectId || !title) {
         return res.status(400).json({ error: "Project ID and title required" });
+      }
+
+      // If no scenarioId provided, get the first scenario for this project
+      let finalScenarioId = scenarioId;
+      if (!finalScenarioId) {
+        const scenarios = await studioDb.getProjectScenarios(projectId);
+        const scenarioArray = Array.isArray(scenarios) ? scenarios : [];
+        if (scenarioArray.length === 0) {
+          return res.status(400).json({ error: "No scenario found. Please generate a scenario first." });
+        }
+        finalScenarioId = scenarioArray[0].id;
       }
 
       // Create capsule in database
       const capsule = await studioDb.createCapsule({
         projectId,
-        scenarioId: 0, // TODO: Get from selected scenario
+        scenarioId: finalScenarioId,
         title,
         description,
         generatedBy: "manual",

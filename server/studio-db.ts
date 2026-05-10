@@ -1,6 +1,36 @@
 import { getDb } from "./db";
 import { sql } from "drizzle-orm";
 
+// ==================== HELPER FUNCTIONS ====================
+
+/**
+ * Normalize db.execute result to extract rows array.
+ * Handles different result shapes from MySQL/TiDB:
+ * - [rows, fields] (mysql2 default)
+ * - rows (array)
+ * - { rows } (object)
+ */
+function normalizeDbResult(result: any): any[] {
+  if (!result) return [];
+  
+  // If result is an array with 2 elements and first is array (mysql2 format)
+  if (Array.isArray(result) && result.length === 2 && Array.isArray(result[0])) {
+    return result[0];
+  }
+  
+  // If result is already an array of rows
+  if (Array.isArray(result)) {
+    return result;
+  }
+  
+  // If result has a rows property
+  if (result && typeof result === 'object' && Array.isArray(result.rows)) {
+    return result.rows;
+  }
+  
+  return [];
+}
+
 // ==================== STUDIO PROJECTS ====================
 
 export async function createStudioProject(data: {
@@ -22,11 +52,12 @@ export async function createStudioProject(data: {
   );
   
   // Return the created project with ID
-  const createdProject = await db.execute(
+  const createdProjectResult = await db.execute(
     sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE slug = ${data.slug} LIMIT 1`
   );
   
-  return (createdProject as any)?.[0] || result;
+  const rows = normalizeDbResult(createdProjectResult);
+  return rows[0] || null;
 }
 
 export async function getUserStudioProjects(userId: number, options?: { limit?: number; offset?: number }) {
@@ -40,8 +71,8 @@ export async function getUserStudioProjects(userId: number, options?: { limit?: 
     sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE userId = ${userId} ORDER BY createdAt DESC LIMIT ${limit} OFFSET ${offset}`
   );
   
-  if (!result || !Array.isArray(result)) return [];
-  return result.filter((item: any) => item && typeof item.id === "number");
+  const rows = normalizeDbResult(result);
+  return rows.filter((item: any) => item && typeof item.id === "number");
 }
 
 export async function getUserStudioProjectsCount(userId: number) {
@@ -52,7 +83,8 @@ export async function getUserStudioProjectsCount(userId: number) {
     sql`SELECT COUNT(*) as count FROM studio_projects WHERE userId = ${userId}`
   );
   
-  return (result as any)?.[0]?.count || 0;
+  const rows = normalizeDbResult(result);
+  return rows[0]?.count || 0;
 }
 
 export async function getStudioProjectBySlug(slug: string) {
@@ -62,10 +94,20 @@ export async function getStudioProjectBySlug(slug: string) {
   const result = await db.execute(
     sql`SELECT id, userId, title, description, slug, pedagogicalModel, status, targetAudience, estimatedDuration, language, createdAt, updatedAt FROM studio_projects WHERE slug = ${slug} LIMIT 1`
   );
-  const project = (result as any)?.[0] || null;
-  if (project && !project.id) {
-    console.error("Project data missing id:", project);
+  
+  // Normalize result to get rows array
+  const rows = normalizeDbResult(result);
+  const project = rows[0] || null;
+  
+  if (!project) {
+    console.error("No project found for slug:", slug);
+    return null;
   }
+  
+  if (!project.id) {
+    console.error("Project data missing id:", project, "Raw result:", result);
+  }
+  
   return project;
 }
 
@@ -130,7 +172,7 @@ export async function getProjectDocuments(projectId: number) {
   const result = await db.execute(
     sql`SELECT * FROM studio_documents WHERE projectId = ${projectId} ORDER BY createdAt DESC`
   );
-  return result || [];
+  return normalizeDbResult(result);
 }
 
 export async function updateDocumentExtraction(
@@ -143,6 +185,16 @@ export async function updateDocumentExtraction(
   
   const result = await db.execute(
     sql`UPDATE studio_documents SET extractedContent = ${extractedContent}, extractionStatus = ${status}, updatedAt = NOW() WHERE id = ${documentId}`
+  );
+  return result;
+}
+
+export async function deleteDocument(documentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  
+  const result = await db.execute(
+    sql`DELETE FROM studio_documents WHERE id = ${documentId}`
   );
   return result;
 }
@@ -176,7 +228,7 @@ export async function getProjectScenarios(projectId: number) {
   const result = await db.execute(
     sql`SELECT * FROM studio_scenarios WHERE projectId = ${projectId} ORDER BY createdAt DESC`
   );
-  return result || [];
+  return normalizeDbResult(result);
 }
 
 export async function updateScenarioGeneration(
