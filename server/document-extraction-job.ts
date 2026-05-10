@@ -16,6 +16,12 @@ if (!fs.existsSync(TEMP_DIR)) {
 
 let isRunning = false;
 
+// Track retry attempts per document
+const retryAttempts = new Map<number, { count: number; lastAttempt: number }>();
+const MAX_RETRIES = 5;
+const INITIAL_RETRY_DELAY = 5000; // 5 seconds
+const MAX_RETRY_DELAY = 300000; // 5 minutes
+
 /**
  * Start the document extraction job
  */
@@ -80,6 +86,57 @@ async function processDocuments() {
 }
 
 /**
+ * Calculate exponential backoff delay
+ */
+function getRetryDelay(attemptCount: number): number {
+  const delay = INITIAL_RETRY_DELAY * Math.pow(2, attemptCount - 1);
+  return Math.min(delay, MAX_RETRY_DELAY);
+}
+
+/**
+ * Check if document should be retried
+ */
+function shouldRetryDocument(docId: number): boolean {
+  const retry = retryAttempts.get(docId);
+  if (!retry) return true; // First attempt
+
+  if (retry.count >= MAX_RETRIES) {
+    console.log(
+      `Document ${docId} has reached max retries (${MAX_RETRIES})`
+    );
+    return false;
+  }
+
+  const delay = getRetryDelay(retry.count);
+  const timeSinceLastAttempt = Date.now() - retry.lastAttempt;
+
+  if (timeSinceLastAttempt < delay) {
+    console.log(
+      `Document ${docId} retry backoff: ${Math.ceil(
+        (delay - timeSinceLastAttempt) / 1000
+      )}s remaining`
+    );
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Update retry attempt for document
+ */
+function updateRetryAttempt(docId: number, success: boolean): void {
+  if (success) {
+    retryAttempts.delete(docId);
+  } else {
+    const retry = retryAttempts.get(docId) || { count: 0, lastAttempt: 0 };
+    retry.count += 1;
+    retry.lastAttempt = Date.now();
+    retryAttempts.set(docId, retry);
+  }
+}
+
+/**
  * Process a single document with primary and fallback methods
  */
 async function processDocument(doc: any) {
@@ -101,6 +158,11 @@ async function processDocument(doc: any) {
     return;
   }
 
+  // Check if document should be retried
+  if (!shouldRetryDocument(doc.id)) {
+    return; // Skip this document for now, will retry later
+  }
+
   console.log(`Processing document: ${doc.fileName}`);
 
   let filePath: string | null = null;
@@ -111,20 +173,28 @@ async function processDocument(doc: any) {
     try {
       filePath = await downloadFileViaPrimaryMethod(doc);
       if (filePath) {
-        console.log(`[Primary Method] Success: Downloaded file to ${filePath}`);
+        console.log(
+          `[Primary Method] Success: Downloaded file to ${filePath}`
+        );
       }
     } catch (primaryError) {
-      console.warn(`[Primary Method] Failed: ${(primaryError as Error).message}`);
-      console.log(`[Fallback Method] Attempting to extract via Manus API`);
-      
-      // Try fallback method: use Manus API
+      console.warn(
+        `[Primary Method] Failed: ${(primaryError as Error).message}`
+      );
+      console.log(`[Fallback Method] Attempting to extract via manus-storage proxy`);
+
+      // Try fallback method: use manus-storage proxy
       try {
         filePath = await downloadFileViaManusAPI(doc);
         if (filePath) {
-          console.log(`[Fallback Method] Success: Downloaded file to ${filePath}`);
+          console.log(
+            `[Fallback Method] Success: Downloaded file to ${filePath}`
+          );
         }
       } catch (fallbackError) {
-        console.error(`[Fallback Method] Failed: ${(fallbackError as Error).message}`);
+        console.error(
+          `[Fallback Method] Failed: ${(fallbackError as Error).message}`
+        );
         throw new Error(
           `Both extraction methods failed. Primary: ${(primaryError as Error).message}, Fallback: ${(fallbackError as Error).message}`
         );
@@ -141,14 +211,41 @@ async function processDocument(doc: any) {
     // Extract content from file
     console.log(`Extracting content from: ${doc.fileName}`);
     const extractedContent = await extractDocumentContent(filePath, mimeType);
-    console.log(`Extracted ${extractedContent.length} characters from ${doc.fileName}`);
+    console.log(
+      `Extracted ${extractedContent.length} characters from ${doc.fileName}`
+    );
 
     // Update document with extracted content
     await updateDocumentExtraction(doc.id, extractedContent, "completed");
-    console.log(`Successfully updated document ${doc.id} with extracted content`);
+    console.log(
+      `Successfully updated document ${doc.id} with extracted content`
+    );
+
+    // Mark as successful for retry tracking
+    updateRetryAttempt(doc.id, true);
   } catch (error) {
     console.error(`Error processing document ${doc.id}:`, error);
-    await updateDocumentExtraction(doc.id, "", "failed");
+
+    // Check if we should retry or mark as failed
+    const retry = retryAttempts.get(doc.id) || {
+      count: 0,
+      lastAttempt: 0,
+    };
+    const nextRetryCount = retry.count + 1;
+
+    if (nextRetryCount <= MAX_RETRIES) {
+      console.log(
+        `Marking document ${doc.id} for retry (attempt ${nextRetryCount}/${MAX_RETRIES})`
+      );
+      updateRetryAttempt(doc.id, false);
+      // Keep status as 'pending' so it will be retried
+    } else {
+      console.log(
+        `Document ${doc.id} exceeded max retries, marking as failed`
+      );
+      await updateDocumentExtraction(doc.id, "", "failed");
+      retryAttempts.delete(doc.id);
+    }
   } finally {
     // Clean up temp file
     if (filePath && fs.existsSync(filePath)) {
@@ -177,7 +274,9 @@ async function downloadFileViaPrimaryMethod(doc: any): Promise<string | null> {
     downloadUrl = await storageGetSignedUrl(doc.fileKey);
     console.log(`Got signed URL for file`);
   } catch (signError) {
-    throw new Error(`Failed to get signed URL: ${(signError as Error).message}`);
+    throw new Error(
+      `Failed to get signed URL: ${(signError as Error).message}`
+    );
   }
 
   console.log(`Resolved download URL (truncated): ${downloadUrl.substring(0, 100)}...`);
@@ -189,7 +288,9 @@ async function downloadFileViaPrimaryMethod(doc: any): Promise<string | null> {
       timeout: 30000, // 30 second timeout
     } as any);
   } catch (fetchError) {
-    throw new Error(`Failed to fetch from storage: ${(fetchError as Error).message}`);
+    throw new Error(
+      `Failed to fetch from storage: ${(fetchError as Error).message}`
+    );
   }
 
   if (!response.ok) {
@@ -200,7 +301,10 @@ async function downloadFileViaPrimaryMethod(doc: any): Promise<string | null> {
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  const filePath = path.join(TEMP_DIR, `${doc.id}-${Date.now()}-${doc.fileName}`);
+  const filePath = path.join(
+    TEMP_DIR,
+    `${doc.id}-${Date.now()}-${doc.fileName}`
+  );
   fs.writeFileSync(filePath, buffer);
   console.log(`Downloaded file via primary method: ${filePath}`);
 
@@ -216,9 +320,13 @@ async function downloadFileViaManusAPI(doc: any): Promise<string | null> {
   }
 
   // Use the manus-storage proxy endpoint which handles S3 access internally
-  console.log(`Using manus-storage proxy endpoint to retrieve file: ${doc.fileKey}`);
+  console.log(
+    `Using manus-storage proxy endpoint to retrieve file: ${doc.fileKey}`
+  );
 
-  const publicDomain = process.env.PUBLIC_DOMAIN || 'https://3000-ipcgfpgxsajtw7hxkpldt-b2e5a23c.us2.manus.computer';
+  const publicDomain =
+    process.env.PUBLIC_DOMAIN ||
+    "https://3000-ipcgfpgxsajtw7hxkpldt-b2e5a23c.us2.manus.computer";
   const downloadUrl = `${publicDomain}/manus-storage/${doc.fileKey}`;
 
   console.log(`Fallback download URL: ${downloadUrl}`);
@@ -228,7 +336,7 @@ async function downloadFileViaManusAPI(doc: any): Promise<string | null> {
     response = await fetch(downloadUrl, {
       timeout: 30000, // 30 second timeout
       // Follow redirects automatically
-      redirect: 'follow',
+      redirect: "follow",
     } as any);
   } catch (fetchError) {
     throw new Error(
@@ -250,7 +358,10 @@ async function downloadFileViaManusAPI(doc: any): Promise<string | null> {
     throw new Error("manus-storage proxy returned empty file content");
   }
 
-  const filePath = path.join(TEMP_DIR, `${doc.id}-${Date.now()}-${doc.fileName}`);
+  const filePath = path.join(
+    TEMP_DIR,
+    `${doc.id}-${Date.now()}-${doc.fileName}`
+  );
   fs.writeFileSync(filePath, buffer);
   console.log(`Downloaded file via manus-storage proxy fallback: ${filePath}`);
 

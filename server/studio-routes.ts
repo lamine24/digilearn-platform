@@ -116,7 +116,13 @@ export function setupStudioRoutes(app: Express) {
       }
 
       // Upload file to S3
-      const fileKey = `studio-documents/${projectId}/${Date.now()}-${req.file.originalname}`;
+      // Normalize filename to remove non-ASCII characters (CloudFront requirement)
+      const normalizedFilename = req.file.originalname
+        .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .replace(/[^a-zA-Z0-9._-]/g, ''); // Keep only safe characters
+      
+      const fileKey = `studio-documents/${projectId}/${Date.now()}-${normalizedFilename}`;
       const { url, key } = await storagePut(fileKey, req.file.buffer, req.file.mimetype);
 
       // Save document metadata to database
@@ -124,7 +130,7 @@ export function setupStudioRoutes(app: Express) {
       
       await studioDb.uploadDocument({
         projectId,
-        fileName: req.file.originalname,
+        fileName: normalizedFilename, // Store normalized filename
         fileSize: req.file.size,
         fileType: dbFileType,
         fileUrl: url,
@@ -135,7 +141,7 @@ export function setupStudioRoutes(app: Express) {
         success: true,
         url,
         key,
-        fileName: req.file.originalname,
+        fileName: normalizedFilename, // Return normalized filename
         fileSize: req.file.size,
         fileType: dbFileType,
       });
