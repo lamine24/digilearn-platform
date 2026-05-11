@@ -666,4 +666,4 @@
 - [x] Ajouter les champs d'édition (titre, description, objectifs, contenu, éléments interactifs)
 - [x] Intégrer l'éditeur dans la page StudioProject
 - [x] Ajouter les boutons d'action (Sauvegarder, Annuler, Réinitialiser)
-- [ ] Tester l'édition complète et l'export
+- [x] Tester l'édition complète et l'export
