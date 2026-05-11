@@ -347,8 +347,11 @@ export const previewScenario = protectedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     try {
+      console.log('[previewScenario] Starting with input:', input);
+      
       const db = await getDb();
       if (!db) throw new Error('Database connection failed');
+      console.log('[previewScenario] DB connected');
 
       // Get project documents
       const documents = await db.select().from(studioDocuments).where(eq(studioDocuments.projectId, input.projectId));
@@ -359,7 +362,8 @@ export const previewScenario = protectedProcedure
         .join('\n');
 
       const { getPedagogicalModel } = await import('../pedagogical-models');
-      const model = getPedagogicalModel(input.pedagogicalModel || 'professional');
+      const modelName = typeof input.pedagogicalModel === 'string' ? input.pedagogicalModel : 'professional';
+      const model = getPedagogicalModel(modelName);
       const modelPrompt = generateScenarioPrompt(model, {
         targetAudience: input.targetAudience || '',
         estimatedDuration: input.estimatedDuration || 0,
