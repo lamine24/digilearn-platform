@@ -8,8 +8,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { lowlight } from 'lowlight';
+// Removed CodeBlockLowlight due to lowlight import issues
+// Using basic code block from StarterKit instead
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -199,15 +199,12 @@ const RichTextEditor = ({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        codeBlock: false,
+        codeBlock: true,
       }),
       Link.configure({
         openOnClick: false,
       }),
       Image,
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
     ],
     content: value,
     onUpdate: ({ editor }) => {
