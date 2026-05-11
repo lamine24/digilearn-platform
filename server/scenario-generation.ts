@@ -152,7 +152,7 @@ export async function generateScenarioWithPedagogicalModel(
     const savedScenario = await studioDb.createScenario({
       projectId: input.projectId,
       title,
-      description: scenarioContent.substring(0, 500),
+      description: scenarioContent,
       generatedBy: "mistral",
       learningObjectives: [],
       contentStructure: {
@@ -170,7 +170,7 @@ export async function generateScenarioWithPedagogicalModel(
       success: true,
       scenario: scenarioContent,
       title,
-      description: scenarioContent.substring(0, 500),
+      description: scenarioContent,
       model: input.pedagogicalModel || "addie",
       message: `Scénario généré avec succès selon le modèle ${model.name}`,
     };
