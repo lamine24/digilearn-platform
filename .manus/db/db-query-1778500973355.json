@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, title, slug FROM studio_projects ORDER BY createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute SELECT id, title, slug FROM studio_projects ORDER BY createdAt DESC;",
+  "rows": [
+    {
+      "id": "240002",
+      "title": "kjvkhv",
+      "slug": "kjvkhv-YNUXI8"
+    },
+    {
+      "id": "180003",
+      "title": "b hn",
+      "slug": "b-hn-bCC_Qe"
+    },
+    {
+      "id": "150001",
+      "title": "Régression Lineaire Simple",
+      "slug": "régression-lineaire-simple-e-eAfg"
+    },
+    {
+      "id": "60001",
+      "title": "Formation Python Avancée - DigiLearn",
+      "slug": "formation-python-avancee-1778329926000"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tslug\n240002\tkjvkhv\tkjvkhv-YNUXI8\n180003\tb hn\tb-hn-bCC_Qe\n150001\tRégression Lineaire Simple\trégression-lineaire-simple-e-eAfg\n60001\tFormation Python Avancée - DigiLearn\tformation-python-avancee-1778329926000\n",
+  "stderr": "",
+  "execution_time_ms": 265
+}

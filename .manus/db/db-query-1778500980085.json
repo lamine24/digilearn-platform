@@ -1,0 +1,76 @@
+{
+  "query": "SHOW CREATE TABLE studio_projects\\G",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute SHOW CREATE TABLE studio_projects\\G",
+  "rows": [
+    {
+      "*************************** 1. row ***************************": "       Table: studio_projects"
+    },
+    {
+      "*************************** 1. row ***************************": "Create Table: CREATE TABLE `studio_projects` ("
+    },
+    {
+      "*************************** 1. row ***************************": "  `id` int NOT NULL AUTO_INCREMENT,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `userId` int NOT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `title` varchar(255) NOT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `description` text DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `slug` varchar(255) NOT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `status` enum('draft','in_progress','completed','published') DEFAULT 'draft',"
+    },
+    {
+      "*************************** 1. row ***************************": "  `pedagogicalModel` enum('bloom','addie','gagne') DEFAULT 'addie',"
+    },
+    {
+      "*************************** 1. row ***************************": "  `targetAudience` varchar(255) DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `estimatedDuration` int DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `language` varchar(10) DEFAULT 'fr',"
+    },
+    {
+      "*************************** 1. row ***************************": "  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+    },
+    {
+      "*************************** 1. row ***************************": "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,"
+    },
+    {
+      "*************************** 1. row ***************************": "  KEY `userId` (`userId`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  KEY `status` (`status`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  KEY `slug` (`slug`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  UNIQUE KEY `slug_2` (`slug`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  CONSTRAINT `fk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE,"
+    },
+    {
+      "*************************** 1. row ***************************": "  CONSTRAINT `studio_projects_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+    },
+    {
+      "*************************** 1. row ***************************": ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=300001"
+    }
+  ],
+  "messages": [],
+  "stdout": "*************************** 1. row ***************************\n       Table: studio_projects\nCreate Table: CREATE TABLE `studio_projects` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `userId` int NOT NULL,\n  `title` varchar(255) NOT NULL,\n  `description` text DEFAULT NULL,\n  `slug` varchar(255) NOT NULL,\n  `status` enum('draft','in_progress','completed','published') DEFAULT 'draft',\n  `pedagogicalModel` enum('bloom','addie','gagne') DEFAULT 'addie',\n  `targetAudience` varchar(255) DEFAULT NULL,\n  `estimatedDuration` int DEFAULT NULL,\n  `language` varchar(10) DEFAULT 'fr',\n  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `userId` (`userId`),\n  KEY `status` (`status`),\n  KEY `slug` (`slug`),\n  UNIQUE KEY `slug_2` (`slug`),\n  CONSTRAINT `fk_1` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `studio_projects_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=300001\n",
+  "stderr": "",
+  "execution_time_ms": 262
+}
