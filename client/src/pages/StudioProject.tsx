@@ -125,6 +125,9 @@ export default function StudioProject() {
     }
   };
 
+  // Preview scenario mutation
+  const previewScenarioMutation = trpc.studio.previewScenario.useMutation();
+
   // Preview scenario handler
   const handlePreviewScenario = async () => {
     if (!projectQuery.data) return;
@@ -132,7 +135,7 @@ export default function StudioProject() {
     setIsPreviewLoading(true);
     try {
       const project = projectQuery.data as any;
-      const result = await trpc.studio.previewScenario.mutate({
+      const result = await previewScenarioMutation.mutateAsync({
         projectId: project.id,
         pedagogicalModel: (project.pedagogicalModel || "professional") as any,
         targetAudience: project.targetAudience,
