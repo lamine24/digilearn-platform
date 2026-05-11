@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, title, description, generatedBy FROM studio_scenarios WHERE title LIKE '%Formation Python%' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute SELECT id, title, description, generatedBy FROM studio_scenarios WHERE title LIKE '%Formation Python%' LIMIT 1;",
+  "rows": [],
+  "messages": [
+    "120007\tScénario ADDIE - Formation Python Avancée - DigiLearn\tVoici le scénario pédagogique complet, structuré selon le modèle ADDIE, en tenant compte du contenu source fourni.",
+    "---",
+    "# Scénario Pédagogique : Modélisation Linéaire Simple avec Python - DigiLearn",
+    "## 1. ANALYSE (Analysis)",
+    "*   **Titre du projet:** Modélisation Linéaire Simple avec Python - DigiLearn",
+    "*   **Public cible:** Développeurs Python intermédiaires",
+    "*   **Durée estimée:** 120 minutes (2 heures)",
+    "### Besoins d'apprentissage identifiés",
+    "Les développeurs Python intermédiaires maîtrisent les\tmistral"
+  ],
+  "stdout": "id\ttitle\tdescription\tgeneratedBy\n120007\tScénario ADDIE - Formation Python Avancée - DigiLearn\tVoici le scénario pédagogique complet, structuré selon le modèle ADDIE, en tenant compte du contenu source fourni.\n\n---\n\n# Scénario Pédagogique : Modélisation Linéaire Simple avec Python - DigiLearn\n\n## 1. ANALYSE (Analysis)\n\n*   **Titre du projet:** Modélisation Linéaire Simple avec Python - DigiLearn\n*   **Public cible:** Développeurs Python intermédiaires\n*   **Durée estimée:** 120 minutes (2 heures)\n\n### Besoins d'apprentissage identifiés\nLes développeurs Python intermédiaires maîtrisent les\tmistral\n",
+  "stderr": "",
+  "execution_time_ms": 294
+}

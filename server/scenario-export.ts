@@ -13,9 +13,15 @@ interface ScenarioExportData {
 }
 
 /**
- * Convert HTML to plain text for Word export
+ * Convert HTML/Markdown to plain text for Word export
  */
 function htmlToPlainText(html: string): string {
+  // If it's already plain text or Markdown, just return it
+  if (!html.includes('<') && !html.includes('&')) {
+    return html;
+  }
+  
+  // Otherwise convert HTML to plain text
   return convert(html, {
     wordwrap: 80,
     preserveNewlines: true,
