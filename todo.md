@@ -655,5 +655,5 @@
 - [x] Créer une procédure tRPC pour générer un aperçu sans sauvegarder
 - [x] Implémenter le composant React de prévisualisation
 - [x] Ajouter les boutons d'action (Sauvegarder, Annuler, Modifier)
-- [ ] Intégrer la prévisualisation dans StudioProject.tsx
-- [ ] Tester la prévisualisation complète
+- [x] Intégrer la prévisualisation dans StudioProject.tsx
+- [x] Tester la prévisualisation complète

@@ -125,48 +125,36 @@ export default function StudioProject() {
     }
   };
 
-  // Generate scenario handler
-  const handleGenerateScenario = async () => {
+  // Preview scenario handler
+  const handlePreviewScenario = async () => {
     if (!projectQuery.data) return;
 
-    setIsGeneratingScenario(true);
+    setIsPreviewLoading(true);
     try {
       const project = projectQuery.data as any;
-      
-      // Call backend API to generate scenario using LLM
-      const response = await fetch("/api/studio/generate-scenario", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          projectId: project.id,
-          pedagogicalModel: project.pedagogicalModel || "ADDIE",
-          targetAudience: project.targetAudience,
-          estimatedDuration: project.estimatedDuration,
-        }),
+      const result = await trpc.studio.previewScenario.mutate({
+        projectId: project.id,
+        pedagogicalModel: (project.pedagogicalModel || "professional") as any,
+        targetAudience: project.targetAudience,
+        estimatedDuration: project.estimatedDuration,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.details || errorData.error || "Scenario generation failed";
-        throw new Error(errorMessage);
+      if (result.success && result.preview) {
+        setPreviewScenario(result.preview);
+        setShowPreview(true);
       }
-
-      const result = await response.json();
-      console.log("Scenario generated successfully:", result);
-      
-      // Refresh scenarios list
-      scenariosQuery.refetch();
-      // Show success message
-      alert("Scénario généré avec succès !");
     } catch (error) {
-      console.error("Scenario generation failed:", error);
-      const errorMessage = (error as Error).message || "Erreur lors de la génération du scénario";
-      alert(`Erreur: ${errorMessage}\n\nLe système va réessayer automatiquement...`);
+      console.error("Preview generation failed:", error);
+      const errorMessage = (error as Error).message || "Erreur lors de la génération de l'aperçu";
+      alert(`Erreur: ${errorMessage}`);
     } finally {
-      setIsGeneratingScenario(false);
+      setIsPreviewLoading(false);
     }
+  };
+
+  // Generate scenario handler (now uses preview)
+  const handleGenerateScenario = async () => {
+    await handlePreviewScenario();
   };
 
   // Delete project handler
@@ -735,6 +723,47 @@ export default function StudioProject() {
             </Card>
           </div>
         )}
+
+        {/* Scenario Preview Modal */}
+        <ScenarioPreviewModal
+          open={showPreview}
+          onOpenChange={setShowPreview}
+          scenario={previewScenario}
+          isLoading={isPreviewLoading}
+          isSaving={isGeneratingScenario}
+          onSave={async () => {
+            if (projectQuery.data && previewScenario) {
+              setIsGeneratingScenario(true);
+              try {
+                const project = projectQuery.data as any;
+                const response = await fetch("/api/studio/generate-scenario", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    projectId: project.id,
+                    pedagogicalModel: project.pedagogicalModel || "professional",
+                    targetAudience: project.targetAudience,
+                    estimatedDuration: project.estimatedDuration,
+                  }),
+                });
+
+                if (!response.ok) throw new Error("Save failed");
+                scenariosQuery.refetch();
+                setShowPreview(false);
+                alert("Scénario sauvegardé avec succès !");
+              } catch (error) {
+                alert("Erreur lors de la sauvegarde");
+              } finally {
+                setIsGeneratingScenario(false);
+              }
+            }
+          }}
+          onCancel={() => setShowPreview(false)}
+          onModify={() => {
+            setShowPreview(false);
+            handleGenerateScenario();
+          }}
+        />
       </div>
     </div>
   );
