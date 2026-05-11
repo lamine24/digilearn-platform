@@ -333,11 +333,82 @@ export const getProjectDocuments = protectedProcedure
 /**
  * Studio router
  */
+/**
+ * Preview scenario generation without saving
+ */
+export const previewScenario = protectedProcedure
+  .input(
+    z.object({
+      projectId: z.number(),
+      pedagogicalModel: z.enum(['addie', 'qddie', 'bloom', 'sac', 'professional']).optional(),
+      targetAudience: z.string().optional(),
+      estimatedDuration: z.number().optional(),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    try {
+      const db = await getDb();
+      if (!db) throw new Error('Database connection failed');
+
+      // Get project documents
+      const documents = await db.select().from(studioDocuments).where(eq(studioDocuments.projectId, input.projectId));
+      const docArray = Array.isArray(documents) ? documents : [];
+      
+      const documentContext = docArray
+        .map((d: any) => `${d.filename || ''}: ${d.description || ''}`)
+        .join('\n');
+
+      const { getPedagogicalModel } = await import('../pedagogical-models');
+      const model = getPedagogicalModel(input.pedagogicalModel || 'professional');
+      const modelPrompt = generateScenarioPrompt(model, {
+        targetAudience: input.targetAudience || '',
+        estimatedDuration: input.estimatedDuration || 0,
+      });
+
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: 'system',
+            content: modelPrompt,
+          },
+          {
+            role: 'user',
+            content: `Documents:\n${documentContext || 'Aucun document fourni'}\n\nPublic cible: ${input.targetAudience || 'Non spécifié'}\nDurée estimée: ${input.estimatedDuration || 'Non spécifiée'} minutes\n\nGénère un scénario pédagogique complet structuré.`,
+          },
+        ],
+      });
+
+      const scenarioContent =
+        typeof response.choices[0]?.message?.content === 'string'
+          ? response.choices[0].message.content
+          : '';
+
+      return {
+        success: true,
+        preview: {
+          title: `Scénario ${input.pedagogicalModel?.toUpperCase() || 'PROFESSIONAL'}`,
+          description: scenarioContent,
+          learningObjectives: '',
+          contentStructure: '',
+          interactiveElements: '',
+          pedagogicalModel: input.pedagogicalModel || 'professional',
+        },
+      };
+    } catch (error) {
+      console.error('LLM scenario preview failed:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la génération de l'aperçu: ${(error as Error).message}`,
+      });
+    }
+  });
+
 export const studioRouter = router({
   createProject,
   getProject,
   listProjects,
   updateProject,
+  previewScenario,
   generateScenario,
   exportScenarioPdf,
   uploadDocument,
