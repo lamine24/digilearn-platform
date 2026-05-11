@@ -787,8 +787,9 @@ export const appRouter = router({
         const docArray = Array.isArray(documents) ? documents : [];
         
         const documentContext = docArray.map((d: any) => `${d.fileName || ""}: ${d.description || ""}`).join("\n");
-        const { getPedagogicalModelPrompt } = await import("./pedagogical-models");
-        const modelPrompt = getPedagogicalModelPrompt(input.pedagogicalModel || "professional");
+        const { getPedagogicalModel, generateScenarioPrompt } = await import("./pedagogical-models");
+        const model = getPedagogicalModel(input.pedagogicalModel || "professional");
+        const modelPrompt = generateScenarioPrompt(model, { targetAudience: input.targetAudience || "", estimatedDuration: input.estimatedDuration || 0 });
         
         const response = await invokeLLM({
           messages: [
