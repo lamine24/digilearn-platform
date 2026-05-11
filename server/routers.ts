@@ -775,10 +775,57 @@ export const appRouter = router({
       return capsule;
     }),
 
+    // Preview scenario before saving (without persisting)
+    previewScenario: formateurProcedure.input(z.object({
+      projectId: z.number(),
+      pedagogicalModel: z.enum(["addie", "bloom", "gagne", "qddie", "sac", "professional"]).optional(),
+      targetAudience: z.string().optional(),
+      estimatedDuration: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        const documents = await studioDb.getProjectDocuments(input.projectId);
+        const docArray = Array.isArray(documents) ? documents : [];
+        
+        const documentContext = docArray.map((d: any) => `${d.fileName || ""}: ${d.description || ""}`).join("\n");
+        const { getPedagogicalModelPrompt } = await import("./pedagogical-models");
+        const modelPrompt = getPedagogicalModelPrompt(input.pedagogicalModel || "professional");
+        
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: modelPrompt,
+            },
+            {
+              role: "user",
+              content: `Documents:\n${documentContext || "Aucun document fourni"}\n\nPublic cible: ${input.targetAudience || "Non spécifié"}\nDurée estimée: ${input.estimatedDuration || "Non spécifiée"} minutes\n\nGénère un scénario pédagogique complet structuré.`,
+            },
+          ],
+        });
+
+        const scenarioContent = typeof response.choices[0]?.message?.content === 'string' ? response.choices[0].message.content : "";
+
+        return {
+          success: true,
+          preview: {
+            title: `Scénario ${input.pedagogicalModel?.toUpperCase() || "PROFESSIONAL"}`,
+            description: scenarioContent,
+            learningObjectives: "",
+            contentStructure: "",
+            interactiveElements: "",
+            pedagogicalModel: input.pedagogicalModel || "professional",
+          },
+        };
+      } catch (error) {
+        console.error("LLM scenario preview failed:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la génération de l'aperçu" });
+      }
+    }),
+
     // Generate scenario using LLM
     generateScenarioWithLLM: formateurProcedure.input(z.object({
       projectId: z.number(),
-      pedagogicalModel: z.enum(["addie", "bloom", "gagne"]).optional(),
+      pedagogicalModel: z.enum(["addie", "bloom", "gagne", "qddie", "sac", "professional"]).optional(),
       targetAudience: z.string().optional(),
       estimatedDuration: z.number().optional(),
     })).mutation(async ({ ctx, input }) => {

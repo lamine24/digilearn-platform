@@ -649,3 +649,11 @@
 - [x] Tester la génération de scénarios avec le nouveau modèle
 - [x] Valider l'export PDF selon la structure professionnelle
 - [x] Créer les tests unitaires pour le nouveau modèle
+
+
+## 🔍 Prévisualisation du Scénario Généré (Nouvelle Fonctionnalité)
+- [x] Créer une procédure tRPC pour générer un aperçu sans sauvegarder
+- [x] Implémenter le composant React de prévisualisation
+- [x] Ajouter les boutons d'action (Sauvegarder, Annuler, Modifier)
+- [ ] Intégrer la prévisualisation dans StudioProject.tsx
+- [ ] Tester la prévisualisation complète

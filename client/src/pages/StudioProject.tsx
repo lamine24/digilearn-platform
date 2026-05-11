@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Upload, Zap, FileText, Trash2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ScenarioPreviewModal } from "@/components/ScenarioPreviewModal";
 import { useEffect, useState } from "react";
 
 export default function StudioProject() {
@@ -15,6 +16,9 @@ export default function StudioProject() {
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [isCreatingCapsule, setIsCreatingCapsule] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewScenario, setPreviewScenario] = useState<any>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const projectQuery = trpc.studio.getProjectBySlug.useQuery(
     { slug },
