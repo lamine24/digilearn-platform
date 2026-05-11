@@ -695,6 +695,25 @@ export const appRouter = router({
       return { success: true };
     }),
 
+    previewScenario: protectedProcedure.input(z.object({
+      projectId: z.number(),
+      pedagogicalModel: z.enum(['addie', 'qddie', 'bloom', 'sac', 'professional']).optional(),
+      targetAudience: z.string().optional(),
+      estimatedDuration: z.number().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      return {
+        success: true,
+        preview: {
+          title: `Apercu du Scenario ${(input.pedagogicalModel || 'professional').toUpperCase()}`,
+          description: `Ceci est un apercu du scenario pedagogique pour: Public cible: ${input.targetAudience || 'Non specifie'} Duree estimee: ${input.estimatedDuration || 'Non specifiee'} minutes`,
+          learningObjectives: 'Les objectifs d\'apprentissage seront generes par l\'IA',
+          contentStructure: 'La structure du contenu sera generee par l\'IA',
+          interactiveElements: 'Les elements interactifs seront generes par l\'IA',
+          pedagogicalModel: input.pedagogicalModel || 'professional',
+        },
+      };
+    }),
+
     getProjectCapsules: protectedProcedure.input(z.object({
       projectId: z.number(),
     })).query(async ({ ctx, input }) => {
