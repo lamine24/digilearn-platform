@@ -4,6 +4,7 @@ import { storagePut } from "./storage";
 import { sdk } from "./_core/sdk";
 import { invokeLLM } from "./_core/llm";
 import * as studioDb from "./studio-db";
+import { generateScenarioWithPedagogicalModel } from "./scenario-generation";
 
 // File size limits in bytes
 const FILE_SIZE_LIMITS = {
@@ -179,39 +180,36 @@ export function setupStudioRoutes(app: Express) {
         return res.status(400).json({ error: "No documents found for this project" });
       }
 
-      // Prepare document context
-      const documentContext = docArray
-        .map((d: any) => `${d.fileName || ""}: ${d.description || ""}`)
-        .join("\n");
+      // Get project details
+      const project = await studioDb.getStudioProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
 
-      // Call LLM to generate scenario
-      const response = await invokeLLM({
-        messages: [
-          {
-            role: "system",
-            content: `Tu es un expert en conception pédagogique. Génère un scénario pédagogique détaillé basé sur le modèle ${pedagogicalModel?.toUpperCase() || "ADDIE"} pour les apprenants: ${targetAudience || "tous les niveaux"}. Durée estimée: ${estimatedDuration || 60} minutes.`,
-          },
-          {
-            role: "user",
-            content: `Basé sur ces documents:\n${documentContext}\n\nGénère un scénario pédagogique structuré avec objectifs, modules, activités et évaluations.`,
-          },
-        ],
-      });
+      // Prepare documents with extracted content
+      const documentsWithContent = docArray.map((d: any) => ({
+        id: d.id,
+        fileName: d.fileName || "Document",
+        extractedContent: d.extractedContent || d.description || "",
+      }));
 
-      const scenarioContent = typeof response.choices[0]?.message?.content === "string" ? response.choices[0].message.content : "";
-
-      // Save scenario to database
-      await studioDb.createScenario({
+      // Generate scenario using pedagogical model
+      const result = await generateScenarioWithPedagogicalModel({
         projectId,
-        title: `Scénario ${pedagogicalModel?.toUpperCase() || "ADDIE"}`,
-        description: scenarioContent.substring(0, 500),
-        generatedBy: "manual",
+        projectTitle: project.title,
+        pedagogicalModel: pedagogicalModel || "addie",
+        targetAudience: targetAudience || project.targetAudience || "Tous les niveaux",
+        estimatedDuration: estimatedDuration || project.estimatedDuration || 60,
+        documents: documentsWithContent,
+        language: project.language || "fr",
       });
 
       res.json({
-        success: true,
-        scenario: scenarioContent,
-        message: "Scénario généré avec succès",
+        success: result.success,
+        scenario: result.scenario,
+        title: result.title,
+        model: result.model,
+        message: result.message,
       });
     } catch (error) {
       console.error("Scenario generation failed:", error);
