@@ -1,0 +1,79 @@
+{
+  "query": "SHOW CREATE TABLE studio_scenarios\\G",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute SHOW CREATE TABLE studio_scenarios\\G",
+  "rows": [
+    {
+      "*************************** 1. row ***************************": "       Table: studio_scenarios"
+    },
+    {
+      "*************************** 1. row ***************************": "Create Table: CREATE TABLE `studio_scenarios` ("
+    },
+    {
+      "*************************** 1. row ***************************": "  `id` int NOT NULL AUTO_INCREMENT,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `projectId` int NOT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `documentId` int DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `title` varchar(255) NOT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `description` text DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `learningObjectives` json DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `contentStructure` json DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `interactiveElements` json DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `generatedBy` enum('mistral','claude','manual') DEFAULT 'mistral',"
+    },
+    {
+      "*************************** 1. row ***************************": "  `generationStatus` enum('pending','processing','completed','failed') DEFAULT 'pending',"
+    },
+    {
+      "*************************** 1. row ***************************": "  `generatedAt` timestamp NULL DEFAULT NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,"
+    },
+    {
+      "*************************** 1. row ***************************": "  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+    },
+    {
+      "*************************** 1. row ***************************": "  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,"
+    },
+    {
+      "*************************** 1. row ***************************": "  KEY `projectId` (`projectId`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  KEY `generationStatus` (`generationStatus`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  KEY `fk_2` (`documentId`),"
+    },
+    {
+      "*************************** 1. row ***************************": "  CONSTRAINT `fk_1` FOREIGN KEY (`projectId`) REFERENCES `studio_projects` (`id`) ON DELETE CASCADE,"
+    },
+    {
+      "*************************** 1. row ***************************": "  CONSTRAINT `fk_2` FOREIGN KEY (`documentId`) REFERENCES `studio_documents` (`id`) ON DELETE SET NULL,"
+    },
+    {
+      "*************************** 1. row ***************************": "  CONSTRAINT `studio_scenarios_projectId_studio_projects_id_fk` FOREIGN KEY (`projectId`) REFERENCES `studio_projects` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION"
+    },
+    {
+      "*************************** 1. row ***************************": ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=150001"
+    }
+  ],
+  "messages": [],
+  "stdout": "*************************** 1. row ***************************\n       Table: studio_scenarios\nCreate Table: CREATE TABLE `studio_scenarios` (\n  `id` int NOT NULL AUTO_INCREMENT,\n  `projectId` int NOT NULL,\n  `documentId` int DEFAULT NULL,\n  `title` varchar(255) NOT NULL,\n  `description` text DEFAULT NULL,\n  `learningObjectives` json DEFAULT NULL,\n  `contentStructure` json DEFAULT NULL,\n  `interactiveElements` json DEFAULT NULL,\n  `generatedBy` enum('mistral','claude','manual') DEFAULT 'mistral',\n  `generationStatus` enum('pending','processing','completed','failed') DEFAULT 'pending',\n  `generatedAt` timestamp NULL DEFAULT NULL,\n  `createdAt` timestamp DEFAULT CURRENT_TIMESTAMP,\n  `updatedAt` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,\n  KEY `projectId` (`projectId`),\n  KEY `generationStatus` (`generationStatus`),\n  KEY `fk_2` (`documentId`),\n  CONSTRAINT `fk_1` FOREIGN KEY (`projectId`) REFERENCES `studio_projects` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_2` FOREIGN KEY (`documentId`) REFERENCES `studio_documents` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `studio_scenarios_projectId_studio_projects_id_fk` FOREIGN KEY (`projectId`) REFERENCES `studio_projects` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin AUTO_INCREMENT=150001\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}
