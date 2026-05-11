@@ -6,7 +6,9 @@ import {
   studioProjects, studioDocuments, studioScenarios, InsertStudioProject, InsertStudioDocument, InsertStudioScenario
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
-import { eq, and, desc, asc, or, like } from 'drizzle-orm';
+import { eq, and, desc, asc, or, like, sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/mysql2';
+
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -205,4 +207,47 @@ export async function listStudioScenarios(projectId: number) {
   return db.select().from(studioScenarios)
     .where(eq(studioScenarios.projectId, projectId))
     .orderBy(desc(studioScenarios.generatedAt));
+}
+
+
+// ─── Premium Subscription ────────────────────────────────────────
+export async function getPremiumSubscriptionStatus(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  try {
+    const result = await db.execute(
+      sql`SELECT * FROM premium_subscriptions WHERE userId = ${userId} AND status = 'active' ORDER BY endDate DESC LIMIT 1`
+    );
+    
+    // Handle different result formats from MySQL/TiDB
+    let rows: any[] = [];
+    if (Array.isArray(result) && result.length === 2 && Array.isArray(result[0])) {
+      rows = result[0];
+    } else if (Array.isArray(result)) {
+      rows = result;
+    } else if (result && typeof result === 'object' && Array.isArray(result.rows)) {
+      rows = result.rows;
+    }
+    
+    if (rows.length === 0) return null;
+    
+    const subscription = rows[0];
+    const endDate = subscription.endDate ? new Date(subscription.endDate) : null;
+    const isActive = endDate ? endDate > new Date() : false;
+    const daysRemaining = endDate ? Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    
+    return {
+      id: subscription.id,
+      userId: subscription.userId,
+      status: subscription.status,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      isActive,
+      daysRemaining: Math.max(0, daysRemaining),
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get premium subscription status:", error);
+    return null;
+  }
 }
