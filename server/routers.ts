@@ -2,8 +2,8 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import * as db from "./db";
 import { initiatePaytechPayment } from "./paytech";
 import { invokeLLM } from "./_core/llm";
@@ -701,17 +701,22 @@ export const appRouter = router({
       targetAudience: z.string().optional(),
       estimatedDuration: z.number().optional(),
     })).mutation(async ({ ctx, input }) => {
-      return {
-        success: true,
-        preview: {
+      try {
+        return {
           title: `Apercu du Scenario ${(input.pedagogicalModel || 'professional').toUpperCase()}`,
           description: `Ceci est un apercu du scenario pedagogique pour: Public cible: ${input.targetAudience || 'Non specifie'} Duree estimee: ${input.estimatedDuration || 'Non specifiee'} minutes`,
           learningObjectives: 'Les objectifs d\'apprentissage seront generes par l\'IA',
           contentStructure: 'La structure du contenu sera generee par l\'IA',
           interactiveElements: 'Les elements interactifs seront generes par l\'IA',
           pedagogicalModel: input.pedagogicalModel || 'professional',
-        },
-      };
+        };
+      } catch (error) {
+        console.error('Preview generation error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Erreur lors de la generation de l\'apercu',
+        });
+      }
     }),
 
     updateScenarioContent: protectedProcedure.input(z.object({
