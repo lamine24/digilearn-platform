@@ -14,6 +14,7 @@ import { premiumResourcesRouter } from "./premium-resources-router";
 import * as subscriptionDb from "./subscription-db";
 import * as studioDb from "./studio-db";
 import { studioCapsuleDb } from "./studio-capsule-db";
+import { studioRouter } from "./routers/studio";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Accès réservé aux administrateurs" });
@@ -27,6 +28,7 @@ const formateurProcedure = protectedProcedure.use(({ ctx, next }) => {
 
 export const appRouter = router({
   system: systemRouter,
+  studio: studioRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -349,8 +351,7 @@ export const appRouter = router({
     stats: formateurProcedure.query(({ ctx }) => db.getFormateurStats(ctx.user.id)),
   }),
 
-  admin: router({
-    stats: adminProcedure.query(() => db.getAdminStats()),
+  premium: router({   stats: adminProcedure.query(() => db.getAdminStats()),
     recentEnrollments: adminProcedure.query(() => db.getRecentEnrollments(20)),
     users: adminProcedure.query(() => db.getAllUsers()),
     updateUserRole: adminProcedure.input(z.object({
@@ -443,11 +444,10 @@ export const appRouter = router({
       moduleId: z.number(), question: z.string(), options: z.string(),
       correctAnswer: z.number(), explanation: z.string().optional(), sortOrder: z.number().default(0),
     })).mutation(async ({ input }) => ({ id: await db.createQuizQuestion(input) })),
-  }),
-
-  search: searchRouter,
+  }),  search: searchRouter,
   freeResources: freeResourcesRouter,
   premiumResources: premiumResourcesRouter,
+  premium: router({
 
   premium: router({
     getStatus: protectedProcedure.query(async ({ ctx }) => {
@@ -911,6 +911,8 @@ export const appRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erreur lors de la génération" });
       }
     }),
+
+  }),
 
     // Create capsule video
     createCapsuleVideo: formateurProcedure.input(z.object({
