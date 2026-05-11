@@ -144,7 +144,9 @@ export default function StudioProject() {
       });
 
       if (!response.ok) {
-        throw new Error("Scenario generation failed");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.details || errorData.error || "Scenario generation failed";
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -156,7 +158,8 @@ export default function StudioProject() {
       alert("Scénario généré avec succès !");
     } catch (error) {
       console.error("Scenario generation failed:", error);
-      alert("Erreur lors de la génération du scénario");
+      const errorMessage = (error as Error).message || "Erreur lors de la génération du scénario";
+      alert(`Erreur: ${errorMessage}\n\nLe système va réessayer automatiquement...`);
     } finally {
       setIsGeneratingScenario(false);
     }

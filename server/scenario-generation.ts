@@ -88,12 +88,19 @@ export async function generateScenarioWithPedagogicalModel(
       context
     );
 
-    // Call LLM to generate scenario
+    // Call LLM to generate scenario with retry logic
     console.log(
       `[Scenario Generation] Generating scenario for model: ${input.pedagogicalModel}`
     );
 
-    const response = await invokeLLM({
+    let response;
+    let lastError: any;
+    const maxRetries = 3;
+    const retryDelayMs = 2000;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        response = await invokeLLM({
       messages: [
         {
           role: "system",
@@ -106,12 +113,34 @@ export async function generateScenarioWithPedagogicalModel(
       ],
     });
 
+        break; // Success, exit retry loop
+      } catch (error) {
+        lastError = error;
+        console.warn(
+          `[Scenario Generation] Attempt ${attempt}/${maxRetries} failed:`,
+          (error as Error).message
+        );
+        if (attempt < maxRetries) {
+          console.log(
+            `[Scenario Generation] Retrying in ${retryDelayMs}ms...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+        }
+      }
+    }
+
+    if (!response) {
+      throw new Error(
+        `Failed to generate scenario after ${maxRetries} attempts: ${(lastError as Error).message}`
+      );
+    }
+
     const scenarioContent =
       typeof response.choices[0]?.message?.content === "string"
         ? response.choices[0].message?.content
         : "";
 
-    if (!scenarioContent) {
+    if (!scenarioContent || scenarioContent.trim().length === 0) {
       throw new Error("No scenario content generated from LLM");
     }
 
