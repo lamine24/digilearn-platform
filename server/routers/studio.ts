@@ -67,13 +67,13 @@ export const getProject = protectedProcedure
     const db = await getDb();
     if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
 
-    const project = await db.query.studioProjects.findFirst({
-      where: and(eq(studioProjects.id, input.projectId), eq(studioProjects.userId, ctx.user.id)),
-    });
+    const result = await db.select().from(studioProjects)
+      .where(and(eq(studioProjects.id, input.projectId), eq(studioProjects.userId, ctx.user.id)))
+      .limit(1);
 
-    if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+    if (result.length === 0) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
 
-    return project;
+    return result[0];
   });
 
 /**
@@ -85,13 +85,13 @@ export const getProjectBySlug = protectedProcedure
     const db = await getDb();
     if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
 
-    const project = await db.query.studioProjects.findFirst({
-      where: and(eq(studioProjects.slug, input.slug), eq(studioProjects.userId, ctx.user.id)),
-    });
+    const result = await db.select().from(studioProjects)
+      .where(and(eq(studioProjects.slug, input.slug), eq(studioProjects.userId, ctx.user.id)))
+      .limit(1);
 
-    if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+    if (result.length === 0) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
 
-    return project;
+    return result[0];
   });
 
 /**
