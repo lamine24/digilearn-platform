@@ -1,6 +1,7 @@
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 // @ts-ignore
 import { convert } from 'html-to-text';
+import PDFDocument from 'pdfkit';
 
 interface ScenarioExportData {
   title: string;
@@ -129,122 +130,79 @@ export async function exportScenarioToWord(data: ScenarioExportData): Promise<Bu
 }
 
 /**
- * Export scenario to PDF format using html-pdf-node
+ * Export scenario to PDF format using pdfkit
  */
 export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffer> {
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>${data.title}</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            margin: 20px;
-          }
-          h1 {
-            color: #0066cc;
-            border-bottom: 2px solid #0066cc;
-            padding-bottom: 10px;
-          }
-          h2 {
-            color: #0066cc;
-            margin-top: 20px;
-          }
-          h3 {
-            color: #666;
-            margin-top: 15px;
-          }
-          .metadata {
-            background-color: #f5f5f5;
-            padding: 10px;
-            border-left: 4px solid #0066cc;
-            margin: 15px 0;
-            font-style: italic;
-          }
-          .content {
-            margin-top: 20px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-          }
-          strong {
-            font-weight: bold;
-          }
-          em {
-            font-style: italic;
-          }
-          blockquote {
-            border-left: 4px solid #ccc;
-            margin-left: 0;
-            padding-left: 15px;
-            color: #666;
-          }
-          code {
-            background-color: #f4f4f4;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-          }
-          pre {
-            background-color: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-          }
-          pre code {
-            background-color: transparent;
-            padding: 0;
-          }
-          ul, ol {
-            margin: 10px 0;
-            padding-left: 30px;
-          }
-          li {
-            margin: 5px 0;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>${data.projectTitle}</h1>
-        <h2>${data.title}</h2>
-        
-        <div class="metadata">
-          <p><strong>Modèle pédagogique:</strong> ${data.pedagogicalModel}</p>
-          <p><strong>Durée estimée:</strong> ${data.estimatedDuration} minutes</p>
-          <p><strong>Créé le:</strong> ${new Date(data.createdAt).toLocaleDateString('fr-FR')}</p>
-        </div>
-        
-        <h3>Contenu du scénario</h3>
-        <div class="content">
-          ${data.description}
-        </div>
-      </body>
-    </html>
-  `;
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50,
+      });
 
-  try {
-    // Use html-pdf-node to convert HTML to PDF
-    // @ts-ignore
-    const { generatePdf } = await import('html-pdf-node');
-    
-    const options = {
-      format: 'A4',
-      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
-      printBackground: true,
-    };
-    
-    const file = { content: html };
-    // generatePdf returns a buffer directly
-    const buffer = await generatePdf(file, options);
-    return buffer;
-  } catch (error) {
-    console.error('PDF conversion error:', error);
-    // Fallback: return HTML as buffer if PDF conversion fails
-    return Buffer.from(html, 'utf-8');
-  }
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
+      });
+
+      doc.on('end', () => {
+        resolve(Buffer.concat(chunks));
+      });
+
+      doc.on('error', (err: Error) => {
+        reject(err);
+      });
+
+      // Title
+      doc.fontSize(24).font('Helvetica-Bold').text(data.projectTitle, {
+        align: 'center',
+        underline: true,
+      });
+
+      doc.moveDown(0.5);
+
+      // Subtitle
+      doc.fontSize(16).font('Helvetica-Bold').text(data.title, {
+        align: 'center',
+      });
+
+      doc.moveDown(1);
+
+      // Metadata box
+      doc.fontSize(10).font('Helvetica');
+      doc.rect(50, doc.y, 495, 80).stroke();
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+
+      doc.text(`Modèle pédagogique: ${data.pedagogicalModel}`, 60, doc.y + 5);
+      doc.text(`Durée estimée: ${data.estimatedDuration} minutes`);
+      doc.text(
+        `Créé le: ${new Date(data.createdAt).toLocaleDateString('fr-FR')}`
+      );
+
+      doc.moveDown(1);
+
+      // Content heading
+      doc.fontSize(12).font('Helvetica-Bold').text('Contenu du scénario');
+      doc.moveDown(0.5);
+
+      // Content
+      doc.fontSize(10).font('Helvetica');
+      
+      // Convert HTML to plain text and wrap it
+      const plainText = htmlToPlainText(data.description);
+      doc.text(plainText, {
+        align: 'left',
+        width: 495,
+        height: 500,
+      });
+
+      // End the document
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 /**
@@ -260,7 +218,7 @@ export function generateExportFilename(
     .replace(/^-+|-+$/g, '');
 
   const timestamp = new Date().toISOString().split('T')[0];
-  const ext = format === 'pdf' ? 'pdf' : 'docx';
+  const extension = format === 'pdf' ? 'pdf' : 'docx';
 
-  return `scenario-${sanitized}-${timestamp}.${ext}`;
+  return `scenario-${sanitized}-${timestamp}.${extension}`;
 }
