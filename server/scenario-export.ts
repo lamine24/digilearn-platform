@@ -129,7 +129,7 @@ export async function exportScenarioToWord(data: ScenarioExportData): Promise<Bu
 }
 
 /**
- * Export scenario to PDF format using html2pdf
+ * Export scenario to PDF format using html-pdf-node
  */
 export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffer> {
   const html = `
@@ -167,6 +167,8 @@ export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffe
           }
           .content {
             margin-top: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
           }
           strong {
             font-weight: bold;
@@ -223,10 +225,24 @@ export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffe
     </html>
   `;
 
-  // For now, we'll return a placeholder buffer
-  // In production, you'd use a library like puppeteer or pdfkit
-  // This is a simplified implementation
-  return Buffer.from(html, 'utf-8');
+  try {
+    // Use html-pdf-node to convert HTML to PDF
+    // @ts-ignore
+    const HtmlPdfConverter = await import('html-pdf-node');
+    
+    const options = {
+      format: 'A4',
+      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' },
+    };
+    
+    const file = { content: html };
+    const buffer = await (HtmlPdfConverter as any).default.convert(options, file);
+    return buffer;
+  } catch (error) {
+    console.error('PDF conversion error:', error);
+    // Fallback: return HTML as buffer if PDF conversion fails
+    return Buffer.from(html, 'utf-8');
+  }
 }
 
 /**
