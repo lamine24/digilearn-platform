@@ -101,10 +101,23 @@ export const listProjects = protectedProcedure.query(async ({ ctx }) => {
   const db = await getDb();
   if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
 
-  const projects = await db.query.studioProjects.findMany({
-    where: eq(studioProjects.userId, ctx.user.id),
-    orderBy: (projects, { desc }) => [desc(projects.createdAt)],
-  });
+  const projects = await db.select().from(studioProjects)
+    .where(eq(studioProjects.userId, ctx.user.id))
+    .orderBy(desc(studioProjects.createdAt));
+
+  return projects;
+});
+
+/**
+ * Get all studio projects for the current user (alias for listProjects)
+ */
+export const getUserProjects = protectedProcedure.query(async ({ ctx }) => {
+  const db = await getDb();
+  if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+  const projects = await db.select().from(studioProjects)
+    .where(eq(studioProjects.userId, ctx.user.id))
+    .orderBy(desc(studioProjects.createdAt));
 
   return projects;
 });
@@ -344,6 +357,7 @@ export const studioRouter = router({
   getProject,
   getProjectBySlug,
   listProjects,
+  getUserProjects,
   updateProject,
   previewScenario,
   generateScenario,
