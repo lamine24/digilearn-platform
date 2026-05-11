@@ -121,9 +121,11 @@ export default function StudioDashboard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="addie">ADDIE</SelectItem>
-                      <SelectItem value="bloom">Bloom</SelectItem>
-                      <SelectItem value="gagne">Gagné</SelectItem>
+                      <SelectItem value="addie">ADDIE - Analyse, Conception, Développement, Implémentation, Évaluation</SelectItem>
+                      <SelectItem value="qddie">QDDIE - ADDIE avec phase de Questionnement</SelectItem>
+                      <SelectItem value="bloom">Bloom - Taxonomie cognitive (6 niveaux)</SelectItem>
+                      <SelectItem value="sac">SAC - Approche Socio-Constructiviste</SelectItem>
+                      <SelectItem value="professional">Modèle Professionnel - Structure institutionnelle complète</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

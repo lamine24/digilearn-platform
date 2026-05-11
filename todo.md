@@ -636,3 +636,16 @@
 - [x] Intégrer le job au démarrage du serveur
 - [x] Ajouter le refresh automatique du statut dans l'interface (polling automatique via React Query)
 - [x] Tester l'extraction avec différents formats de fichiers (PDF, DOCX, PPTX, TXT)
+
+
+## 🎓 Adoption du Modèle Professionnel de Scénarisation (Nouvelle Session)
+- [ ] Analyser la structure du modèle Modele_Scenarise_.docx
+- [ ] Créer un nouveau modèle pédagogique PROFESSIONAL_TEMPLATE dans pedagogical-models.ts
+- [ ] Ajouter les champs de métadonnées au schéma Drizzle (author, institution, moduleTitle, etc.)
+- [ ] Générer la migration SQL pour les nouveaux champs
+- [ ] Adapter les prompts LLM pour générer la structure complète du modèle
+- [ ] Mettre à jour scenario-export.ts pour respecter la mise en page professionnelle
+- [ ] Ajouter les champs de métadonnées au formulaire de création de projet
+- [ ] Tester la génération de scénarios avec le nouveau modèle
+- [ ] Valider l'export PDF selon la structure professionnelle
+- [ ] Créer les tests unitaires pour le nouveau modèle

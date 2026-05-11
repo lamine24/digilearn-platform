@@ -368,3 +368,67 @@ export const userDashboardStats = mysqlTable("user_dashboard_stats", {
 
 export type UserDashboardStats = typeof userDashboardStats.$inferSelect;
 export type InsertUserDashboardStats = typeof userDashboardStats.$inferInsert;
+
+
+// ─── Studio Projects ────────────────────────────────────────────
+export const studioProjects = mysqlTable("studio_projects", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().references(() => users.id),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  slug: varchar("slug", { length: 500 }).notNull().unique(),
+  pedagogicalModel: mysqlEnum("pedagogicalModel", ["addie", "qddie", "bloom", "sac", "professional"]).default("addie").notNull(),
+  status: mysqlEnum("status", ["draft", "in_progress", "completed", "archived"]).default("draft").notNull(),
+  targetAudience: varchar("targetAudience", { length: 255 }),
+  estimatedDuration: int("estimatedDuration"), // in minutes
+  language: varchar("language", { length: 10 }).default("fr").notNull(),
+  // Professional template metadata
+  author: varchar("author", { length: 255 }),
+  institution: varchar("institution", { length: 255 }),
+  credits: int("credits"),
+  prerequisites: text("prerequisites"),
+  generalObjective: text("generalObjective"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudioProject = typeof studioProjects.$inferSelect;
+export type InsertStudioProject = typeof studioProjects.$inferInsert;
+
+// ─── Studio Documents ───────────────────────────────────────────
+export const studioDocuments = mysqlTable("studio_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull().references(() => studioProjects.id),
+  filename: varchar("filename", { length: 500 }).notNull(),
+  fileUrl: text("fileUrl").notNull(),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  fileSize: int("fileSize"), // in bytes
+  mimeType: varchar("mimeType", { length: 100 }),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending").notNull(),
+  extractedContent: text("extractedContent"),
+  errorMessage: text("errorMessage"),
+  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudioDocument = typeof studioDocuments.$inferSelect;
+export type InsertStudioDocument = typeof studioDocuments.$inferInsert;
+
+// ─── Studio Scenarios ───────────────────────────────────────────
+export const studioScenarios = mysqlTable("studio_scenarios", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull().references(() => studioProjects.id),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  pedagogicalModel: mysqlEnum("pedagogicalModel", ["addie", "qddie", "bloom", "sac", "professional"]).default("addie").notNull(),
+  status: mysqlEnum("status", ["draft", "generated", "approved", "published"]).default("draft").notNull(),
+  generatedAt: timestamp("generatedAt"),
+  approvedAt: timestamp("approvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudioScenario = typeof studioScenarios.$inferSelect;
+export type InsertStudioScenario = typeof studioScenarios.$inferInsert;

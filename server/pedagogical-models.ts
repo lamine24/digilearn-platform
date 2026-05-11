@@ -15,6 +15,11 @@ export interface ScenarioContext {
   estimatedDuration: number;
   documentContent: string;
   language: string;
+  author?: string;
+  institution?: string;
+  credits?: number;
+  prerequisites?: string;
+  generalObjective?: string;
 }
 
 /**
@@ -255,6 +260,84 @@ Génère un scénario pédagogique complet suivant l'approche SAC.
 };
 
 /**
+ * Professional Template Model (Modèle Professionnel de Scénarisation)
+ * Based on Modele_Scenarise_.docx structure
+ */
+export const professionalTemplateModel: PedagogicalModelTemplate = {
+  name: "Professional Template",
+  description: "Modèle Professionnel de Scénarisation - Structure académique et professionnelle",
+  phases: ["Module Identification", "Course Scenarization", "Sequences", "Final Evaluation"],
+  prompt: (context: ScenarioContext) => `
+Tu es un expert en conception pédagogique et en scénarisation de modules de formation professionnelle.
+
+CONTEXTE DU MODULE:
+- Titre: ${context.projectTitle}
+- Auteur: ${context.author || "[À remplir]"}
+- Institution: ${context.institution || "[À remplir]"}
+- Public cible: ${context.targetAudience}
+- Crédits: ${context.credits || "[À déterminer]"}
+- Durée totale: ${Math.ceil(context.estimatedDuration / 60)} heures
+- Prérequis: ${context.prerequisites || "Aucun"}
+- Contenu source:
+${context.documentContent}
+
+TÂCHE: Générer un syllabus scénarisé professionnel complet suivant EXACTEMENT cette structure:
+
+## SECTION 1: IDENTIFICATION DU MODULE
+
+Génère un tableau d'identification avec les champs suivants:
+- Auteur: ${context.author || "[À remplir]"}
+- Institution: ${context.institution || "[À remplir]"}
+- Intitulé du module: ${context.projectTitle}
+- Unité d'Enseignement: [À déterminer basé sur le contenu]
+- Niveau / Cycle: [À déterminer: L1, L2, L3, M1, M2]
+- Équivalence en crédits: ${context.credits || "[À remplir]"}
+- Volume horaire total: ${Math.ceil(context.estimatedDuration / 60)} heures
+- Pré-requis: ${context.prerequisites || "Aucun"}
+- Objectif général du cours: [Générer un objectif clair et mesurable]
+- Objectifs spécifiques: [Générer 3-5 objectifs spécifiques SMART]
+- Résumé du cours: [Générer un résumé de 100-150 mots]
+- Ouvrages bibliographiques: [Identifier 3-5 références pertinentes]
+
+## SECTION 2: SCÉNARISATION DU COURS
+
+Génère 3-5 séquences pédagogiques avec cette structure pour CHAQUE séquence:
+
+### Séquence N – Chapitre N : [Titre]
+Durée: Une (01) semaine | Contact direct: 2h | Travail personnel estimé: 3h
+
+**Objectifs spécifiques de la séquence:**
+I. [Titre] - [Description détaillée]
+II. [Titre] - [Description détaillée]
+III. [Titre] - [Description détaillée]
+
+**Ressources numériques:**
+[Lister les ressources disponibles]
+
+**Ressources complémentaires:**
+(Capsules audio/vidéo, liens Cyberlibris, webographie, bibliographie ciblée)
+[Lister les ressources complémentaires]
+
+**Tests de connaissances – Chapitre N:**
+[Générer 2-3 questions d'évaluation formative]
+
+---
+
+### Séance 10 – Évaluation finale et bilan du module
+Cette séance est consacrée à l'examen de fin de module et à la restitution des projets. Elle inclut un bilan collectif et individuel des apprentissages réalisés au cours du semestre.
+
+TH = TOTAL HEURE | H au total = Volume total
+
+IMPORTANT:
+- Respecte STRICTEMENT cette structure
+- Génère du contenu spécifique basé sur le document source
+- Assure la cohérence entre les objectifs et le contenu
+- Utilise un langage académique et professionnel
+- Inclus des évaluations formatives pour chaque séquence
+`,
+};
+
+/**
  * Get pedagogical model template by name
  */
 export function getPedagogicalModel(modelName: string): PedagogicalModelTemplate {
@@ -263,6 +346,7 @@ export function getPedagogicalModel(modelName: string): PedagogicalModelTemplate
     qddie: qaddieModel,
     bloom: bloomModel,
     sac: sacModel,
+    professional: professionalTemplateModel,
   };
 
   return models[modelName.toLowerCase()] || addieModel;
@@ -272,7 +356,7 @@ export function getPedagogicalModel(modelName: string): PedagogicalModelTemplate
  * Get all available pedagogical models
  */
 export function getAllPedagogicalModels(): PedagogicalModelTemplate[] {
-  return [addieModel, qaddieModel, bloomModel, sacModel];
+  return [addieModel, qaddieModel, bloomModel, sacModel, professionalTemplateModel];
 }
 
 /**

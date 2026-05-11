@@ -38,7 +38,7 @@ export async function createStudioProject(data: {
   title: string;
   description?: string;
   slug: string;
-  pedagogicalModel?: "bloom" | "addie" | "gagne";
+  pedagogicalModel?: "bloom" | "addie" | "gagne" | "qddie" | "sac" | "professional";
   targetAudience?: string;
   estimatedDuration?: number;
   language?: string;

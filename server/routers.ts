@@ -587,7 +587,7 @@ export const appRouter = router({
     createProject: protectedProcedure.input(z.object({
       title: z.string(),
       description: z.string().optional(),
-      pedagogicalModel: z.enum(["bloom", "addie", "gagne"]).optional(),
+      pedagogicalModel: z.enum(["bloom", "addie", "gagne", "qddie", "sac", "professional"]).optional(),
       targetAudience: z.string().optional(),
       estimatedDuration: z.number().optional(),
     })).mutation(async ({ ctx, input }) => {

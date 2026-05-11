@@ -43,6 +43,13 @@
       "when": 1777818370105,
       "tag": "0005_groovy_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1778498205405,
+      "tag": "0006_real_the_santerians",
+      "breakpoints": true
     }
   ]
 }
