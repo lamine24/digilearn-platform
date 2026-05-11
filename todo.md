@@ -639,13 +639,13 @@
 
 
 ## 🎓 Adoption du Modèle Professionnel de Scénarisation (Nouvelle Session)
-- [ ] Analyser la structure du modèle Modele_Scenarise_.docx
-- [ ] Créer un nouveau modèle pédagogique PROFESSIONAL_TEMPLATE dans pedagogical-models.ts
-- [ ] Ajouter les champs de métadonnées au schéma Drizzle (author, institution, moduleTitle, etc.)
-- [ ] Générer la migration SQL pour les nouveaux champs
-- [ ] Adapter les prompts LLM pour générer la structure complète du modèle
-- [ ] Mettre à jour scenario-export.ts pour respecter la mise en page professionnelle
-- [ ] Ajouter les champs de métadonnées au formulaire de création de projet
-- [ ] Tester la génération de scénarios avec le nouveau modèle
-- [ ] Valider l'export PDF selon la structure professionnelle
+- [x] Analyser la structure du modèle Modele_Scenarise_.docx
+- [x] Créer un nouveau modèle pédagogique PROFESSIONAL_TEMPLATE dans pedagogical-models.ts
+- [x] Ajouter les champs de métadonnées au schéma Drizzle (author, institution, moduleTitle, etc.)
+- [x] Générer la migration SQL pour les nouveaux champs
+- [x] Adapter les prompts LLM pour générer la structure complète du modèle
+- [x] Mettre à jour scenario-export.ts pour respecter la mise en page professionnelle
+- [x] Ajouter les champs de métadonnées au formulaire de création de projet
+- [x] Tester la génération de scénarios avec le nouveau modèle
+- [x] Valider l'export PDF selon la structure professionnelle
 - [ ] Créer les tests unitaires pour le nouveau modèle
