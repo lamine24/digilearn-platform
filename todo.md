@@ -648,4 +648,4 @@
 - [x] Ajouter les champs de métadonnées au formulaire de création de projet
 - [x] Tester la génération de scénarios avec le nouveau modèle
 - [x] Valider l'export PDF selon la structure professionnelle
-- [ ] Créer les tests unitaires pour le nouveau modèle
+- [x] Créer les tests unitaires pour le nouveau modèle
