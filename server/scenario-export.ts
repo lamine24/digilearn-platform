@@ -194,8 +194,19 @@ export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffe
       doc.text(plainText, {
         align: 'left',
         width: 495,
-        height: 500,
       });
+
+      // Add footer with page numbers
+      const pageCount = doc.bufferedPageRange().count;
+      for (let i = 1; i <= pageCount; i++) {
+        doc.switchToPage(i - 1);
+        doc.fontSize(8).text(
+          `Page ${i} / ${pageCount}`,
+          50,
+          doc.page.height - 30,
+          { align: 'center' }
+        );
+      }
 
       // End the document
       doc.end();
