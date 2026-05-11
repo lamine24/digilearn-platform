@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as pdfParse from "pdf-parse";
+import JSZip from "jszip";
 
 /**
  * Extract text content from a document based on its file type
@@ -62,7 +63,6 @@ async function extractDocxContent(buffer: Buffer): Promise<string> {
     // For DOCX, we need to use a different approach
     // DOCX files are ZIP archives containing XML files
     // We'll use a simple approach to extract text from the document.xml
-    const JSZip = require("jszip");
     const zip = new JSZip();
     await zip.loadAsync(buffer);
 
@@ -96,7 +96,6 @@ async function extractDocxContent(buffer: Buffer): Promise<string> {
 async function extractPptxContent(buffer: Buffer): Promise<string> {
   try {
     // PPTX files are also ZIP archives
-    const JSZip = require("jszip");
     const zip = new JSZip();
     await zip.loadAsync(buffer);
 
