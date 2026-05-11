@@ -6,7 +6,7 @@ import { router, protectedProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getDb } from '../db';
 import { studioProjects, studioDocuments, studioScenarios } from '../../drizzle/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { invokeLLM } from '../_core/llm';
 import { storagePut } from '../storage';
 import { generateScenarioPrompt } from '../pedagogical-models';
@@ -213,10 +213,11 @@ export const exportScenarioPdf = protectedProcedure
       const db = await getDb();
       if (!db) throw new Error('Database connection failed');
 
-      const scenario = await db.query.studioScenarios.findFirst({
-        where: eq(studioScenarios.id, input.scenarioId),
-      });
+      const result = await db.select().from(studioScenarios)
+        .where(eq(studioScenarios.id, input.scenarioId))
+        .limit(1);
 
+      const scenario = result[0];
       if (!scenario) throw new Error('Scenario not found');
 
       const pdfBuffer = await exportProfessionalScenarioPdf(scenario);
@@ -271,11 +272,36 @@ export const getProjectDocuments = protectedProcedure
     const db = await getDb();
     if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
 
-    const documents = await db.query.studioDocuments.findMany({
-      where: eq(studioDocuments.projectId, input.projectId),
-    });
+    const documents = await db.select().from(studioDocuments)
+      .where(eq(studioDocuments.projectId, input.projectId));
 
     return documents;
+  });
+
+/**
+ * Get project scenarios
+ */
+export const getProjectScenarios = protectedProcedure
+  .input(z.object({ projectId: z.number() }))
+  .query(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+    const scenarios = await db.select().from(studioScenarios)
+      .where(eq(studioScenarios.projectId, input.projectId));
+
+    return scenarios;
+  });
+
+/**
+ * Get project capsules (video content)
+ */
+export const getProjectCapsules = protectedProcedure
+  .input(z.object({ projectId: z.number() }))
+  .query(async ({ ctx, input }) => {
+    // For now, return empty array as capsules table doesn't exist yet
+    // This can be extended when video capsule feature is implemented
+    return [];
   });
 
 /**
@@ -324,4 +350,6 @@ export const studioRouter = router({
   exportScenarioPdf,
   uploadDocument,
   getProjectDocuments,
+  getProjectScenarios,
+  getProjectCapsules,
 });
