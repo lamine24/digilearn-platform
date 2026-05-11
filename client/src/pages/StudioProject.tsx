@@ -669,35 +669,51 @@ export default function StudioProject() {
               <CardContent>
                 <div className="space-y-2">
                   {documentsQuery.data.map((doc: any) => (
-                    <div
-                      key={doc.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
-                    >
-                      <div className="flex items-center flex-1">
-                        <FileText className="h-4 w-4 text-blue-600 mr-3" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {doc.fileName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(doc.fileSize / 1024).toFixed(2)} KB • {doc.fileType.toUpperCase()}
-                          </p>
+                    <div key={doc.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition">
+                        <div className="flex items-center flex-1">
+                          <FileText className="h-4 w-4 text-blue-600 mr-3" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {doc.fileName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(doc.fileSize / 1024).toFixed(2)} KB • {doc.fileType.toUpperCase()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-2">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            doc.extractionStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                            doc.extractionStatus === 'failed' ? 'bg-red-100 text-red-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {doc.extractionStatus || "pending"}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteDocument(doc.id, doc.fileName)}
+                            disabled={deleteDocumentMutation.isPending}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-2">
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {doc.extractionStatus || "pending"}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteDocument(doc.id, doc.fileName)}
-                          disabled={deleteDocumentMutation.isPending}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {doc.extractedContent && doc.extractionStatus === 'completed' && (
+                        <div className="p-4 bg-white border-t border-gray-200">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">Contenu Extrait (Scénarisation):</p>
+                          <div className="bg-gray-50 p-3 rounded border border-gray-200 max-h-64 overflow-y-auto">
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
+                              {doc.extractedContent.substring(0, 1000)}
+                              {doc.extractedContent.length > 1000 && (
+                                <span className="text-gray-500">... [+{doc.extractedContent.length - 1000} caractères]</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
