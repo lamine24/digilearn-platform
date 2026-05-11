@@ -251,3 +251,169 @@ export async function getPremiumSubscriptionStatus(userId: number) {
     return null;
   }
 }
+
+
+// Missing functions for courses and modules
+export async function getModulesByCourse(courseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(modules).where(eq(modules.courseId, courseId));
+  } catch (error) {
+    console.error("[Database] Failed to get modules by course:", error);
+    return [];
+  }
+}
+
+export async function getModuleById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.select().from(modules).where(eq(modules.id, id));
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get module:", error);
+    return null;
+  }
+}
+
+export async function updateUserActivity(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(users).set({ lastActiveAt: new Date() }).where(eq(users.id, userId));
+  } catch (error) {
+    console.error("[Database] Failed to update user activity:", error);
+  }
+}
+
+export async function createCategory(data: { name: string; slug: string; description?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+  try {
+    const result = await db.insert(categories).values(data);
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create category:", error);
+    throw error;
+  }
+}
+
+export async function getPaymentHistory(userId: number, limit = 10, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(payments).where(eq(payments.userId, userId)).limit(limit).offset(offset);
+  } catch (error) {
+    console.error("[Database] Failed to get payment history:", error);
+    return [];
+  }
+}
+
+export async function getPaymentHistoryCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  try {
+    const result = await db.select({ count: sql<number>`COUNT(*)` }).from(payments).where(eq(payments.userId, userId));
+    return result[0]?.count || 0;
+  } catch (error) {
+    console.error("[Database] Failed to get payment history count:", error);
+    return 0;
+  }
+}
+
+export async function getAllPremiumSubscriptions() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    // Assuming there's a subscriptions table or similar
+    // This is a placeholder - adjust based on your actual schema
+    return [];
+  } catch (error) {
+    console.error("[Database] Failed to get premium subscriptions:", error);
+    return [];
+  }
+}
+
+
+export async function getPendingNotifications() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(notifications).where(eq(notifications.status, 'pending'));
+  } catch (error) {
+    console.error("[Database] Failed to get pending notifications:", error);
+    return [];
+  }
+}
+
+export async function updateNotificationStatus(notificationId: number, status: string) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(notifications).set({ status }).where(eq(notifications.id, notificationId));
+  } catch (error) {
+    console.error("[Database] Failed to update notification status:", error);
+  }
+}
+
+
+export async function getInactiveUsers(days: number = 3) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    return await db.select().from(users).where(
+      or(
+        eq(users.lastActiveAt, null),
+        sql`${users.lastActiveAt} < ${cutoffDate}`
+      )
+    );
+  } catch (error) {
+    console.error("[Database] Failed to get inactive users:", error);
+    return [];
+  }
+}
+
+
+export async function hasNotificationBeenSent(userId: number, subscriptionId: number) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const result = await db.select().from(notifications).where(
+      and(
+        eq(notifications.userId, userId),
+        sql`JSON_EXTRACT(${notifications.metadata}, '$.subscriptionId') = ${subscriptionId}`
+      )
+    );
+    return result.length > 0;
+  } catch (error) {
+    console.error("[Database] Failed to check notification:", error);
+    return false;
+  }
+}
+
+export async function createNotificationRecord(data: {
+  userId: number;
+  title: string;
+  message: string;
+  metadata?: Record<string, any>;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.insert(notifications).values({
+      userId: data.userId,
+      title: data.title,
+      message: data.message,
+      metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+      status: 'pending',
+      createdAt: new Date(),
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create notification:", error);
+    return null;
+  }
+}
