@@ -1,0 +1,37 @@
+{
+  "query": "SHOW TABLES LIKE 'studio_%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway06.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3exGCM6vZZbaXcJ.root --database 3eU4rj6ECr6V6csg5zLYUG --execute SHOW TABLES LIKE 'studio_%';",
+  "rows": [
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_capsules"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_documents"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_exports"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_h5p_elements"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_marketplace_listings"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_project_access"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_projects"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_revenue_transactions"
+    },
+    {
+      "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)": "studio_scenarios"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_3eU4rj6ECr6V6csg5zLYUG (studio_%)\nstudio_capsules\nstudio_documents\nstudio_exports\nstudio_h5p_elements\nstudio_marketplace_listings\nstudio_project_access\nstudio_projects\nstudio_revenue_transactions\nstudio_scenarios\n",
+  "stderr": "",
+  "execution_time_ms": 296
+}

@@ -164,7 +164,7 @@ export async function createStudioDocument(projectId: number, data: Omit<InsertS
     projectId,
   });
   
-  return result[0].insertId;
+  return (result as any).insertId || result[0]?.insertId;
 }
 
 export async function getStudioDocuments(projectId: number) {
