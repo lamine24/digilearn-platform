@@ -77,6 +77,24 @@ export const getProject = protectedProcedure
   });
 
 /**
+ * Get a studio project by slug
+ */
+export const getProjectBySlug = protectedProcedure
+  .input(z.object({ slug: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+    const project = await db.query.studioProjects.findFirst({
+      where: and(eq(studioProjects.slug, input.slug), eq(studioProjects.userId, ctx.user.id)),
+    });
+
+    if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+
+    return project;
+  });
+
+/**
  * List all studio projects for the current user
  */
 export const listProjects = protectedProcedure.query(async ({ ctx }) => {
@@ -298,6 +316,7 @@ export const previewScenario = protectedProcedure
 export const studioRouter = router({
   createProject,
   getProject,
+  getProjectBySlug,
   listProjects,
   updateProject,
   previewScenario,
