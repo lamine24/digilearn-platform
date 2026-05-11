@@ -228,7 +228,7 @@ export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffe
   try {
     // Use html-pdf-node to convert HTML to PDF
     // @ts-ignore
-    const htmlPdf = await import('html-pdf-node');
+    const { generatePdf } = await import('html-pdf-node');
     
     const options = {
       format: 'A4',
@@ -237,8 +237,8 @@ export async function exportScenarioPdf(data: ScenarioExportData): Promise<Buffe
     };
     
     const file = { content: html };
-    // html-pdf-node exports generatePdf as default
-    const buffer = await htmlPdf.default(file, options);
+    // generatePdf returns a buffer directly
+    const buffer = await generatePdf(file, options);
     return buffer;
   } catch (error) {
     console.error('PDF conversion error:', error);
