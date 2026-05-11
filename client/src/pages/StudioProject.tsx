@@ -527,15 +527,12 @@ export default function StudioProject() {
                       key={scenario.id}
                       className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition"
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900">
                             {scenario.title || `Scénario ${scenario.id}`}
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {scenario.description || "Scénario généré automatiquement"}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">
+                          <p className="text-xs text-gray-500 mt-1">
                             Créé le {new Date(scenario.createdAt).toLocaleDateString('fr-FR')}
                           </p>
                         </div>
@@ -595,6 +592,16 @@ export default function StudioProject() {
                           </Button>
                         </div>
                       </div>
+                      {scenario.description && (
+                        <div className="mt-3 pt-3 border-t border-amber-200">
+                          <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto bg-white rounded p-2 border border-amber-100">
+                            {scenario.description}
+                          </div>
+                          {scenario.description && scenario.description.length > 1000 && (
+                            <p className="text-xs text-amber-600 mt-2">... (Contenu complet disponible dans l'export PDF/Word)</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
