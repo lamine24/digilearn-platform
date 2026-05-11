@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, ArrowLeft, Upload, Zap, FileText, Trash2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ScenarioPreviewModal } from "@/components/ScenarioPreviewModal";
+import { ScenarioEditor } from "@/components/ScenarioEditor";
 import { useEffect, useState } from "react";
 
 export default function StudioProject() {
@@ -19,6 +20,8 @@ export default function StudioProject() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewScenario, setPreviewScenario] = useState<any>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [editingScenarioId, setEditingScenarioId] = useState<number | null>(null);
+  const [editingScenario, setEditingScenario] = useState<any>(null);
 
   const projectQuery = trpc.studio.getProjectBySlug.useQuery(
     { slug },
@@ -34,6 +37,7 @@ export default function StudioProject() {
   const deleteDocumentMutation = trpc.studio.deleteDocument.useMutation();
   const deleteScenarioMutation = trpc.studio.deleteScenario.useMutation();
   const updateScenarioMutation = trpc.studio.updateScenario.useMutation();
+  const updateScenarioContentMutation = trpc.studio.updateScenarioContent.useMutation();
   const exportScenarioMutation = trpc.studio.exportScenario.useMutation();
 
   const scenariosQuery = trpc.studio.getProjectScenarios.useQuery(
@@ -554,19 +558,12 @@ export default function StudioProject() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                              const newTitle = prompt("Nouveau titre:", scenario.title);
-                              if (newTitle) {
-                                updateScenarioMutation.mutate(
-                                  { scenarioId: scenario.id, title: newTitle },
-                                  {
-                                    onSuccess: () => scenariosQuery.refetch()
-                                  }
-                                );
-                              }
+                              setEditingScenarioId(scenario.id);
+                              setEditingScenario(scenario);
                             }}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
-                            ✏️
+                            ✏️ Éditer
                           </Button>
                           <Button
                             variant="ghost"
@@ -767,6 +764,43 @@ export default function StudioProject() {
             handleGenerateScenario();
           }}
         />
+
+        {/* Scenario Editor Modal */}
+        {editingScenarioId && editingScenario && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full my-8">
+              <ScenarioEditor
+                scenarioId={editingScenarioId}
+                initialTitle={editingScenario.title || ''}
+                initialDescription={editingScenario.description || ''}
+                initialObjectives={editingScenario.learningObjectives || ''}
+                initialContent={editingScenario.contentStructure || ''}
+                initialInteractive={editingScenario.interactiveElements || ''}
+                onSave={async (data) => {
+                  try {
+                    await updateScenarioContentMutation.mutateAsync({
+                      scenarioId: editingScenarioId,
+                      title: data.title,
+                      description: data.description,
+                    });
+                    scenariosQuery.refetch();
+                    setEditingScenarioId(null);
+                    setEditingScenario(null);
+                    alert('Scenario mis a jour avec succes !');
+                  } catch (error) {
+                    console.error('Failed to save scenario:', error);
+                    alert('Erreur lors de la sauvegarde du scenario');
+                  }
+                }}
+                onCancel={() => {
+                  setEditingScenarioId(null);
+                  setEditingScenario(null);
+                }}
+                isLoading={updateScenarioContentMutation.isPending}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -657,3 +657,13 @@
 - [x] Ajouter les boutons d'action (Sauvegarder, Annuler, Modifier)
 - [x] Intégrer la prévisualisation dans StudioProject.tsx
 - [x] Tester la prévisualisation complète
+
+
+## ✏️ Système d'Édition de Scénarios avec Éditeur WYSIWYG
+- [x] Créer une procédure tRPC pour sauvegarder les modifications de scénario
+- [x] Installer et configurer TipTap (éditeur WYSIWYG)
+- [x] Implémenter un composant ScenarioEditor avec support WYSIWYG
+- [x] Ajouter les champs d'édition (titre, description, objectifs, contenu, éléments interactifs)
+- [x] Intégrer l'éditeur dans la page StudioProject
+- [x] Ajouter les boutons d'action (Sauvegarder, Annuler, Réinitialiser)
+- [ ] Tester l'édition complète et l'export

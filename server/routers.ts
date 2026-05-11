@@ -714,6 +714,26 @@ export const appRouter = router({
       };
     }),
 
+    updateScenarioContent: protectedProcedure.input(z.object({
+      scenarioId: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      try {
+        await studioDb.updateScenario(input.scenarioId, {
+          title: input.title,
+          description: input.description,
+        });
+        return { success: true, message: 'Scenario updated successfully' };
+      } catch (error) {
+        console.error('Scenario update failed:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Erreur lors de la mise a jour du scenario: ${(error as Error).message}`,
+        });
+      }
+    }),
+
     getProjectCapsules: protectedProcedure.input(z.object({
       projectId: z.number(),
     })).query(async ({ ctx, input }) => {
