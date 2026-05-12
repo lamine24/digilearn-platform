@@ -6,7 +6,7 @@ import { router, protectedProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getDb } from '../db';
 import { studioProjects, studioDocuments, studioScenarios } from '../../drizzle/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { invokeLLM } from '../_core/llm';
 import { storagePut } from '../storage';
 import { generateScenarioPrompt } from '../pedagogical-models';
@@ -318,7 +318,7 @@ export const getProjectCapsules = protectedProcedure
   });
 
 /**
- * Preview scenario generation without saving
+ * Generate a scenario preview with LLM
  */
 export const previewScenario = protectedProcedure
   .input(
@@ -331,16 +331,47 @@ export const previewScenario = protectedProcedure
   )
   .mutation(async ({ ctx, input }) => {
     try {
-      // Return a simple preview for now
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+      // Get project
+      const projectResult = await db.select().from(studioProjects)
+        .where(and(eq(studioProjects.id, input.projectId), eq(studioProjects.userId, ctx.user.id)))
+        .limit(1);
+      const project = projectResult[0];
+      if (!project) throw new TRPCError({ code: 'NOT_FOUND', message: 'Project not found' });
+
+      // Get documents
+      const documents = await db.select().from(studioDocuments)
+        .where(eq(studioDocuments.projectId, input.projectId));
+
+      if (documents.length === 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'No documents found for this project. Please upload documents first.' });
+      }
+
+      // Generate scenario using LLM
+      const { generateScenarioWithPedagogicalModel } = await import('../scenario-generation');
+      const result = await generateScenarioWithPedagogicalModel({
+        projectId: input.projectId,
+        projectTitle: project.title,
+        pedagogicalModel: input.pedagogicalModel || project.pedagogicalModel || 'professional',
+        targetAudience: input.targetAudience || project.targetAudience || '',
+        estimatedDuration: input.estimatedDuration || project.estimatedDuration || 0,
+        documents: documents.map(doc => ({
+          id: doc.id,
+          fileName: doc.fileName,
+          extractedContent: doc.extractedContent || '',
+        })),
+        language: 'fr',
+      });
+
       return {
         success: true,
         preview: {
-          title: `Aperçu du Scénario ${(input.pedagogicalModel || 'professional').toUpperCase()}`,
-          description: `Ceci est un aperçu du scénario pédagogique pour:\n- Public cible: ${input.targetAudience || 'Non spécifié'}\n- Durée estimée: ${input.estimatedDuration || 'Non spécifiée'} minutes\n\nCet aperçu sera remplacé par le contenu généré par l'IA.`,
-          learningObjectives: 'Les objectifs d\'apprentissage seront générés par l\'IA',
-          contentStructure: 'La structure du contenu sera générée par l\'IA',
-          interactiveElements: 'Les éléments interactifs seront générés par l\'IA',
+          title: result.title,
+          description: result.scenario,
           pedagogicalModel: input.pedagogicalModel || 'professional',
+          generatedAt: new Date(),
         },
       };
     } catch (error) {
