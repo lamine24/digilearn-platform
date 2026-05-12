@@ -351,7 +351,8 @@ export const appRouter = router({
     stats: formateurProcedure.query(({ ctx }) => db.getFormateurStats(ctx.user.id)),
   }),
 
-  premium: router({   stats: adminProcedure.query(() => db.getAdminStats()),
+  admin: router({
+    stats: adminProcedure.query(() => db.getAdminStats()),
     recentEnrollments: adminProcedure.query(() => db.getRecentEnrollments(20)),
     users: adminProcedure.query(() => db.getAllUsers()),
     updateUserRole: adminProcedure.input(z.object({
