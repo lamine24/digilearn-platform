@@ -445,11 +445,11 @@ export const appRouter = router({
       moduleId: z.number(), question: z.string(), options: z.string(),
       correctAnswer: z.number(), explanation: z.string().optional(), sortOrder: z.number().default(0),
     })).mutation(async ({ input }) => ({ id: await db.createQuizQuestion(input) })),
-  }),  search: searchRouter,
+  }),
+
+  search: searchRouter,
   freeResources: freeResourcesRouter,
   premiumResources: premiumResourcesRouter,
-  premium: router({
-
   premium: router({
     getStatus: protectedProcedure.query(async ({ ctx }) => {
       return db.getPremiumSubscriptionStatus(ctx.user.id);
