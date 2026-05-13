@@ -135,7 +135,7 @@ export async function generateScenarioWithPedagogicalModel(
       );
     }
 
-    const scenarioContent =
+    let scenarioContent =
       typeof response.choices[0]?.message?.content === "string"
         ? response.choices[0].message?.content
         : "";
@@ -143,6 +143,14 @@ export async function generateScenarioWithPedagogicalModel(
     if (!scenarioContent || scenarioContent.trim().length === 0) {
       throw new Error("No scenario content generated from LLM");
     }
+
+    // Clean up excessive dashes from LLM output
+    // Remove lines with 50+ consecutive dashes
+    scenarioContent = scenarioContent
+      .split('\n')
+      .filter(line => !/^-{50,}$/.test(line.trim()))
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n'); // Replace multiple blank lines with double newline
 
     // Extract title from pedagogical model
     const model = getPedagogicalModel(input.pedagogicalModel || "addie");
