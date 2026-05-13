@@ -420,6 +420,60 @@ export const deleteScenario = protectedProcedure
     return { success: true };
   });
 
+/**
+ * Update scenario content (description/title)
+ */
+export const updateScenarioContent = protectedProcedure
+  .input(
+    z.object({
+      scenarioId: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+    // Verify the scenario exists and belongs to the user's project
+    const scenario = await db
+      .select()
+      .from(studioScenarios)
+      .where(eq(studioScenarios.id, input.scenarioId))
+      .limit(1);
+
+    if (!scenario.length) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Scenario not found' });
+    }
+
+    // Verify the project belongs to the user
+    const project = await db
+      .select()
+      .from(studioProjects)
+      .where(eq(studioProjects.id, scenario[0].projectId))
+      .limit(1);
+
+    if (!project.length || project[0].userId !== ctx.user.id) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: 'Unauthorized' });
+    }
+
+    // Update the scenario
+    const updateData: any = {};
+    if (input.title !== undefined) updateData.title = input.title;
+    if (input.description !== undefined) updateData.description = input.description;
+
+    if (Object.keys(updateData).length === 0) {
+      return { success: true };
+    }
+
+    await db
+      .update(studioScenarios)
+      .set(updateData)
+      .where(eq(studioScenarios.id, input.scenarioId));
+
+    return { success: true };
+  });
+
 export const studioRouter = router({
   createProject,
   getProject,
@@ -435,4 +489,5 @@ export const studioRouter = router({
   getProjectScenarios,
   getProjectCapsules,
   deleteScenario,
+  updateScenarioContent,
 });
