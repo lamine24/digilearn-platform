@@ -427,7 +427,7 @@ export const exportScenario = protectedProcedure
   .input(
     z.object({
       scenarioId: z.number(),
-      format: z.enum(['word', 'pdf']).default('word'),
+      format: z.enum(['docx', 'pdf']).default('docx'),
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -460,10 +460,10 @@ export const exportScenario = protectedProcedure
 
       // For now, return a placeholder URL
       // In production, this would generate the actual Word/PDF file
-      const filename = `${scenario.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${input.format === 'pdf' ? 'pdf' : 'docx'}`;
+      const filename = `${scenario.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${input.format}`;
       const url = `/manus-storage/scenarios/${filename}`;
 
-      return { url, filename, format: input.format };
+      return { url, filename };
     } catch (error) {
       console.error('Export failed:', error);
       throw new TRPCError({
