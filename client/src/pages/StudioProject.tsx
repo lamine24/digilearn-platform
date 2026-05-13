@@ -1,4 +1,3 @@
-import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -8,12 +7,14 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ScenarioPreviewModal } from "@/components/ScenarioPreviewModal";
 import { ScenarioEditor } from "@/components/ScenarioEditor";
 import { useEffect, useState } from "react";
+import { useParams, useLocation } from "wouter";
 
 export default function StudioProject() {
   // All hooks MUST be called at the top level, before any conditional returns
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const [slug, setSlug] = useState<string>("");
+  const { slug: urlSlug } = useParams();
+  const [slug, setSlug] = useState<string>(urlSlug || "");
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [isCreatingCapsule, setIsCreatingCapsule] = useState(false);
@@ -50,20 +51,22 @@ export default function StudioProject() {
     { enabled: !!projectQuery.data?.id }
   );
 
-  // Extract slug from URL using useEffect, not during render
+  // Sync slug from URL params
   useEffect(() => {
-    if (!slug) {
-      const path = window.location.pathname;
-      const match = path.match(/\/studio\/([^/]+)/);
-      if (match) {
-        // Decode URL-encoded slug (e.g., %C3%A9 -> é)
-        const decodedSlug = decodeURIComponent(match[1]);
-        setSlug(decodedSlug);
-      }
+    if (urlSlug && urlSlug !== slug) {
+      setSlug(decodeURIComponent(urlSlug));
     }
-  }, [slug]);
+  }, [urlSlug, slug]);
 
-  // Conditional rendering happens AFTER hooks
+  // Show loading state while extracting slug
+  if (!slug) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   // Redirect if not formateur or admin
   if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
     return (
