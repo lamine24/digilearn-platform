@@ -40,7 +40,7 @@ export const createProject = protectedProcedure
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    const project = await db.insert(studioProjects).values({
+    await db.insert(studioProjects).values({
       userId: ctx.user.id,
       title: input.title,
       description: input.description,
@@ -55,7 +55,7 @@ export const createProject = protectedProcedure
       generalObjective: input.generalObjective,
     });
 
-    return project;
+    return { slug, title: input.title };
   });
 
 /**
