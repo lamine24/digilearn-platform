@@ -458,11 +458,62 @@ export const exportScenario = protectedProcedure
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Unauthorized' });
       }
 
-      // For now, return a placeholder URL
-      // In production, this would generate the actual Word/PDF file
+      // Generate the actual Word/PDF file
       const filename = `${scenario.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${input.format}`;
-      const url = `/manus-storage/scenarios/${filename}`;
-
+      
+      let fileBuffer: Buffer;
+      
+      if (input.format === 'pdf') {
+        // Generate PDF with content
+        const { PDFDocument, rgb } = await import('pdf-lib');
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([612, 792]);
+        const { height } = page.getSize();
+        
+        page.drawText(scenario.title, {
+          x: 50,
+          y: height - 50,
+          size: 24,
+          color: rgb(0, 0, 0),
+        });
+        
+        page.drawText(scenario.description || '', {
+          x: 50,
+          y: height - 100,
+          size: 12,
+          color: rgb(0.5, 0.5, 0.5),
+          maxWidth: 500,
+        });
+        
+        const pdfBytes = await pdfDoc.save();
+        fileBuffer = Buffer.from(pdfBytes);
+      } else {
+        // Generate DOCX with content
+        const { Document, Packer, Paragraph, HeadingLevel } = await import('docx');
+        const doc = new Document({
+          sections: [{
+            children: [
+              new Paragraph({
+                text: scenario.title,
+                heading: HeadingLevel.HEADING_1,
+              }),
+              new Paragraph(scenario.description || ''),
+            ],
+          }],
+        });
+        
+        const buffer = await Packer.toBuffer(doc);
+        fileBuffer = buffer;
+      }
+      
+      // Upload to storage
+      const { storagePut } = await import('../storage');
+      const { url } = await storagePut(
+        `scenarios/${filename}`,
+        fileBuffer,
+        input.format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      );
+      
       return { url, filename };
     } catch (error) {
       console.error('Export failed:', error);
