@@ -7,7 +7,6 @@ import {
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { eq, and, desc, asc, or, like, sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/mysql2';
 
 
 let _db: ReturnType<typeof drizzle> | null = null;

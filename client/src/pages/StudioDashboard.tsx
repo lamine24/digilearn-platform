@@ -85,14 +85,14 @@ export default function StudioDashboard() {
                 Nouveau Projet
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Créer un nouveau projet</DialogTitle>
                 <DialogDescription>
                   Commencez par donner un titre à votre projet de formation
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 pr-4">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Titre du projet</label>
                   <Input
@@ -117,15 +117,15 @@ export default function StudioDashboard() {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Modèle pédagogique</label>
                   <Select value={formData.pedagogicalModel} onValueChange={(value: any) => setFormData({ ...formData, pedagogicalModel: value })}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger className="mt-1 truncate">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="addie">ADDIE - Analyse, Conception, Développement, Implémentation, Évaluation</SelectItem>
-                      <SelectItem value="qddie">QDDIE - ADDIE avec phase de Questionnement</SelectItem>
-                      <SelectItem value="bloom">Bloom - Taxonomie cognitive (6 niveaux)</SelectItem>
-                      <SelectItem value="sac">SAC - Approche Socio-Constructiviste</SelectItem>
-                      <SelectItem value="professional">Modèle Professionnel - Structure institutionnelle complète</SelectItem>
+                    <SelectContent className="max-w-xs">
+                      <SelectItem value="addie">ADDIE</SelectItem>
+                      <SelectItem value="qddie">QDDIE</SelectItem>
+                      <SelectItem value="bloom">Bloom</SelectItem>
+                      <SelectItem value="sac">SAC</SelectItem>
+                      <SelectItem value="professional">Professionnel</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
