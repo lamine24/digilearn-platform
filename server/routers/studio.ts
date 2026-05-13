@@ -421,6 +421,59 @@ export const deleteScenario = protectedProcedure
   });
 
 /**
+ * Export scenario to Word format
+ */
+export const exportScenario = protectedProcedure
+  .input(
+    z.object({
+      scenarioId: z.number(),
+      format: z.enum(['word', 'pdf']).default('word'),
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    try {
+      const db = await getDb();
+      if (!db) throw new Error('Database connection failed');
+
+      // Get the scenario
+      const result = await db
+        .select()
+        .from(studioScenarios)
+        .where(eq(studioScenarios.id, input.scenarioId))
+        .limit(1);
+
+      const scenario = result[0];
+      if (!scenario) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Scenario not found' });
+      }
+
+      // Verify the project belongs to the user
+      const project = await db
+        .select()
+        .from(studioProjects)
+        .where(eq(studioProjects.id, scenario.projectId))
+        .limit(1);
+
+      if (!project.length || project[0].userId !== ctx.user.id) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Unauthorized' });
+      }
+
+      // For now, return a placeholder URL
+      // In production, this would generate the actual Word/PDF file
+      const filename = `${scenario.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.${input.format === 'pdf' ? 'pdf' : 'docx'}`;
+      const url = `/manus-storage/scenarios/${filename}`;
+
+      return { url, filename, format: input.format };
+    } catch (error) {
+      console.error('Export failed:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de l'export: ${(error as Error).message}`,
+      });
+    }
+  });
+
+/**
  * Update scenario content (description/title)
  */
 export const updateScenarioContent = protectedProcedure
@@ -490,4 +543,5 @@ export const studioRouter = router({
   getProjectCapsules,
   deleteScenario,
   updateScenarioContent,
+  exportScenario,
 });
