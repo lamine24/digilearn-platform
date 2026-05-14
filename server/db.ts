@@ -416,3 +416,327 @@ export async function createNotificationRecord(data: {
     return null;
   }
 }
+
+
+// ─── Payment Functions ──────────────────────────────────────────
+
+export async function getPaymentByRef(ref: string) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.select().from(payments).where(eq(payments.reference, ref)).limit(1);
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get payment by ref:", error);
+    return null;
+  }
+}
+
+export async function updatePaymentStatus(paymentId: number, status: string, paidAt?: Date) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const updateData: any = { status };
+    if (paidAt) updateData.paidAt = paidAt;
+    await db.update(payments).set(updateData).where(eq(payments.id, paymentId));
+  } catch (error) {
+    console.error("[Database] Failed to update payment status:", error);
+  }
+}
+
+export async function recordPaymentError(paymentId: number, errorMessage: string, retryCount: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(payments).set({
+      status: 'echoue',
+    }).where(eq(payments.id, paymentId));
+  } catch (error) {
+    console.error("[Database] Failed to record payment error:", error);
+  }
+}
+
+export async function getUserPayments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(payments).where(eq(payments.userId, userId)).orderBy(desc(payments.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get user payments:", error);
+    return [];
+  }
+}
+
+export async function getAllPayments() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(payments).orderBy(desc(payments.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get all payments:", error);
+    return [];
+  }
+}
+
+// ─── Enrollment Functions ───────────────────────────────────────
+
+export async function getEnrollment(userId: number, courseId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.select()
+      .from(enrollments)
+      .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)))
+      .limit(1);
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Failed to get enrollment:", error);
+    return null;
+  }
+}
+
+export async function createEnrollment(data: { userId: number; courseId: number; status: string }) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.insert(enrollments).values({
+      userId: data.userId,
+      courseId: data.courseId,
+      status: data.status as any,
+      enrolledAt: new Date(),
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create enrollment:", error);
+    return null;
+  }
+}
+
+export async function updateEnrollment(enrollmentId: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(enrollments).set(data).where(eq(enrollments.id, enrollmentId));
+  } catch (error) {
+    console.error("[Database] Failed to update enrollment:", error);
+  }
+}
+
+// ─── Certificate Functions ──────────────────────────────────────
+
+export async function createCertificate(data: {
+  userId: number;
+  courseId: number;
+  enrollmentId: number;
+  certificateCode: string;
+  pdfUrl: string;
+  pdfKey: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.insert(certificates).values({
+      userId: data.userId,
+      courseId: data.courseId,
+      enrollmentId: data.enrollmentId,
+      certificateCode: data.certificateCode,
+      pdfUrl: data.pdfUrl,
+      pdfKey: data.pdfKey,
+      issuedAt: new Date(),
+      createdAt: new Date(),
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create certificate:", error);
+    return null;
+  }
+}
+
+// ─── Premium Subscription Functions ──────────────────────────────
+
+export async function createPremiumSubscription(userId: number, paymentId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+    
+    const result = await db.insert(premiumSubscriptions).values({
+      userId,
+      paymentId,
+      startDate: new Date(),
+      endDate,
+      status: 'active',
+      autoRenew: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create premium subscription:", error);
+    return null;
+  }
+}
+
+
+// ─── Subscription Notification Functions ────────────────────────
+
+export async function getExpiringSubscriptions(daysUntilExpiry: number = 7) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() + daysUntilExpiry);
+    
+    const result = await db.select({
+      id: premiumSubscriptions.id,
+      userId: premiumSubscriptions.userId,
+      endDate: premiumSubscriptions.endDate,
+      status: premiumSubscriptions.status,
+      userName: users.name,
+      userEmail: users.email,
+      daysRemaining: sql<number>`DATEDIFF(${premiumSubscriptions.endDate}, NOW())`,
+    })
+    .from(premiumSubscriptions)
+    .innerJoin(users, eq(premiumSubscriptions.userId, users.id))
+    .where(
+      and(
+        eq(premiumSubscriptions.status, 'active'),
+        sql`${premiumSubscriptions.endDate} IS NOT NULL`,
+        sql`${premiumSubscriptions.endDate} > NOW()`,
+        sql`${premiumSubscriptions.endDate} <= ${cutoffDate}`
+      )
+    );
+    
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get expiring subscriptions:", error);
+    return [];
+  }
+}
+
+export async function getExpiredSubscriptions() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const result = await db.select({
+      id: premiumSubscriptions.id,
+      userId: premiumSubscriptions.userId,
+      endDate: premiumSubscriptions.endDate,
+      status: premiumSubscriptions.status,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(premiumSubscriptions)
+    .innerJoin(users, eq(premiumSubscriptions.userId, users.id))
+    .where(
+      and(
+        eq(premiumSubscriptions.status, 'active'),
+        sql`${premiumSubscriptions.endDate} IS NOT NULL`,
+        sql`${premiumSubscriptions.endDate} <= NOW()`
+      )
+    );
+    
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get expired subscriptions:", error);
+    return [];
+  }
+}
+
+export async function createSubscriptionNotification(data: {
+  subscriptionId: number;
+  userId: number;
+  notificationType: 'expiring_soon' | 'expired' | 'renewal_reminder';
+  daysBeforeExpiry?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.insert(subscriptionNotifications).values({
+      subscriptionId: data.subscriptionId,
+      userId: data.userId,
+      notificationType: data.notificationType,
+      daysBeforeExpiry: data.daysBeforeExpiry || null,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create subscription notification:", error);
+    return null;
+  }
+}
+
+export async function hasSubscriptionNotificationBeenSent(
+  subscriptionId: number,
+  notificationType: 'expiring_soon' | 'expired' | 'renewal_reminder'
+) {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const result = await db.select()
+      .from(subscriptionNotifications)
+      .where(
+        and(
+          eq(subscriptionNotifications.subscriptionId, subscriptionId),
+          eq(subscriptionNotifications.notificationType, notificationType),
+          eq(subscriptionNotifications.status, 'sent')
+        )
+      )
+      .limit(1);
+    
+    return result.length > 0;
+  } catch (error) {
+    console.error("[Database] Failed to check subscription notification:", error);
+    return false;
+  }
+}
+
+export async function updateSubscriptionNotificationStatus(
+  subscriptionNotificationId: number,
+  status: 'pending' | 'sent' | 'failed',
+  errorMessage?: string
+) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(subscriptionNotifications)
+      .set({
+        status,
+        errorMessage: errorMessage || null,
+        sentAt: status === 'sent' ? new Date() : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptionNotifications.id, subscriptionNotificationId));
+  } catch (error) {
+    console.error("[Database] Failed to update subscription notification status:", error);
+  }
+}
+
+
+export async function createNotification(data: {
+  userId: number;
+  type?: string;
+  title: string;
+  message: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.insert(notifications).values({
+      userId: data.userId,
+      type: (data.type as any) || 'general',
+      title: data.title,
+      message: data.message,
+      isRead: false,
+      sentAt: new Date(),
+      createdAt: new Date(),
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create notification:", error);
+    return null;
+  }
+}

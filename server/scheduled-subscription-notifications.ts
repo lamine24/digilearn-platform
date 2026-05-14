@@ -21,10 +21,9 @@ export async function checkAndSendExpirationNotifications() {
     for (const sub of expiringSubscriptions) {
       try {
         // Check if we've already sent a notification for this subscription
-        const alreadySent = await db.hasNotificationBeenSent(
+        const alreadySent = await db.hasSubscriptionNotificationBeenSent(
           sub.id,
-          "expiring_soon",
-          sub.daysRemaining
+          "expiring_soon"
         );
 
         if (alreadySent) {
@@ -32,20 +31,15 @@ export async function checkAndSendExpirationNotifications() {
           continue;
         }
 
-        // Create notification record
-        let notificationId: number;
-        try {
-          await db.createNotificationRecord(
-            sub.id,
-            sub.userId,
-            "expiring_soon",
-            sub.daysRemaining
-          );
-          // Get the notification ID from the database
-          const pending = await db.getPendingNotifications();
-          const notification = pending.find(n => n.subscriptionId === sub.id);
-          notificationId = notification?.id || 0;
-        } catch (error) {
+        // Create subscription notification record
+        const notificationId = await db.createSubscriptionNotification({
+          subscriptionId: sub.id,
+          userId: sub.userId,
+          notificationType: "expiring_soon",
+          daysBeforeExpiry: sub.daysRemaining,
+        });
+
+        if (!notificationId) {
           console.error(`[SubscriptionNotifications] Failed to create notification record for subscription ${sub.id}`);
           continue;
         }
@@ -65,11 +59,11 @@ export async function checkAndSendExpirationNotifications() {
         if (emailSent) {
           console.log(`[SubscriptionNotifications] Email sent successfully to ${sub.userEmail}`);
           // Update notification status to sent
-          if (notificationId) await db.updateNotificationStatus(notificationId, "sent");
+          await db.updateSubscriptionNotificationStatus(notificationId, "sent");
         } else {
           console.error(`[SubscriptionNotifications] Failed to send email to ${sub.userEmail}`);
           // Update notification status to failed
-          if (notificationId) await db.updateNotificationStatus(notificationId, "failed", "Email send failed");
+          await db.updateSubscriptionNotificationStatus(notificationId, "failed", "Email send failed");
         }
       } catch (error) {
         console.error(`[SubscriptionNotifications] Error processing subscription ${sub.id}:`, error);
@@ -96,21 +90,21 @@ export async function checkAndSendExpiredNotifications() {
     for (const sub of expiredSubscriptions) {
       try {
         // Check if we've already sent a notification
-        const alreadySent = await db.hasNotificationBeenSent(sub.id, "expired");
+        const alreadySent = await db.hasSubscriptionNotificationBeenSent(sub.id, "expired");
 
         if (alreadySent) {
           console.log(`[SubscriptionNotifications] Expired notification already sent for subscription ${sub.id}`);
           continue;
         }
 
-        // Create notification record
-        let notificationId: number;
-        try {
-          await db.createNotificationRecord(sub.id, sub.userId, "expired");
-          const pending = await db.getPendingNotifications();
-          const notification = pending.find(n => n.subscriptionId === sub.id);
-          notificationId = notification?.id || 0;
-        } catch (error) {
+        // Create subscription notification record
+        const notificationId = await db.createSubscriptionNotification({
+          subscriptionId: sub.id,
+          userId: sub.userId,
+          notificationType: "expired",
+        });
+
+        if (!notificationId) {
           console.error(`[SubscriptionNotifications] Failed to create notification record for subscription ${sub.id}`);
           continue;
         }
@@ -128,10 +122,10 @@ export async function checkAndSendExpiredNotifications() {
 
         if (emailSent) {
           console.log(`[SubscriptionNotifications] Expired email sent to ${sub.userEmail}`);
-          if (notificationId) await db.updateNotificationStatus(notificationId, "sent");
+          await db.updateSubscriptionNotificationStatus(notificationId, "sent");
         } else {
           console.error(`[SubscriptionNotifications] Failed to send expired email to ${sub.userEmail}`);
-          if (notificationId) await db.updateNotificationStatus(notificationId, "failed", "Email send failed");
+          await db.updateSubscriptionNotificationStatus(notificationId, "failed", "Email send failed");
         }
       } catch (error) {
         console.error(`[SubscriptionNotifications] Error processing expired subscription ${sub.id}:`, error);

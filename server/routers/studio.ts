@@ -266,11 +266,11 @@ export const uploadDocument = protectedProcedure
 
     const document = await db.insert(studioDocuments).values({
       projectId: input.projectId,
-      filename: input.filename,
-      description: input.description,
+      fileName: input.filename,
+      fileKey: `studio/${input.projectId}/${input.filename}`,
       fileUrl: input.fileUrl,
-      mimeType: input.mimeType,
-      status: 'pending',
+      fileType: (input.mimeType?.split('/')[1] || 'txt') as any,
+      extractionStatus: 'pending',
     });
 
     return document;
@@ -464,10 +464,7 @@ export const exportScenario = protectedProcedure
       let fileBuffer: Buffer;
       
       if (input.format === 'pdf') {
-        // Generate PDF with content using reportlab for better Unicode support
-        const { Document, SimpleDocTemplate, Paragraph, Spacer, getSampleStyleSheet } = await import('reportlab/lib/pagesizes');
-        
-        // Use a simpler approach with pdf-lib but sanitize text
+        // Generate PDF with content using pdf-lib but sanitize text
         const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage([612, 792]);
