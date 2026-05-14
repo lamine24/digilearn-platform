@@ -464,25 +464,40 @@ export const exportScenario = protectedProcedure
       let fileBuffer: Buffer;
       
       if (input.format === 'pdf') {
-        // Generate PDF with content
-        const { PDFDocument, rgb } = await import('pdf-lib');
+        // Generate PDF with content using reportlab for better Unicode support
+        const { Document, SimpleDocTemplate, Paragraph, Spacer, getSampleStyleSheet } = await import('reportlab/lib/pagesizes');
+        
+        // Use a simpler approach with pdf-lib but sanitize text
+        const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib');
         const pdfDoc = await PDFDocument.create();
         const page = pdfDoc.addPage([612, 792]);
         const { height } = page.getSize();
         
-        page.drawText(scenario.title, {
+        // Sanitize text to remove problematic Unicode characters
+        const sanitizeText = (text: string) => {
+          return text
+            .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
+            .substring(0, 500); // Limit length
+        };
+        
+        const titleText = sanitizeText(scenario.title);
+        const descText = sanitizeText(scenario.description || '');
+        
+        page.drawText(titleText, {
           x: 50,
           y: height - 50,
           size: 24,
           color: rgb(0, 0, 0),
+          font: await pdfDoc.embedFont(StandardFonts.Helvetica),
         });
         
-        page.drawText(scenario.description || '', {
+        page.drawText(descText, {
           x: 50,
           y: height - 100,
           size: 12,
           color: rgb(0.5, 0.5, 0.5),
           maxWidth: 500,
+          font: await pdfDoc.embedFont(StandardFonts.Helvetica),
         });
         
         const pdfBytes = await pdfDoc.save();
@@ -490,14 +505,32 @@ export const exportScenario = protectedProcedure
       } else {
         // Generate DOCX with content
         const { Document, Packer, Paragraph, HeadingLevel } = await import('docx');
+        
+        // Sanitize text for better compatibility
+        const sanitizeText = (text: string) => {
+          return text
+            .replace(/[\u0080-\uFFFF]/g, (char) => {
+              // Replace problematic Unicode with ASCII equivalents
+              const map: {[key: string]: string} = {
+                'ε': 'e', 'α': 'a', 'β': 'b', 'γ': 'g', 'δ': 'd',
+                'ζ': 'z', 'η': 'h', 'θ': 'th', 'ι': 'i', 'κ': 'k',
+                'λ': 'l', 'μ': 'u', 'ν': 'n', 'ξ': 'x', 'ο': 'o',
+                'π': 'pi', 'ρ': 'r', 'σ': 's', 'τ': 't', 'υ': 'u',
+                'φ': 'ph', 'χ': 'ch', 'ψ': 'ps', 'ω': 'o',
+              };
+              return map[char] || char;
+            })
+            .substring(0, 5000); // Limit length
+        };
+        
         const doc = new Document({
           sections: [{
             children: [
               new Paragraph({
-                text: scenario.title,
+                text: sanitizeText(scenario.title),
                 heading: HeadingLevel.HEADING_1,
               }),
-              new Paragraph(scenario.description || ''),
+              new Paragraph(sanitizeText(scenario.description || '')),
             ],
           }],
         });
