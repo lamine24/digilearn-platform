@@ -432,3 +432,24 @@ export const studioScenarios = mysqlTable("studio_scenarios", {
 
 export type StudioScenario = typeof studioScenarios.$inferSelect;
 export type InsertStudioScenario = typeof studioScenarios.$inferInsert;
+
+// ─── Studio Capsules ────────────────────────────────────────────
+export const studioCapsules = mysqlTable("studio_capsules", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull().references(() => studioProjects.id),
+  scenarioId: int("scenarioId").notNull().references(() => studioScenarios.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  narrationText: text("narrationText"),
+  videoUrl: text("videoUrl"),
+  videoKey: varchar("videoKey", { length: 255 }),
+  thumbnailUrl: text("thumbnailUrl"),
+  duration: int("duration"), // in seconds
+  generatedBy: mysqlEnum("generatedBy", ["reemotion", "motion_canvas", "manual"]).default("manual"),
+  videoStatus: mysqlEnum("videoStatus", ["pending", "processing", "completed", "failed"]).default("pending"),
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
+});
+
+export type StudioCapsule = typeof studioCapsules.$inferSelect;
+export type InsertStudioCapsule = typeof studioCapsules.$inferInsert;

@@ -332,10 +332,16 @@ export async function createCapsule(data: {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
   
-  const result = await db.execute(
-    sql`INSERT INTO studio_capsules (projectId, scenarioId, title, description, narrationText, generatedBy, videoStatus)
-        VALUES (${data.projectId}, ${data.scenarioId}, ${data.title}, ${data.description || null}, ${data.narrationText || null}, ${data.generatedBy || "manual"}, 'pending')`
-  );
+  const { studioCapsules } = await import("../drizzle/schema");
+  const result = await db.insert(studioCapsules).values({
+    projectId: data.projectId,
+    scenarioId: data.scenarioId,
+    title: data.title,
+    description: data.description,
+    narrationText: data.narrationText,
+    generatedBy: data.generatedBy || "manual",
+    videoStatus: "pending",
+  });
   return result;
 }
 
@@ -343,20 +349,26 @@ export async function getProjectCapsules(projectId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
   
-  const result = await db.execute(
-    sql`SELECT * FROM studio_capsules WHERE projectId = ${projectId} ORDER BY createdAt DESC`
-  );
-  return normalizeDbResult(result);
+  const { studioCapsules } = await import("../drizzle/schema");
+  const { eq, desc } = await import("drizzle-orm");
+  
+  return await db.select()
+    .from(studioCapsules)
+    .where(eq(studioCapsules.projectId, projectId))
+    .orderBy(desc(studioCapsules.createdAt));
 }
 
 export async function getScenarioCapsules(scenarioId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database connection failed");
   
-  const result = await db.execute(
-    sql`SELECT * FROM studio_capsules WHERE scenarioId = ${scenarioId} ORDER BY createdAt DESC`
-  );
-  return normalizeDbResult(result);
+  const { studioCapsules } = await import("../drizzle/schema");
+  const { eq, desc } = await import("drizzle-orm");
+  
+  return await db.select()
+    .from(studioCapsules)
+    .where(eq(studioCapsules.scenarioId, scenarioId))
+    .orderBy(desc(studioCapsules.createdAt));
 }
 
 export async function updateCapsuleVideo(

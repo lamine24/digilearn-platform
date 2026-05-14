@@ -5,13 +5,15 @@
 import { router, protectedProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getDb } from '../db';
-import { studioProjects, studioDocuments, studioScenarios } from '../../drizzle/schema';
+import { studioProjects, studioDocuments, studioScenarios, studioCapsules } from '../../drizzle/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { invokeLLM } from '../_core/llm';
 import { storagePut } from '../storage';
 import { generateScenarioPrompt } from '../pedagogical-models';
 import { exportProfessionalScenarioPdf, generateProfessionalExportFilename } from '../scenario-export-professional';
 import { TRPCError } from '@trpc/server';
+import * as studioCapsuleDb from '../studio-db';
+
 
 /**
  * Create a new studio project
@@ -331,9 +333,45 @@ export const getProjectScenarios = protectedProcedure
 export const getProjectCapsules = protectedProcedure
   .input(z.object({ projectId: z.number() }))
   .query(async ({ ctx, input }) => {
-    // For now, return empty array as capsules table doesn't exist yet
-    // This can be extended when video capsule feature is implemented
-    return [];
+    try {
+      const capsules = await studioCapsuleDb.getProjectCapsules(input.projectId);
+      return capsules || [];
+    } catch (error) {
+      console.error('Failed to get project capsules:', error);
+      return [];
+    }
+  });
+
+/**
+ * Create a new capsule from a scenario
+ */
+export const createCapsule = protectedProcedure
+  .input(z.object({
+    projectId: z.number(),
+    scenarioId: z.number(),
+    title: z.string(),
+    description: z.string().optional(),
+    narrationText: z.string().optional(),
+    generatedBy: z.enum(['reemotion', 'motion_canvas', 'manual']).optional(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    try {
+      const capsule = await studioCapsuleDb.createCapsule({
+        projectId: input.projectId,
+        scenarioId: input.scenarioId,
+        title: input.title,
+        description: input.description,
+        narrationText: input.narrationText,
+        generatedBy: input.generatedBy || 'manual',
+      });
+      return { success: true, capsule };
+    } catch (error) {
+      console.error('Failed to create capsule:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la création de la capsule: ${(error as Error).message}`,
+      });
+    }
   });
 
 /**

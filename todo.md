@@ -682,3 +682,11 @@
 - [x] Implémenter le système de badges et réalisations
 - [x] Tester le dashboard avec un utilisateur authentifié
 - [x] Ajouter les recommandations de formations personnalisées
+
+
+## 🐛 Bug - Création de Capsules après Scénarisation - FIXÉ
+
+- [x] Investiguer l'erreur de création de capsules après scénarisation
+- [x] Vérifier les fonctions de base de données dans studio-capsule-db.ts
+- [x] Corriger la logique de conversion scénario → capsules
+- [x] Tester la création de capsules end-to-end
