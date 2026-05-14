@@ -667,3 +667,18 @@
 - [x] Intégrer l'éditeur dans la page StudioProject
 - [x] Ajouter les boutons d'action (Sauvegarder, Annuler, Réinitialiser)
 - [x] Tester l'édition complète et l'export
+
+
+## 📊 Dashboard Utilisateur - Implémenté (Nouvelle Session)
+
+- [x] Créer la page Dashboard (/dashboard) avec layout professionnel
+- [x] Afficher les formations en cours avec progression en pourcentage
+- [x] Afficher les certificats obtenus avec détails
+- [x] Afficher l'historique d'apprentissage (dernières formations consultées)
+- [x] Afficher le statut d'abonnement premium (actif, expiré, jours restants)
+- [x] Ajouter les statistiques d'apprentissage (heures totales, modules complétés, taux de réussite)
+- [x] Implémenter les graphiques de progression (graphique de progression par formation)
+- [x] Ajouter les paramètres utilisateur et préférences (notifications, langue, thème)
+- [x] Implémenter le système de badges et réalisations
+- [x] Tester le dashboard avec un utilisateur authentifié
+- [x] Ajouter les recommandations de formations personnalisées

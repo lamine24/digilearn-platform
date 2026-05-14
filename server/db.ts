@@ -740,3 +740,209 @@ export async function createNotification(data: {
     return null;
   }
 }
+
+
+// ─── Dashboard Helpers ──────────────────────────────────────────
+
+export async function getUserEnrollments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select({
+      enrollment: enrollments,
+      course: courses,
+      category: categories,
+      progress: moduleProgress,
+    }).from(enrollments)
+      .leftJoin(courses, eq(enrollments.courseId, courses.id))
+      .leftJoin(categories, eq(courses.categoryId, categories.id))
+      .leftJoin(moduleProgress, eq(enrollments.userId, moduleProgress.userId))
+      .where(eq(enrollments.userId, userId))
+      .orderBy(desc(enrollments.enrolledAt));
+  } catch (error) {
+    console.error("[Database] Failed to get user enrollments:", error);
+    return [];
+  }
+}
+
+export async function getCourseProgress(userId: number, courseId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const courseModules = await db.select({ id: modules.id })
+      .from(modules)
+      .where(eq(modules.courseId, courseId));
+    
+    if (courseModules.length === 0) return { completed: 0, total: 0, percentage: 0 };
+    
+    const completedCount = await db.select({ count: sql`COUNT(*)` })
+      .from(moduleProgress)
+      .where(
+        and(
+          eq(moduleProgress.userId, userId),
+          sql`${moduleProgress.moduleId} IN (${sql.raw(courseModules.map(m => m.id).join(','))})`
+        )
+      );
+    
+    const completed = parseInt(completedCount[0]?.count?.toString() || '0');
+    const total = courseModules.length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    return { completed, total, percentage };
+  } catch (error) {
+    console.error("[Database] Failed to get course progress:", error);
+    return null;
+  }
+}
+
+export async function getUserCertificates(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select({
+      certificate: certificates,
+      course: courses,
+    }).from(certificates)
+      .leftJoin(courses, eq(certificates.courseId, courses.id))
+      .where(eq(certificates.userId, userId))
+      .orderBy(desc(certificates.issuedAt));
+  } catch (error) {
+    console.error("[Database] Failed to get user certificates:", error);
+    return [];
+  }
+}
+
+export async function getUserLearningStats(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    // Total hours
+    const enrollmentResult = await db.select({
+      totalHours: sql`SUM(${courses.duration}) / 60`
+    }).from(enrollments)
+      .leftJoin(courses, eq(enrollments.courseId, courses.id))
+      .where(eq(enrollments.userId, userId));
+    
+    // Completed modules
+    const completedResult = await db.select({
+      count: sql`COUNT(*)`
+    }).from(moduleProgress)
+      .where(eq(moduleProgress.userId, userId));
+    
+    // Completed courses
+    const completedCourses = await db.select({
+      count: sql`COUNT(DISTINCT ${certificates.courseId})`
+    }).from(certificates)
+      .where(eq(certificates.userId, userId));
+    
+    return {
+      totalHours: Math.round(parseFloat(enrollmentResult[0]?.totalHours || '0')),
+      completedModules: parseInt(completedResult[0]?.count?.toString() || '0'),
+      completedCourses: parseInt(completedCourses[0]?.count?.toString() || '0'),
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get user learning stats:", error);
+    return null;
+  }
+}
+
+export async function getUserSubscriptionStatus(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.select()
+      .from(premiumSubscriptions)
+      .where(eq(premiumSubscriptions.userId, userId))
+      .orderBy(desc(premiumSubscriptions.expiresAt))
+      .limit(1);
+    
+    if (result.length === 0) return null;
+    
+    const subscription = result[0];
+    const now = new Date();
+    const isActive = subscription.expiresAt > now;
+    const daysRemaining = isActive 
+      ? Math.ceil((subscription.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    
+    return {
+      ...subscription,
+      isActive,
+      daysRemaining,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get user subscription status:", error);
+    return null;
+  }
+}
+
+export async function getRecentlyViewedCourses(userId: number, limit: number = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select({
+      course: courses,
+      category: categories,
+      enrollment: enrollments,
+    }).from(enrollments)
+      .leftJoin(courses, eq(enrollments.courseId, courses.id))
+      .leftJoin(categories, eq(courses.categoryId, categories.id))
+      .where(eq(enrollments.userId, userId))
+      .orderBy(desc(enrollments.enrolledAt))
+      .limit(limit);
+  } catch (error) {
+    console.error("[Database] Failed to get recently viewed courses:", error);
+    return [];
+  }
+}
+
+export async function getRecommendedCourses(userId: number, limit: number = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    // Get user's enrolled course categories
+    const userCategories = await db.select({ categoryId: courses.categoryId })
+      .from(enrollments)
+      .leftJoin(courses, eq(enrollments.courseId, courses.id))
+      .where(eq(enrollments.userId, userId));
+    
+    if (userCategories.length === 0) {
+      // If no enrollments, recommend popular courses
+      return await db.select({
+        course: courses,
+        category: categories,
+      }).from(courses)
+        .leftJoin(categories, eq(courses.categoryId, categories.id))
+        .where(eq(courses.status, 'publie'))
+        .orderBy(desc(courses.createdAt))
+        .limit(limit);
+    }
+    
+    const categoryIds = userCategories.map(c => c.categoryId).filter(Boolean);
+    
+    // Recommend courses from same categories that user hasn't enrolled in
+    const enrolledCourseIds = await db.select({ id: enrollments.courseId })
+      .from(enrollments)
+      .where(eq(enrollments.userId, userId));
+    
+    const enrolledIds = enrolledCourseIds.map(e => e.id);
+    
+    return await db.select({
+      course: courses,
+      category: categories,
+    }).from(courses)
+      .leftJoin(categories, eq(courses.categoryId, categories.id))
+      .where(
+        and(
+          eq(courses.status, 'publie'),
+          sql`${courses.categoryId} IN (${sql.raw(categoryIds.join(','))})`,
+          sql`${courses.id} NOT IN (${sql.raw(enrolledIds.length > 0 ? enrolledIds.join(',') : '0')})`
+        )
+      )
+      .orderBy(desc(courses.createdAt))
+      .limit(limit);
+  } catch (error) {
+    console.error("[Database] Failed to get recommended courses:", error);
+    return [];
+  }
+}
