@@ -1,0 +1,45 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "db",
+    "server",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://3exGCM6vZZbaXcJ.root:6OseP4Jj44MSq4j4mWDT@gateway06.us-east-1.prod.aws.tidbcloud.com:4000/3eU4rj6ECr6V6csg5zLYUG?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663530716376/3eU4rj6ECr6V6csg5zLYUG",
+    "access_key_id": "ASIAZV3A2ECZENCA5OWV",
+    "secret_access_key": "umv5VMou0XNs7ZyeXJzufVAWC4pTP7/NyvTbmckH",
+    "session_token": "IQoJb3JpZ2luX2VjEJb//////////wEaCXVzLWVhc3QtMSJIMEYCIQDVAEDk/+sccWGdWjxvilQDtUQ60xEaipgWaMjFrsq2ZQIhAKWl/4KP3/tO5pCZO/usFOl9lNxeA57w+O4bK7bqvKESKvYDCF8QBBoMNjY1Mzg2MDk4ODY2IgzR8YG+rRJyp7D6fQwq0wMZav6tOkmdcJnbL15Kt1NbnHk5Yh436WwSj3WycYLtlEY7KJ//U2gFNFD1RK2hbZBIfkKKPSuiFHgzGxr3NYP8BRo/fK4z/LUipfjNqO9JHzvhPAqjLyy5hm1tk9dDJdadfrMhm5+721kyysHYK1OaJ3LOjlCbIwVdIOnvSHGNyzTjTIqd0p7WO3YcXk8G4lPGA4ZjEZuBx6xcjAq1vRHTxA+7veqYdj7NBRu/rpTLqN/uv70Rg/uRVuqhDsWGkF15au0e3+J24yN5sZ38kGWjLQskjDXd3fHDXbnP1CC00N0kwK7Ps597a20BsFYZ6Os4x7qPBoEOp9f0AXhg8DHp1EAYiyaCV/ktrfx2xbbryVeCMmsgx3RTZM5ugwsxft0LyMYUkQpGMr2FRR0eNSy4Yznpwfa/k3YbjSDsDnR+ANQlOiO8i/Wjajn0Q9Ml8TpG+XlLB7hsdLjKEGBNxPr2kOiRvWYCa4YKCUeA+ACFyxHMcAfxLsE3NqeAGdyehyNuRhrM416Hqa9VlFBhF3f+zJF/tBt88KmsE7mXBRV0XS8Jnb/pO4EA6I25BfnC9Z3XZDeXKkQexlTtDaEUFtOkFXPDhz2YHQUT6cXcUom0kSjyPzDymJfQBjqcATUut1EthiIxMfg9kaB12n2Fi/naSlUAkHF1BRBnLu6vMZNEgrci0VIz/9F84Oni6Mkz2F1XBOAko4/t2z/01XJ3z9/jQbbh21KXNR+77fuw5yStF2od2g92W20sxOkomYBpy6qJF2to2vboi1hWpLS6jYs9kL6ewmWPi/T6JerYktV3kgqLtYTQw8hMPcsQDAnRkUupOoMtVfVwJQ==",
+    "expiration": "2026-05-15T01:21:54.000Z"
+  },
+  "name": "digilearn-platform",
+  "path": "/home/ubuntu/digilearn-platform",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "54FyTKie4JNuTrrbZ9cdMh",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "JWT_SECRET": "A7fP3oVFauUGYoaKEGLTNt",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "Mamadou Lamine KANE",
+    "OWNER_OPEN_ID": "hvoCUjHkGDqLNjaPpM3EbX",
+    "PAYTECH_API_KEY": "03816da35b6f1b188a87c14e2156cfc33cf31166a577fdc5522beb35c0949291",
+    "PAYTECH_SECRET_KEY": "b9c1daa6626e853fa1f6568731b0490044b949ebe3ee1150d1911841232a619c",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "76baf134-3ba1-4335-9fa3-31601e5af05f",
+    "VITE_APP_ID": "3eU4rj6ECr6V6csg5zLYUG",
+    "VITE_APP_LOGO": "https://files.manuscdn.com/user_upload_by_module/web_dev_logo/310519663530716376/yjVhZWwqRLwcalYa.png",
+    "VITE_APP_TITLE": "DigiLearn - Plateforme de Formation Certifiante",
+    "VITE_FRONTEND_FORGE_API_KEY": "dGybuTrx9kr8VynRbRrdDC",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "web-db-user",
+  "test_command": "pnpm test"
+}
