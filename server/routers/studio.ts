@@ -200,10 +200,12 @@ export const generateScenario = protectedProcedure
       const { generateScenarioWithPedagogicalModel } = await import('../scenario-generation');
       const scenario = await generateScenarioWithPedagogicalModel({
         projectId: input.projectId,
+        projectTitle: project.title,
         pedagogicalModel: input.pedagogicalModel || project.pedagogicalModel,
         targetAudience: input.targetAudience || project.targetAudience || '',
         estimatedDuration: input.estimatedDuration || project.estimatedDuration || 0,
         documents: documents || [],
+        language: input.language || 'fr',
       });
 
       return scenario;
@@ -233,7 +235,24 @@ export const exportScenarioPdf = protectedProcedure
       const scenario = result[0];
       if (!scenario) throw new Error('Scenario not found');
 
-      const pdfBuffer = await exportProfessionalScenarioPdf(scenario);
+      const pdfBuffer = await exportProfessionalScenarioPdf({
+        author: scenario.author || 'DigiLearn',
+        institution: scenario.institution || 'ESCOA',
+        moduleTitle: scenario.title,
+        teachingUnit: scenario.description,
+        level: 'Professionnel',
+        credits: 3,
+        totalHours: scenario.estimatedDuration || 60,
+        prerequisites: scenario.prerequisites || '',
+        generalObjective: scenario.description || '',
+        specificObjectives: [],
+        courseSummary: scenario.description || '',
+        bibliography: [],
+        sequences: [],
+        finalEvaluation: '',
+        createdAt: new Date(),
+        pedagogicalModel: scenario.pedagogicalModel || 'professional',
+      });
       const filename = generateProfessionalExportFilename(scenario.title);
       const { url } = await storagePut(`scenarios/${filename}.pdf`, pdfBuffer, 'application/pdf');
 
