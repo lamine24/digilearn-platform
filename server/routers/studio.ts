@@ -679,9 +679,11 @@ export const studioRouter = router({
   getProjectDocuments,
   getProjectScenarios,
   getProjectCapsules,
+  createCapsule,
   deleteScenario,
   updateScenarioContent,
   exportScenario,
+  generateCapsuleVideo,
 });
 
 

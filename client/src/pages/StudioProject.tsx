@@ -40,6 +40,7 @@ export default function StudioProject() {
   const updateScenarioMutation = trpc.studio.updateScenario.useMutation();
   const updateScenarioContentMutation = trpc.studio.updateScenarioContent.useMutation();
   const exportScenarioMutation = trpc.studio.exportScenario.useMutation();
+  const createCapsuleMutation = trpc.studio.createCapsule.useMutation();
 
   const scenariosQuery = trpc.studio.getProjectScenarios.useQuery(
     { projectId: projectQuery.data?.id || 0 },
@@ -208,43 +209,28 @@ export default function StudioProject() {
   const handleCreateCapsule = async () => {
     if (!projectQuery.data || !scenariosQuery.data?.length) return;
 
-    setIsCreatingCapsule(true);
+    const project = projectQuery.data as any;
+    const firstScenario = scenariosQuery.data[0] as any;
+    
     try {
-      const project = projectQuery.data as any;
-      const firstScenario = scenariosQuery.data[0] as any;
-      
-      // Call backend API to create capsule
-      const response = await fetch("/api/studio/create-capsule", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          projectId: project.id,
-          scenarioId: firstScenario.id,
-          title: `Capsule ${new Date().toLocaleDateString()}`,
-          description: "Nouvelle capsule vidéo",
-        }),
+      const result = await createCapsuleMutation.mutateAsync({
+        projectId: project.id,
+        scenarioId: firstScenario.id,
+        title: `Capsule ${new Date().toLocaleDateString()}`,
+        description: "Nouvelle capsule vidéo",
       });
 
-      if (!response.ok) {
-        throw new Error("Capsule creation failed");
-      }
-
-      const result = await response.json();
       console.log("Capsule created successfully:", result);
       
       // Redirect to capsule preview
-      if (result.capsuleId) {
-        setLocation(`/studio/capsule/${result.capsuleId}`);
+      if (result.capsule?.id) {
+        setLocation(`/studio/capsule/${result.capsule.id}`);
       } else {
-        projectQuery.refetch();
+        capsulesQuery.refetch();
       }
     } catch (error) {
       console.error("Capsule creation failed:", error);
-      alert("Erreur lors de la création de la capsule");
-    } finally {
-      setIsCreatingCapsule(false);
+      alert("Erreur lors de la création de la capsule: " + (error instanceof Error ? error.message : "Erreur inconnue"));
     }
   };
 
