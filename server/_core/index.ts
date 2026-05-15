@@ -294,8 +294,6 @@ async function startServer() {
   console.log(`Server running on:`);
   console.log(`- http://localhost:${listeningPort}/`);
   console.log(`- http://127.0.0.1:${listeningPort}/`);
-  // Start background jobs
-  startInactivityJob();
 }
 
 startServer().catch(console.error);
