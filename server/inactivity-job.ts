@@ -13,9 +13,6 @@ const CHECK_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 // Track which users have already been notified to avoid duplicates
 const notifiedUsers = new Set<number>();
 
-// Singleton guard to prevent duplicate job starts on hot reload
-let jobStarted = false;
-
 async function checkInactiveUsers() {
   try {
     const inactiveUsers = await db.getInactiveUsers(3);
@@ -63,13 +60,6 @@ async function checkInactiveUsers() {
 }
 
 export function startInactivityJob() {
-  // Prevent duplicate job starts on hot reload
-  if (jobStarted) {
-    console.log("[Inactivity Job] Already started, skipping duplicate");
-    return;
-  }
-  jobStarted = true;
-
   // Run first check after 30 seconds (let server fully start)
   setTimeout(() => {
     checkInactiveUsers();
