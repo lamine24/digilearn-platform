@@ -946,3 +946,199 @@ export async function getRecommendedCourses(userId: number, limit: number = 5) {
     return [];
   }
 }
+
+
+// ─── Course Management Functions ───────────────────────────────────────────
+
+export async function getAllCourses() {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(courses).orderBy(desc(courses.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get all courses:", error);
+    return [];
+  }
+}
+
+export async function createCourse(input: {
+  title: string;
+  slug: string;
+  description?: string;
+  categoryId?: number;
+  formateurId: number;
+  level?: string;
+  duration?: number;
+  price?: string;
+  currency?: string;
+  previewContent?: string;
+  previewVideoUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+  try {
+    const result = await db.insert(courses).values({
+      title: input.title,
+      slug: input.slug,
+      description: input.description,
+      categoryId: input.categoryId,
+      formateurId: input.formateurId,
+      level: input.level,
+      duration: input.duration,
+      price: input.price,
+      currency: input.currency,
+      previewContent: input.previewContent,
+      previewVideoUrl: input.previewVideoUrl,
+      createdAt: new Date(),
+    });
+    return result.insertId || 0;
+  } catch (error) {
+    console.error("[Database] Failed to create course:", error);
+    throw error;
+  }
+}
+
+export async function updateCourse(id: number, data: {
+  title?: string;
+  slug?: string;
+  description?: string;
+  categoryId?: number;
+  level?: string;
+  duration?: number;
+  price?: string;
+  currency?: string;
+  previewContent?: string;
+  previewVideoUrl?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+  try {
+    const updateData: Record<string, any> = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.slug !== undefined) updateData.slug = data.slug;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+    if (data.level !== undefined) updateData.level = data.level;
+    if (data.duration !== undefined) updateData.duration = data.duration;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.currency !== undefined) updateData.currency = data.currency;
+    if (data.previewContent !== undefined) updateData.previewContent = data.previewContent;
+    if (data.previewVideoUrl !== undefined) updateData.previewVideoUrl = data.previewVideoUrl;
+
+    await db.update(courses).set(updateData).where(eq(courses.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to update course:", error);
+    throw error;
+  }
+}
+
+export async function deleteCourse(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+  try {
+    await db.delete(courses).where(eq(courses.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete course:", error);
+    throw error;
+  }
+}
+
+
+// ─── Formateur Course Management ───────────────────────────────────────────
+
+export async function getFormateurCourses(formateurId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(courses).where(eq(courses.formateurId, formateurId)).orderBy(desc(courses.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get formateur courses:", error);
+    return [];
+  }
+}
+
+export async function getCourseEnrollments(courseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(enrollments).where(eq(enrollments.courseId, courseId));
+  } catch (error) {
+    console.error("[Database] Failed to get course enrollments:", error);
+    return [];
+  }
+}
+
+// ─── Module Management ───────────────────────────────────────────────────
+
+export async function createModule(input: {
+  courseId: number;
+  title: string;
+  description?: string;
+  order?: number;
+  duration?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+  try {
+    const result = await db.insert(modules).values({
+      courseId: input.courseId,
+      title: input.title,
+      description: input.description,
+      order: input.order || 0,
+      duration: input.duration,
+      createdAt: new Date(),
+    });
+    return result.insertId || 0;
+  } catch (error) {
+    console.error("[Database] Failed to create module:", error);
+    throw error;
+  }
+}
+
+export async function updateModule(id: number, data: {
+  title?: string;
+  description?: string;
+  order?: number;
+  duration?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+  try {
+    const updateData: Record<string, any> = {};
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.order !== undefined) updateData.order = data.order;
+    if (data.duration !== undefined) updateData.duration = data.duration;
+
+    await db.update(modules).set(updateData).where(eq(modules.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to update module:", error);
+    throw error;
+  }
+}
+
+export async function deleteModule(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+  try {
+    await db.delete(modules).where(eq(modules.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete module:", error);
+    throw error;
+  }
+}
+
+export async function getModuleResources(moduleId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(moduleResources).where(eq(moduleResources.moduleId, moduleId)).orderBy(asc(moduleResources.order));
+  } catch (error) {
+    console.error("[Database] Failed to get module resources:", error);
+    return [];
+  }
+}

@@ -587,41 +587,7 @@ export const appRouter = router({
     }),
   }),
 
-  dashboard: router({
-    getEnrollments: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserEnrollments(ctx.user.id);
-    }),
 
-    getCourseProgress: protectedProcedure.input(z.object({
-      courseId: z.number(),
-    })).query(async ({ ctx, input }) => {
-      return await db.getCourseProgress(ctx.user.id, input.courseId);
-    }),
-
-    getCertificates: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserCertificates(ctx.user.id);
-    }),
-
-    getLearningStats: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserLearningStats(ctx.user.id);
-    }),
-
-    getSubscriptionStatus: protectedProcedure.query(async ({ ctx }) => {
-      return await db.getUserSubscriptionStatus(ctx.user.id);
-    }),
-
-    getRecentlyViewed: protectedProcedure.input(z.object({
-      limit: z.number().optional(),
-    })).query(async ({ ctx, input }) => {
-      return await db.getRecentlyViewedCourses(ctx.user.id, input?.limit);
-    }),
-
-    getRecommended: protectedProcedure.input(z.object({
-      limit: z.number().optional(),
-    })).query(async ({ ctx, input }) => {
-      return await db.getRecommendedCourses(ctx.user.id, input?.limit);
-    }),
-  }),
 
 });
 export type AppRouter = typeof appRouter;

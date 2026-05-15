@@ -341,3 +341,20 @@ Pedagogical Model: ${sanitizeText(data.pedagogicalModel)}
 
   return Buffer.from(content, 'utf-8');
 }
+
+
+/**
+ * Generate professional export filename with timestamp
+ */
+export function generateProfessionalExportFilename(moduleTitle: string, format: 'pdf' | 'docx' = 'pdf'): string {
+  const sanitized = moduleTitle
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  
+  const timestamp = new Date().toISOString().slice(0, 10);
+  const extension = format === 'pdf' ? 'pdf' : 'docx';
+  
+  return `${sanitized}-${timestamp}.${extension}`;
+}
