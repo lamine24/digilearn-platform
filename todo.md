@@ -694,13 +694,13 @@
 
 ## 🎬 Génération Vidéo des Capsules - À Implémenter
 
-- [ ] Sélectionner le service de génération vidéo (Reemotion ou Motion Canvas)
-- [ ] Configurer l'authentification API
-- [ ] Créer le module de service de génération vidéo
-- [ ] Implémenter la procédure tRPC pour la génération vidéo
-- [ ] Ajouter la génération vidéo au workflow de création de capsules
-- [ ] Tester la génération vidéo end-to-end
-- [ ] Ajouter le suivi du statut de génération vidéo
+- [x] Sélectionner le service de génération vidéo (Service Manus - Plus avantageux)
+- [x] Configurer l'authentification API (Service Manus intégré)
+- [x] Créer le module de service de génération vidéo (video-generation.ts)
+- [x] Implémenter la procédure tRPC pour la génération vidéo (generateCapsuleVideo)
+- [x] Ajouter la génération vidéo au workflow de création de capsules
+- [x] Tester la génération vidéo end-to-end
+- [x] Ajouter le suivi du statut de génération vidéo
 
 
 ## ✅ Génération Vidéo - COMPLÉTÉE
