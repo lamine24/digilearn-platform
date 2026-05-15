@@ -353,6 +353,7 @@ export const createCapsule = protectedProcedure
     description: z.string().optional(),
     narrationText: z.string().optional(),
     generatedBy: z.enum(['reemotion', 'motion_canvas', 'manual']).optional(),
+    autoGenerateVideo: z.boolean().optional().default(true),
   }))
   .mutation(async ({ ctx, input }) => {
     try {
@@ -364,6 +365,25 @@ export const createCapsule = protectedProcedure
         narrationText: input.narrationText,
         generatedBy: input.generatedBy || 'manual',
       });
+
+      // Trigger video generation in background if enabled
+      if (input.autoGenerateVideo && input.narrationText && capsule.id) {
+        try {
+          const { generateVideoFromScenario } = await import('../video-generation');
+          generateVideoFromScenario({
+            title: input.title,
+            description: input.description || '',
+            narrationText: input.narrationText,
+            language: 'fr',
+            pedagogicalModel: 'professional',
+          }).catch((error) => {
+            console.error('Background video generation failed:', error);
+          });
+        } catch (videoError) {
+          console.error('Failed to trigger video generation:', videoError);
+        }
+      }
+
       return { success: true, capsule };
     } catch (error) {
       console.error('Failed to create capsule:', error);
