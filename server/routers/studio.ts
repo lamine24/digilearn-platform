@@ -182,6 +182,7 @@ export const generateScenario = protectedProcedure
       pedagogicalModel: z.enum(['addie', 'qddie', 'bloom', 'sac', 'professional']).optional(),
       targetAudience: z.string().optional(),
       estimatedDuration: z.number().optional(),
+      language: z.string().optional(),
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -665,32 +666,10 @@ export const updateScenarioContent = protectedProcedure
     return { success: true };
   });
 
-export const studioRouter = router({
-  createProject,
-  getProject,
-  getProjectBySlug,
-  listProjects,
-  getUserProjects,
-  updateProject,
-  previewScenario,
-  generateScenario,
-  exportScenarioPdf,
-  uploadDocument,
-  getProjectDocuments,
-  getProjectScenarios,
-  getProjectCapsules,
-  createCapsule,
-  deleteScenario,
-  updateScenarioContent,
-  exportScenario,
-  generateCapsuleVideo,
-});
-
-
 /**
  * Generate video from capsule scenario
  */
-export const generateCapsuleVideo = protectedProcedure
+const generateCapsuleVideo = protectedProcedure
   .input(z.object({
     capsuleId: z.number(),
     scenarioId: z.number(),
@@ -757,3 +736,24 @@ export const generateCapsuleVideo = protectedProcedure
       });
     }
   });
+
+export const studioRouter = router({
+  createProject,
+  getProject,
+  getProjectBySlug,
+  listProjects,
+  getUserProjects,
+  updateProject,
+  previewScenario,
+  generateScenario,
+  exportScenarioPdf,
+  uploadDocument,
+  getProjectDocuments,
+  getProjectScenarios,
+  getProjectCapsules,
+  createCapsule,
+  deleteScenario,
+  updateScenarioContent,
+  exportScenario,
+  generateCapsuleVideo,
+});
