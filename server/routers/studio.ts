@@ -683,3 +683,75 @@ export const studioRouter = router({
   updateScenarioContent,
   exportScenario,
 });
+
+
+/**
+ * Generate video from capsule scenario
+ */
+export const generateCapsuleVideo = protectedProcedure
+  .input(z.object({
+    capsuleId: z.number(),
+    scenarioId: z.number(),
+    projectId: z.number(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    try {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+      // Get scenario details
+      const scenario = await db.select().from(studioScenarios)
+        .where(eq(studioScenarios.id, input.scenarioId));
+
+      if (!scenario || scenario.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Scenario not found' });
+      }
+
+      const scenarioData = scenario[0];
+
+      // Get capsule details
+      const capsule = await db.select().from(studioCapsules)
+        .where(eq(studioCapsules.id, input.capsuleId));
+
+      if (!capsule || capsule.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Capsule not found' });
+      }
+
+      const capsuleData = capsule[0];
+
+      // Import video generation service
+      const { generateVideoFromScenario } = await import('../video-generation');
+
+      // Generate video
+      const videoResult = await generateVideoFromScenario({
+        title: capsuleData.title,
+        description: capsuleData.description || '',
+        narrationText: capsuleData.narrationText || scenarioData.description || '',
+        duration: 900, // 15 minutes default
+        language: 'fr',
+        pedagogicalModel: scenarioData.generatedBy || 'professional',
+      });
+
+      // Update capsule with video information
+      await db.update(studioCapsules)
+        .set({
+          videoUrl: videoResult.videoUrl,
+          videoKey: videoResult.videoKey,
+          videoStatus: 'completed',
+          duration: videoResult.duration,
+        })
+        .where(eq(studioCapsules.id, input.capsuleId));
+
+      return {
+        success: true,
+        video: videoResult,
+        message: 'Vidéo générée avec succès',
+      };
+    } catch (error) {
+      console.error('Video generation failed:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la génération vidéo: ${(error as Error).message}`,
+      });
+    }
+  });

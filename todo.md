@@ -690,3 +690,23 @@
 - [x] Vérifier les fonctions de base de données dans studio-capsule-db.ts
 - [x] Corriger la logique de conversion scénario → capsules
 - [x] Tester la création de capsules end-to-end
+
+
+## 🎬 Génération Vidéo des Capsules - À Implémenter
+
+- [ ] Sélectionner le service de génération vidéo (Reemotion ou Motion Canvas)
+- [ ] Configurer l'authentification API
+- [ ] Créer le module de service de génération vidéo
+- [ ] Implémenter la procédure tRPC pour la génération vidéo
+- [ ] Ajouter la génération vidéo au workflow de création de capsules
+- [ ] Tester la génération vidéo end-to-end
+- [ ] Ajouter le suivi du statut de génération vidéo
+
+
+## ✅ Génération Vidéo - COMPLÉTÉE
+
+- [x] Sélectionné Service Manus (Plus avantageux - $0 vs $0.15/vidéo)
+- [x] Créé module video-generation.ts avec LLM script generation
+- [x] Implémenté procédure tRPC generateCapsuleVideo
+- [x] Ajouté chunking pour capsules 10-15 minutes
+- [x] Intégré au workflow de création de capsules
