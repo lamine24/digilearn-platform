@@ -52,6 +52,16 @@ export const appRouter = router({
       await db.updateUserActivity(ctx.user.id);
       return { success: true };
     }),
+    promoteToFormateur: adminProcedure.input(z.object({
+      userId: z.number(),
+    })).mutation(async ({ input }) => {
+      const dbInstance = await db.getDb();
+      if (!dbInstance) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { users } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      await dbInstance.update(users).set({ role: "formateur" }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
   }),
 
   categories: router({

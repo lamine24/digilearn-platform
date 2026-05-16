@@ -337,9 +337,9 @@ export async function createCapsule(data: {
     projectId: data.projectId,
     scenarioId: data.scenarioId,
     title: data.title,
-    description: data.description,
-    narrationText: data.narrationText,
-    generatedBy: data.generatedBy || "manual",
+    description: data.description || null,
+    narrationText: data.narrationText || null,
+    generatedBy: data.generatedBy || "reemotion",
     videoStatus: "pending",
   });
   return result;

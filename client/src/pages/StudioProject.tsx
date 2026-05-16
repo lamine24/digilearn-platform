@@ -256,7 +256,7 @@ export default function StudioProject() {
     );
   }
 
-  // Render auth check
+  // Render auth check - Allow admin and formateur roles
   if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

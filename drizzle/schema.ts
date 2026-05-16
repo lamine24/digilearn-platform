@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, decimal, json, longtext } from "drizzle-orm/mysql-core";
 
 // ─── Users ──────────────────────────────────────────────────────
 export const users = mysqlTable("users", {
@@ -440,13 +440,14 @@ export const studioCapsules = mysqlTable("studio_capsules", {
   scenarioId: int("scenarioId").notNull().references(() => studioScenarios.id),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  narrationText: text("narrationText"),
-  videoUrl: text("videoUrl"),
   videoKey: varchar("videoKey", { length: 255 }),
-  thumbnailUrl: text("thumbnailUrl"),
-  duration: int("duration"), // in seconds
-  generatedBy: mysqlEnum("generatedBy", ["reemotion", "motion_canvas", "manual"]).default("manual"),
+  videoUrl: varchar("videoUrl", { length: 255 }),
   videoStatus: mysqlEnum("videoStatus", ["pending", "processing", "completed", "failed"]).default("pending"),
+  duration: int("duration"),
+  narrationText: text("narrationText"),
+  narrationUrl: varchar("narrationUrl", { length: 255 }),
+  generatedBy: mysqlEnum("generatedBy", ["reemotion", "motion_canvas", "manual"]).default("reemotion"),
+  generatedAt: timestamp("generatedAt"),
   createdAt: timestamp("createdAt").defaultNow(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow(),
 });
