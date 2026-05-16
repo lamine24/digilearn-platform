@@ -738,6 +738,64 @@ const generateCapsuleVideo = protectedProcedure
   });
 
 /**
+ * Get capsule preview (public procedure)
+ */
+export const getCapsulePreview = publicProcedure
+  .input(z.object({ capsuleId: z.number() }))
+  .query(async ({ ctx, input }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+    const capsule = await db.select()
+      .from(studioCapsules)
+      .where(eq(studioCapsules.id, input.capsuleId))
+      .limit(1);
+
+    if (!capsule || capsule.length === 0) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Capsule not found' });
+    }
+
+    return {
+      capsule: capsule[0],
+      h5pElements: [],
+      versions: [],
+      stats: {
+        avgWatchDuration: 0,
+      },
+    };
+  });
+
+/**
+ * Get capsule metadata (public procedure)
+ */
+export const getCapsuleMetadata = publicProcedure
+  .input(z.object({ capsuleId: z.number() }))
+  .query(async ({ ctx, input }) => {
+    return {
+      elementCount: 0,
+      versionCount: 1,
+    };
+  });
+
+/**
+ * Get capsule exports (public procedure)
+ */
+export const getCapsuleExports = publicProcedure
+  .input(z.object({ capsuleId: z.number() }))
+  .query(async ({ ctx, input }) => {
+    return [];
+  });
+
+/**
+ * Record capsule view (public procedure)
+ */
+export const recordCapsuleView = publicProcedure
+  .input(z.object({ capsuleId: z.number(), watchDuration: z.number() }))
+  .mutation(async ({ ctx, input }) => {
+    return { success: true };
+  });
+
+/**
  * Get all capsules (public procedure)
  */
 export const getAllCapsules = publicProcedure
@@ -773,4 +831,8 @@ export const studioRouter = router({
   exportScenario,
   generateCapsuleVideo,
   getAllCapsules,
+  getCapsulePreview,
+  getCapsuleMetadata,
+  getCapsuleExports,
+  recordCapsuleView,
 });

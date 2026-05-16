@@ -34,6 +34,9 @@ export function CapsulePreview() {
   // Record view mutation
   const recordViewMutation = trpc.studio.recordCapsuleView.useMutation();
 
+  // Generate video mutation
+  const generateVideoMutation = trpc.studio.generateCapsuleVideo.useMutation();
+
   // Track watch duration
   useEffect(() => {
     if (!capsuleId) return;
@@ -125,6 +128,13 @@ export function CapsulePreview() {
                   <div className="text-white text-center">
                     <Layers className="w-16 h-16 mx-auto mb-4 opacity-50" />
                     <p>Vidéo non disponible</p>
+                    <Button
+                      onClick={() => generateVideoMutation.mutate({ capsuleId })}
+                      disabled={generateVideoMutation.isPending}
+                      className="mt-4"
+                    >
+                      {generateVideoMutation.isPending ? 'Génération...' : 'Générer la vidéo'}
+                    </Button>
                   </div>
                 )}
               </div>
