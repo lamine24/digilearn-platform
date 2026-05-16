@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { ScenarioPreviewModal } from "@/components/ScenarioPreviewModal";
 import { ScenarioEditor } from "@/components/ScenarioEditor";
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function StudioProject() {
   // All hooks MUST be called at the top level, before any conditional returns
@@ -59,27 +59,8 @@ export default function StudioProject() {
     }
   }, [urlSlug, slug]);
 
-  // Show loading state while extracting slug
-  if (!slug) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  // Redirect if not formateur or admin
-  if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Accès Refusé</h1>
-          <p className="text-muted-foreground mb-6">Seuls les formateurs et administrateurs peuvent accéder au Studio.</p>
-          <Button onClick={() => setLocation("/dashboard")}>Retour au Dashboard</Button>
-        </div>
-      </div>
-    );
-  }
+  // Preview scenario mutation
+  const previewScenarioMutation = trpc.studio.previewScenario.useMutation();
 
   // Upload document handler
   const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,9 +113,6 @@ export default function StudioProject() {
       setIsUploading(false);
     }
   };
-
-  // Preview scenario mutation
-  const previewScenarioMutation = trpc.studio.previewScenario.useMutation();
 
   // Preview scenario handler
   const handlePreviewScenario = async () => {
@@ -266,6 +244,7 @@ export default function StudioProject() {
     }
   };
 
+  // Render loading state while extracting slug
   if (!slug) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -277,6 +256,20 @@ export default function StudioProject() {
     );
   }
 
+  // Render auth check
+  if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Accès Refusé</h1>
+          <p className="text-muted-foreground mb-6">Seuls les formateurs et administrateurs peuvent accéder au Studio.</p>
+          <Button onClick={() => setLocation("/dashboard")}>Retour au Dashboard</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render loading state while fetching project
   if (projectQuery.isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -288,6 +281,7 @@ export default function StudioProject() {
     );
   }
 
+  // Render error state
   if (projectQuery.isError || !projectQuery.data) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -410,53 +404,93 @@ export default function StudioProject() {
                   ) : (
                     <>
                       <Upload className="mr-2 h-4 w-4" />
-                      Ajouter un document
+                      Télécharger Document
                     </>
                   )}
                 </Button>
               </div>
-              <p className="text-sm text-gray-600 mt-4">
-                Formats supportés: PDF, DOCX, PPTX, TXT
-              </p>
+
+              {documentsQuery.data && documentsQuery.data.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-semibold text-gray-700">Documents ({documentsQuery.data.length})</p>
+                  {documentsQuery.data.map((doc: any) => (
+                    <div key={doc.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <FileText className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 truncate">{doc.filename}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteDocument(doc.id, doc.filename)}
+                        disabled={deleteDocumentMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Scenario Section */}
+          {/* Scenario Generation Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Zap className="mr-2 h-5 w-5 text-amber-600" />
-                Scénario Pédagogique
+                <Zap className="mr-2 h-5 w-5 text-yellow-600" />
+                Scénario
               </CardTitle>
               <CardDescription>
-                Générez un scénario basé sur vos documents
+                Générez un scénario pédagogique
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button
-                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
+                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
                 onClick={handleGenerateScenario}
-                disabled={isGeneratingScenario || !documentsQuery.data?.length}
+                disabled={isGeneratingScenario || isPreviewLoading}
               >
-                {isGeneratingScenario ? (
+                {isPreviewLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Génération en cours...
+                    Génération...
                   </>
                 ) : (
                   <>
                     <Zap className="mr-2 h-4 w-4" />
-                    Générer un scénario
+                    Générer Scénario
                   </>
                 )}
               </Button>
-              <p className="text-sm text-gray-600 mt-4">
-                Modèle: {project.pedagogicalModel?.toUpperCase() || "ADDIE"}
-              </p>
-              {!documentsQuery.data?.length && (
-                <p className="text-xs text-amber-600 mt-2">
-                  ⚠️ Téléchargez d'abord un document
-                </p>
+
+              {scenariosQuery.data && scenariosQuery.data.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Scénarios ({scenariosQuery.data.length})</p>
+                  {scenariosQuery.data.map((scenario: any) => (
+                    <div key={scenario.id} className="bg-gray-50 p-3 rounded mb-2">
+                      <p className="text-sm font-medium text-gray-800">{scenario.title}</p>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleExportScenario(scenario.id, 'pdf')}
+                          disabled={exportScenarioMutation.isPending}
+                        >
+                          PDF
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleExportScenario(scenario.id, 'docx')}
+                          disabled={exportScenarioMutation.isPending}
+                        >
+                          DOCX
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
@@ -469,326 +503,76 @@ export default function StudioProject() {
                 Capsules Vidéo
               </CardTitle>
               <CardDescription>
-                Créez et gérez vos capsules vidéo
+                Créez des capsules vidéo
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button
-                className="w-full"
-                variant="outline"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 onClick={handleCreateCapsule}
-                disabled={isCreatingCapsule}
+                disabled={isCreatingCapsule || !scenariosQuery.data?.length}
               >
                 {isCreatingCapsule ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Création en cours...
+                    Création...
                   </>
                 ) : (
                   <>
                     <Zap className="mr-2 h-4 w-4" />
-                    Créer une capsule
+                    Créer Capsule
                   </>
                 )}
               </Button>
-              <p className="text-sm text-gray-600 mt-4">
-                Générez des vidéos interactives avec l'IA
-              </p>
+
+              {capsulesQuery.data && capsulesQuery.data.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Capsules ({capsulesQuery.data.length})</p>
+                  {capsulesQuery.data.map((capsule: any) => (
+                    <div key={capsule.id} className="bg-gray-50 p-3 rounded mb-2">
+                      <p className="text-sm font-medium text-gray-800">{capsule.title}</p>
+                      <p className="text-xs text-gray-600 mt-1">Statut: {capsule.videoStatus}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Scenarios Section */}
-        {scenariosQuery.data && scenariosQuery.data.length > 0 && (
-          <div className="mt-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Zap className="mr-2 h-5 w-5 text-amber-600" />
-                  Scénarios Générés ({scenariosQuery.data.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {scenariosQuery.data.map((scenario: any) => (
-                    <div
-                      key={scenario.id}
-                      className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 transition"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
-                            {scenario.title || `Scénario ${scenario.id}`}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Créé le {new Date(scenario.createdAt).toLocaleDateString('fr-FR')}
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-2 flex-wrap justify-end">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleExportScenario(scenario.id, 'pdf')}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                            title="Exporter en PDF"
-                          >
-                            📄 PDF
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleExportScenario(scenario.id, 'docx')}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            title="Exporter en Word"
-                          >
-                            📝 Word
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingScenarioId(scenario.id);
-                              setEditingScenario(scenario);
-                            }}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            ✏️ Éditer
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm("Confirmer la suppression du scénario ?")) {
-                                deleteScenarioMutation.mutate(
-                                  { scenarioId: scenario.id },
-                                  {
-                                    onSuccess: () => scenariosQuery.refetch()
-                                  }
-                                );
-                              }
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      {scenario.description && (
-                        <div className="mt-3 pt-3 border-t border-amber-200">
-                          <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto bg-white rounded p-2 border border-amber-100">
-                            {scenario.description}
-                          </div>
-                          {scenario.description && scenario.description.length > 1000 && (
-                            <p className="text-xs text-amber-600 mt-2">... (Contenu complet disponible dans l'export PDF/Word)</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Preview Modal */}
+        {showPreview && previewScenario && (
+          <ScenarioPreviewModal
+            scenario={previewScenario}
+            isOpen={showPreview}
+            onClose={() => setShowPreview(false)}
+          />
         )}
-
-        {/* Capsules Section */}
-        {capsulesQuery.data && capsulesQuery.data.length > 0 && (
-          <div className="mt-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-5 w-5 text-purple-600" />
-                  Capsules Vidéo ({capsulesQuery.data.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {capsulesQuery.data.map((capsule: any) => (
-                    <div
-                      key={capsule.id}
-                      className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:bg-purple-100 transition"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
-                            {capsule.title}
-                          </p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {capsule.description || "Capsule vidéo"}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-2">
-                            Statut: <span className="font-semibold">{capsule.videoStatus || "pending"}</span>
-                          </p>
-                        </div>
-                        <div className="flex gap-2 ml-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => alert("Édition de capsule en développement")}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            ✏️
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => alert("Suppression de capsule en développement")}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Documents List Section */}
-        {documentsQuery.data && documentsQuery.data.length > 0 && (
-          <div className="mt-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-5 w-5 text-blue-600" />
-                  Documents Téléchargés ({documentsQuery.data.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {documentsQuery.data.map((doc: any) => (
-                    <div key={doc.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 transition">
-                        <div className="flex items-center flex-1">
-                          <FileText className="h-4 w-4 text-blue-600 mr-3" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {doc.fileName}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {(doc.fileSize / 1024).toFixed(2)} KB • {doc.fileType.toUpperCase()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 ml-2">
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            doc.extractionStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                            doc.extractionStatus === 'failed' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
-                            {doc.extractionStatus || "pending"}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteDocument(doc.id, doc.fileName)}
-                            disabled={deleteDocumentMutation.isPending}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      {doc.extractedContent && doc.extractionStatus === 'completed' && (
-                        <div className="p-4 bg-white border-t border-gray-200">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">Contenu Extrait (Scénarisation):</p>
-                          <div className="bg-gray-50 p-3 rounded border border-gray-200 max-h-64 overflow-y-auto">
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap break-words">
-                              {doc.extractedContent.substring(0, 1000)}
-                              {doc.extractedContent.length > 1000 && (
-                                <span className="text-gray-500">... [+{doc.extractedContent.length - 1000} caractères]</span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Scenario Preview Modal */}
-        <ScenarioPreviewModal
-          open={showPreview}
-          onOpenChange={setShowPreview}
-          scenario={previewScenario}
-          isLoading={isPreviewLoading}
-          isSaving={isGeneratingScenario}
-          onSave={async () => {
-            if (projectQuery.data && previewScenario) {
-              setIsGeneratingScenario(true);
-              try {
-                const project = projectQuery.data as any;
-                const response = await fetch("/api/studio/generate-scenario", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    projectId: project.id,
-                    pedagogicalModel: project.pedagogicalModel || "professional",
-                    targetAudience: project.targetAudience,
-                    estimatedDuration: project.estimatedDuration,
-                  }),
-                });
-
-                if (!response.ok) throw new Error("Save failed");
-                scenariosQuery.refetch();
-                setShowPreview(false);
-                alert("Scénario sauvegardé avec succès !");
-              } catch (error) {
-                alert("Erreur lors de la sauvegarde");
-              } finally {
-                setIsGeneratingScenario(false);
-              }
-            }
-          }}
-          onCancel={() => setShowPreview(false)}
-          onModify={() => {
-            setShowPreview(false);
-            handleGenerateScenario();
-          }}
-        />
 
         {/* Scenario Editor Modal */}
         {editingScenarioId && editingScenario && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full my-8">
-              <ScenarioEditor
-                scenarioId={editingScenarioId}
-                initialTitle={editingScenario.title || ''}
-                initialDescription={editingScenario.description || ''}
-                initialObjectives={editingScenario.learningObjectives || ''}
-                initialContent={editingScenario.contentStructure || ''}
-                initialInteractive={editingScenario.interactiveElements || ''}
-                onSave={async (data) => {
-                  try {
-                    await updateScenarioContentMutation.mutateAsync({
-                      scenarioId: editingScenarioId,
-                      title: data.title,
-                      description: data.description,
-                    });
-                    scenariosQuery.refetch();
-                    setEditingScenarioId(null);
-                    setEditingScenario(null);
-                    alert('Scenario mis a jour avec succes !');
-                  } catch (error) {
-                    console.error('Failed to save scenario:', error);
-                    alert('Erreur lors de la sauvegarde du scenario');
-                  }
-                }}
-                onCancel={() => {
-                  setEditingScenarioId(null);
-                  setEditingScenario(null);
-                }}
-                isLoading={updateScenarioContentMutation.isPending}
-              />
-            </div>
-          </div>
+          <ScenarioEditor
+            scenario={editingScenario}
+            isOpen={!!editingScenarioId}
+            onClose={() => {
+              setEditingScenarioId(null);
+              setEditingScenario(null);
+            }}
+            onSave={async (updatedScenario) => {
+              try {
+                await updateScenarioContentMutation.mutateAsync({
+                  scenarioId: editingScenarioId,
+                  content: updatedScenario,
+                });
+                scenariosQuery.refetch();
+                setEditingScenarioId(null);
+                setEditingScenario(null);
+              } catch (error) {
+                console.error("Update failed:", error);
+                alert("Erreur lors de la mise à jour du scénario");
+              }
+            }}
+          />
         )}
       </div>
     </div>
