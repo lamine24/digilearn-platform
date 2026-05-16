@@ -6,12 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, ArrowLeft, Download, Share2, Eye, Clock, Layers } from "lucide-react";
+import { useVideoGeneration } from "@/hooks/useVideoGeneration";
 
 export function CapsulePreview() {
   const params = useParams();
   const [, setLocation] = useLocation();
   const capsuleId = parseInt(params?.id || "0");
   const [watchDuration, setWatchDuration] = useState(0);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const { progress, isCompleted, isFailed, isProcessing } = useVideoGeneration(jobId);
 
   // Fetch capsule preview data
   const { data: capsule, isLoading, error } = trpc.studio.getCapsulePreview.useQuery(
@@ -35,7 +38,13 @@ export function CapsulePreview() {
   const recordViewMutation = trpc.studio.recordCapsuleView.useMutation();
 
   // Generate video mutation
-  const generateVideoMutation = trpc.studio.generateCapsuleVideo.useMutation();
+  const generateVideoMutation = trpc.studio.generateCapsuleVideo.useMutation({
+    onSuccess: (data: any) => {
+      if (data.jobId) {
+        setJobId(data.jobId);
+      }
+    },
+  });
 
   // Track watch duration
   useEffect(() => {
@@ -124,6 +133,32 @@ export function CapsulePreview() {
                     className="w-full h-full"
                     onPlay={() => setWatchDuration(0)}
                   />
+                ) : isProcessing ? (
+                  <div className="text-white text-center">
+                    <Loader2 className="w-16 h-16 mx-auto mb-4 opacity-50 animate-spin" />
+                    <p>Génération en cours...</p>
+                    <div className="mt-4 w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm">{Math.round(progress)}%</p>
+                  </div>
+                ) : isFailed ? (
+                  <div className="text-white text-center">
+                    <Layers className="w-16 h-16 mx-auto mb-4 opacity-50 text-red-500" />
+                    <p>Erreur lors de la génération</p>
+                    <Button
+                      onClick={() => {
+                        setJobId(null);
+                        generateVideoMutation.mutate({ capsuleId });
+                      }}
+                      className="mt-4"
+                    >
+                      Réessayer
+                    </Button>
+                  </div>
                 ) : (
                   <div className="text-white text-center">
                     <Layers className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -133,10 +168,10 @@ export function CapsulePreview() {
                       disabled={generateVideoMutation.isPending}
                       className="mt-4"
                     >
-                      {generateVideoMutation.isPending ? 'Génération...' : 'Générer la vidéo'}
+                      {generateVideoMutation.isPending ? 'Lancement...' : 'Générer la vidéo'}
                     </Button>
                   </div>
-                )}
+                )
               </div>
             </Card>
 

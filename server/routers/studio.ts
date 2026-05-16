@@ -13,6 +13,7 @@ import { generateScenarioPrompt } from '../pedagogical-models';
 import { exportProfessionalScenarioPdf, generateProfessionalExportFilename } from '../scenario-export-professional';
 import { TRPCError } from '@trpc/server';
 import * as studioCapsuleDb from '../studio-db';
+import { enqueueVideoGeneration, getJobStatus } from '../queue';
 
 
 /**
@@ -700,11 +701,16 @@ const generateCapsuleVideo = protectedProcedure
 
       const capsuleData = capsule[0];
 
-      // Import video generation service
-      const { generateVideoFromScenario } = await import('../video-generation');
+      // Update capsule status to 'pending' to indicate job is queued
+      await db.update(studioCapsules)
+        .set({ videoStatus: 'pending' })
+        .where(eq(studioCapsules.id, input.capsuleId));
 
-      // Generate video
-      const videoResult = await generateVideoFromScenario({
+      // Enqueue video generation job
+      const job = await enqueueVideoGeneration({
+        capsuleId: input.capsuleId,
+        projectId: capsuleData.projectId,
+        scenarioId: capsuleData.scenarioId,
         title: capsuleData.title,
         description: capsuleData.description || '',
         narrationText: capsuleData.narrationText || scenarioData.description || '',
@@ -713,20 +719,10 @@ const generateCapsuleVideo = protectedProcedure
         pedagogicalModel: scenarioData.generatedBy || 'professional',
       });
 
-      // Update capsule with video information
-      await db.update(studioCapsules)
-        .set({
-          videoUrl: videoResult.videoUrl,
-          videoKey: videoResult.videoKey,
-          videoStatus: 'completed',
-          duration: videoResult.duration,
-        })
-        .where(eq(studioCapsules.id, input.capsuleId));
-
       return {
         success: true,
-        video: videoResult,
-        message: 'Vidéo générée avec succès',
+        jobId: job.id,
+        message: 'Génération vidéo lancée. Vous recevrez une notification quand elle sera prête.',
       };
     } catch (error) {
       console.error('Video generation failed:', error);
@@ -811,6 +807,26 @@ export const getAllCapsules = publicProcedure
     return capsules;
   });
 
+/**
+ * Get video generation job status
+ */
+export const getVideoJobStatus = publicProcedure
+  .input(z.object({ jobId: z.string() }))
+  .query(async ({ input }) => {
+    try {
+      const jobStatus = await getJobStatus(input.jobId);
+      if (!jobStatus) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Job not found' });
+      }
+      return jobStatus;
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la récupération du statut: ${(error as Error).message}`,
+      });
+    }
+  });
+
 export const studioRouter = router({
   createProject,
   getProject,
@@ -835,4 +851,5 @@ export const studioRouter = router({
   getCapsuleMetadata,
   getCapsuleExports,
   recordCapsuleView,
+  getVideoJobStatus,
 });

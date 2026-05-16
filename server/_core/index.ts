@@ -63,6 +63,7 @@ async function listenWithRetry(
 import { startInactivityJob } from "../inactivity-job";
 import { initializeDatabaseTables } from "../db-init";
 import { startDocumentExtractionJob } from "../document-extraction-job";
+import initializeWorker from "../init-worker";
 
 async function startServer() {
   // Initialize database tables on startup
@@ -71,6 +72,7 @@ async function startServer() {
   // Start background jobs
   startDocumentExtractionJob();
   startInactivityJob();
+  initializeWorker();
   
   const app = express();
   const server = createServer(app);

@@ -177,3 +177,25 @@ export async function generateMultipleVideos(
 
   return videos;
 }
+
+/**
+ * Generate video content (core function for async processing)
+ */
+export async function generateCapsuleVideoContent(
+  input: VideoGenerationInput
+): Promise<{ videoUrl: string; videoKey: string; duration: number }> {
+  try {
+    console.log(`[Video Generation] Starting video generation for: ${input.title}`);
+    
+    const result = await generateVideoFromScenario(input);
+    
+    return {
+      videoUrl: result.videoUrl,
+      videoKey: result.videoKey,
+      duration: result.duration,
+    };
+  } catch (error) {
+    console.error('[Video Generation] Error generating video:', error);
+    throw error;
+  }
+}
