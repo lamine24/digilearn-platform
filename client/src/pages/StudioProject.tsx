@@ -257,12 +257,12 @@ export default function StudioProject() {
   }
 
   // Render auth check - Allow admin and formateur roles
-  if (!authLoading && (!user || (user.role !== "formateur" && user.role !== "admin"))) {
+  if (!authLoading && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Accès Refusé</h1>
-          <p className="text-muted-foreground mb-6">Seuls les formateurs et administrateurs peuvent accéder au Studio.</p>
+          <h1 className="text-2xl font-bold mb-4">Authentification requise</h1>
+          <p className="text-muted-foreground mb-6">Veuillez vous connecter pour accéder au Studio.</p>
           <Button onClick={() => setLocation("/dashboard")}>Retour au Dashboard</Button>
         </div>
       </div>
@@ -527,13 +527,56 @@ export default function StudioProject() {
 
               {capsulesQuery.data && capsulesQuery.data.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Capsules ({capsulesQuery.data.length})</p>
-                  {capsulesQuery.data.map((capsule: any) => (
-                    <div key={capsule.id} className="bg-gray-50 p-3 rounded mb-2">
-                      <p className="text-sm font-medium text-gray-800">{capsule.title}</p>
-                      <p className="text-xs text-gray-600 mt-1">Statut: {capsule.videoStatus}</p>
-                    </div>
-                  ))}
+                  <p className="text-sm font-semibold text-gray-700 mb-3">Capsules ({capsulesQuery.data.length})</p>
+                  <div className="grid gap-3">
+                    {capsulesQuery.data.map((capsule: any) => {
+                      const statusColors = {
+                        completed: 'bg-green-100 text-green-700',
+                        processing: 'bg-blue-100 text-blue-700',
+                        failed: 'bg-red-100 text-red-700',
+                        pending: 'bg-yellow-100 text-yellow-700'
+                      };
+                      const statusLabels = {
+                        pending: 'En attente',
+                        processing: 'En cours',
+                        completed: 'Complétée',
+                        failed: 'Erreur'
+                      };
+                      const statusColor = statusColors[capsule.videoStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-700';
+                      const statusLabel = statusLabels[capsule.videoStatus as keyof typeof statusLabels] || capsule.videoStatus;
+                      
+                      return (
+                        <Card key={capsule.id} className="bg-white border border-gray-200 hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900">{capsule.title}</h4>
+                                {capsule.description && (
+                                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{capsule.description}</p>
+                                )}
+                                <div className="mt-3 flex items-center gap-3 flex-wrap">
+                                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusColor}`}>
+                                    {statusLabel}
+                                  </span>
+                                  {capsule.duration && (
+                                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">Durée: {capsule.duration}s</span>
+                                  )}
+                                  {capsule.generatedBy && (
+                                    <span className="text-xs text-gray-600">Par: {capsule.generatedBy}</span>
+                                  )}
+                                </div>
+                              </div>
+                              {capsule.videoUrl && capsule.videoStatus === 'completed' && (
+                                <Button size="sm" variant="outline" className="ml-2 whitespace-nowrap">
+                                  Voir vidéo
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </CardContent>

@@ -2,7 +2,7 @@
  * Studio Router - tRPC procedures for scenario generation and management
  */
 
-import { router, protectedProcedure } from '../_core/trpc';
+import { router, protectedProcedure, publicProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { getDb } from '../db';
 import { studioProjects, studioDocuments, studioScenarios, studioCapsules } from '../../drizzle/schema';
@@ -737,6 +737,22 @@ const generateCapsuleVideo = protectedProcedure
     }
   });
 
+/**
+ * Get all capsules (public procedure)
+ */
+export const getAllCapsules = publicProcedure
+  .query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database connection failed' });
+
+    const capsules = await db.select()
+      .from(studioCapsules)
+      .orderBy(desc(studioCapsules.createdAt))
+      .limit(100);
+
+    return capsules;
+  });
+
 export const studioRouter = router({
   createProject,
   getProject,
@@ -756,4 +772,5 @@ export const studioRouter = router({
   updateScenarioContent,
   exportScenario,
   generateCapsuleVideo,
+  getAllCapsules,
 });

@@ -32,6 +32,7 @@ import UserDashboard from "./pages/UserDashboard";
 import StudioDashboard from "./pages/StudioDashboard";
 import StudioProject from "./pages/StudioProject";
 import { CapsulePreview } from "./pages/CapsulePreview";
+import { CapsuleGallery } from "./pages/CapsuleGallery";
 
 function Router() {
   return (
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/user-dashboard" component={UserDashboard} />
       <Route path="/studio" component={StudioDashboard} />
       <Route path="/studio/capsule/:id" component={CapsulePreview} />
+      <Route path="/studio/gallery" component={CapsuleGallery} />
       <Route path="/studio/:slug" component={StudioProject} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
