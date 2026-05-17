@@ -3,7 +3,8 @@
  * Processes video generation jobs from the Bull queue
  */
 
-import { Worker, Job } from 'bull';
+import { Worker } from 'bullmq';
+import type { Job } from 'bullmq';
 import { getDb } from '../db';
 import { studioCapsules } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
@@ -42,6 +43,7 @@ export const videoGenerationWorker = new Worker(
       console.log(`[Worker] Generating video for capsule ${job.data.capsuleId}`);
       const videoResult = await generateCapsuleVideoContent({
         title: job.data.title,
+        description: job.data.description || '',
         narrationText: job.data.narrationText,
         duration: job.data.duration,
         language: job.data.language,
@@ -77,7 +79,7 @@ export const videoGenerationWorker = new Worker(
         if (db) {
           await db.update(studioCapsules)
             .set({
-              videoStatus: 'error',
+              videoStatus: 'failed',
             })
             .where(eq(studioCapsules.id, job.data.capsuleId));
         }

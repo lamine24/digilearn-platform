@@ -171,7 +171,7 @@ export function CapsulePreview() {
                       {generateVideoMutation.isPending ? 'Lancement...' : 'Générer la vidéo'}
                     </Button>
                   </div>
-                )
+                )}
               </div>
             </Card>
 
