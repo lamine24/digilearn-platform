@@ -24,7 +24,7 @@ export const videoGenerationWorker = new Worker(
 
     try {
       // Update job progress
-      await job.progress(10);
+      job.updateProgress(10);
 
       // Get database connection
       const db = await getDb();
@@ -37,7 +37,7 @@ export const videoGenerationWorker = new Worker(
         .set({ videoStatus: 'processing' })
         .where(eq(studioCapsules.id, job.data.capsuleId));
 
-      await job.progress(20);
+      job.updateProgress(20);
 
       // Generate video content
       console.log(`[Worker] Generating video for capsule ${job.data.capsuleId}`);
@@ -50,7 +50,7 @@ export const videoGenerationWorker = new Worker(
         pedagogicalModel: job.data.pedagogicalModel,
       });
 
-      await job.progress(80);
+      job.updateProgress(80);
 
       // Update capsule with video information
       await db.update(studioCapsules)
@@ -62,7 +62,7 @@ export const videoGenerationWorker = new Worker(
         })
         .where(eq(studioCapsules.id, job.data.capsuleId));
 
-      await job.progress(100);
+      job.updateProgress(100);
 
       console.log(`[Worker] Job ${job.id} completed successfully`);
       return {
@@ -93,12 +93,10 @@ export const videoGenerationWorker = new Worker(
   {
     connection: redisConfig,
     concurrency: 2, // Process 2 videos simultaneously
-    settings: {
-      lockDuration: 30000, // 30 seconds
-      lockRenewTime: 15000, // Renew lock every 15 seconds
-      maxStalledCount: 2, // Max times a job can stall
-      stalledInterval: 5000, // Check for stalled jobs every 5 seconds
-    },
+    lockDuration: 30000, // 30 seconds
+    lockRenewTime: 15000, // Renew lock every 15 seconds
+    maxStalledCount: 2, // Max times a job can stall
+    stalledInterval: 5000, // Check for stalled jobs every 5 seconds
   }
 );
 
