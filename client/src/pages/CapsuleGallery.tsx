@@ -168,7 +168,14 @@ export function CapsuleGallery() {
 
                     {/* Action Button */}
                     {capsule.videoStatus === "completed" && capsule.videoUrl && (
-                      <Button className="w-full mt-2" size="sm">
+                      <Button 
+                        className="w-full mt-2" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLocation(`/studio/capsule/${capsule.id}`);
+                        }}
+                      >
                         Regarder
                       </Button>
                     )}

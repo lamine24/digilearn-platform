@@ -567,7 +567,12 @@ export default function StudioProject() {
                                 </div>
                               </div>
                               {capsule.videoUrl && capsule.videoStatus === 'completed' && (
-                                <Button size="sm" variant="outline" className="ml-2 whitespace-nowrap">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="ml-2 whitespace-nowrap"
+                                  onClick={() => setLocation(`/studio/capsule/${capsule.id}`)}
+                                >
                                   Voir vidéo
                                 </Button>
                               )}
