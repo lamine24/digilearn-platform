@@ -10,6 +10,8 @@ import { studioCapsules } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { validateCapsuleData, estimateCapsuleDuration } from '../remotion-renderer';
 import { renderCapsuleVideo, estimateRenderTime, formatFileSize } from '../remotion-render-service';
+import { generateCapsuleAudio, createVideoSyncMarkers, prepareVideoWithAudio } from '../video-tts-integration';
+import type { TTSConfig } from '../tts-service';
 import { storagePut } from '../storage';
 import type { VideoGenerationJob } from '../queue';
 import type { CapsuleData } from '../video-generation';
@@ -67,6 +69,37 @@ export const videoGenerationWorker = new Worker(
 
       job.updateProgress(40);
 
+      // Generate audio narration if text is available
+      let audioUrl: string | undefined;
+      let syncMarkers: any[] = [];
+      
+      if (capsuleData.narrationText || capsuleData.contentStructure?.sections?.length) {
+        console.log(`[Worker] Generating audio narration for capsule`);
+        
+        const ttsConfig: TTSConfig = {
+          language: 'fr', // Default to French
+          voiceGender: 'female',
+          speakingRate: 1.0,
+          pitch: 0,
+          audioFormat: 'mp3',
+          sampleRateHertz: 24000,
+        };
+
+        try {
+          const audioResult = await generateCapsuleAudio(capsuleData, ttsConfig);
+          console.log(`[Worker] Audio generated: ${audioResult.duration}s`);
+          
+          // Create sync markers for animations
+          syncMarkers = createVideoSyncMarkers(audioResult.segments, 30); // 30 fps
+          audioUrl = audioResult.audioUrl;
+          
+          job.updateProgress(50);
+        } catch (audioError) {
+          console.warn(`[Worker] Audio generation failed, continuing without audio:`, audioError);
+          job.updateProgress(50);
+        }
+      }
+
       // Render video using Remotion
       console.log(`[Worker] Rendering video for capsule ${job.data.capsuleId}`);
       const estimatedRenderTime = estimateRenderTime(estimatedDuration, 'medium');
@@ -116,7 +149,7 @@ export const videoGenerationWorker = new Worker(
 
       job.updateProgress(90);
 
-      // Update capsule with video information
+      // Update capsule with video and audio information
       await db.update(studioCapsules)
         .set({
           videoUrl,
@@ -128,6 +161,8 @@ export const videoGenerationWorker = new Worker(
           generatedBy: 'reemotion',
         })
         .where(eq(studioCapsules.id, job.data.capsuleId));
+      
+      // Note: audioUrl can be stored separately if needed in future updates
 
       job.updateProgress(100);
 
@@ -135,7 +170,9 @@ export const videoGenerationWorker = new Worker(
       return {
         success: true,
         videoUrl,
+        audioUrl,
         duration: estimatedDuration,
+        syncMarkersCount: syncMarkers.length,
       };
     } catch (error) {
       console.error(`[Worker] Job ${job.id} failed:`, error);
