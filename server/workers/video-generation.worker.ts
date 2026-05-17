@@ -9,7 +9,7 @@ import { getDb } from '../db';
 import { studioCapsules } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { validateCapsuleData, estimateCapsuleDuration } from '../remotion-renderer';
-import { renderCapsuleVideoWithRemotion } from '../remotion-server-renderer';
+import { renderCapsuleVideo, estimateRenderTime, formatFileSize } from '../remotion-render-service';
 import { storagePut } from '../storage';
 import type { VideoGenerationJob } from '../queue';
 import type { CapsuleData } from '../video-generation';
@@ -69,27 +69,32 @@ export const videoGenerationWorker = new Worker(
 
       // Render video using Remotion
       console.log(`[Worker] Rendering video for capsule ${job.data.capsuleId}`);
+      const estimatedRenderTime = estimateRenderTime(estimatedDuration, 'medium');
+      console.log(`[Worker] Estimated render time: ~${estimatedRenderTime}s`);
+      
       const tempVideoPath = path.join(process.cwd(), 'tmp', `capsule-${job.data.capsuleId}-${Date.now()}.mp4`);
       
-      const renderResult = await renderCapsuleVideoWithRemotion({
-        data: capsuleData,
+      const renderResult = await renderCapsuleVideo(capsuleData, {
         outputPath: tempVideoPath,
-        durationInSeconds: estimatedDuration,
-        onProgress: (progress) => {
-          const jobProgress = 40 + (progress * 0.4); // 40-80% for rendering
-          job.updateProgress(Math.round(jobProgress));
-        },
+        codec: 'h264',
+        quality: 'medium',
+        fps: 30,
+        width: 1920,
+        height: 1080,
       });
 
-      if (!renderResult.success || !renderResult.videoPath) {
+      if (!renderResult.success) {
         throw new Error(renderResult.error || 'Video rendering failed');
       }
+      
+      console.log(`[Worker] Video rendered successfully`);
+      console.log(`[Worker] Video size: ${formatFileSize(renderResult.fileSize)}`);
 
       job.updateProgress(80);
 
       // Upload video to storage
       console.log(`[Worker] Uploading video to storage...`);
-      const videoBuffer = fs.readFileSync(renderResult.videoPath);
+      const videoBuffer = fs.readFileSync(renderResult.videoPath!);
       const videoFileName = `capsule-${job.data.capsuleId}-${Date.now()}.mp4`;
       const videoKey = `videos/capsules/${videoFileName}`;
       
@@ -101,7 +106,10 @@ export const videoGenerationWorker = new Worker(
 
       // Clean up temp file
       try {
-        fs.unlinkSync(renderResult.videoPath);
+        if (renderResult.videoPath) {
+          fs.unlinkSync(renderResult.videoPath);
+          console.log(`[Worker] Cleaned up temporary file`);
+        }
       } catch (error) {
         console.warn(`[Worker] Failed to delete temp file: ${renderResult.videoPath}`);
       }
@@ -115,6 +123,7 @@ export const videoGenerationWorker = new Worker(
           videoKey,
           videoStatus: 'completed',
           duration: estimatedDuration,
+          fileSize: renderResult.fileSize,
           generatedAt: new Date(),
           generatedBy: 'reemotion',
         })
@@ -151,11 +160,11 @@ export const videoGenerationWorker = new Worker(
   },
   {
     connection: redisConfig,
-    concurrency: 1, // Process one video at a time to avoid resource exhaustion
-    lockDuration: 60000, // 60 seconds
-    lockRenewTime: 30000, // Renew lock every 30 seconds
-    maxStalledCount: 2, // Max times a job can stall
-    stalledInterval: 10000, // Check for stalled jobs every 10 seconds
+    concurrency: 1, // Process one video at a time (video rendering is CPU intensive)
+    lockDuration: 3600000, // 1 hour (video rendering can take time)
+    lockRenewTime: 300000, // Renew lock every 5 minutes
+    maxStalledCount: 1, // Fail after 1 stall
+    stalledInterval: 30000, // Check for stalled jobs every 30 seconds
   }
 );
 
