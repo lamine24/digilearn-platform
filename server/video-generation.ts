@@ -6,6 +6,28 @@
 import { invokeLLM } from './_core/llm';
 import { storagePut } from './storage';
 
+export interface ContentSection {
+  title: string;
+  content: string;
+  duration?: number;
+}
+
+export interface InteractiveElement {
+  type: string;
+  text: string;
+  position?: { x: number; y: number };
+}
+
+export interface CapsuleData {
+  title: string;
+  description: string;
+  contentStructure?: {
+    sections?: ContentSection[];
+  };
+  interactiveElements?: InteractiveElement[];
+  narrationText?: string;
+}
+
 export interface VideoGenerationInput {
   title: string;
   description: string;
@@ -13,6 +35,10 @@ export interface VideoGenerationInput {
   duration?: number; // in seconds
   language?: string;
   pedagogicalModel?: string;
+  contentStructure?: {
+    sections?: ContentSection[];
+  };
+  interactiveElements?: InteractiveElement[];
 }
 
 export interface VideoGenerationOutput {

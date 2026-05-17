@@ -191,15 +191,21 @@ export const generateScenario = protectedProcedure
       const db = await getDb();
       if (!db) throw new Error('Database connection failed');
 
-      const project = await db.query.studioProjects.findFirst({
-        where: and(eq(studioProjects.id, input.projectId), eq(studioProjects.userId, ctx.user.id)),
-      });
-
+      const projects = await db.select().from(studioProjects)
+        .where(and(eq(studioProjects.id, input.projectId), eq(studioProjects.userId, ctx.user.id)));
+      
+      const project = projects.length > 0 ? projects[0] : null;
       if (!project) throw new Error('Project not found');
 
-      const documents = await db.query.studioDocuments.findMany({
-        where: eq(studioDocuments.projectId, input.projectId),
-      });
+      const allDocuments = await db.select().from(studioDocuments)
+        .where(eq(studioDocuments.projectId, input.projectId));
+
+      // Map documents to the expected format
+      const documents = allDocuments.map(doc => ({
+        id: doc.id,
+        fileName: doc.fileName,
+        extractedContent: doc.extractedContent || '',
+      }));
 
       const { generateScenarioWithPedagogicalModel } = await import('../scenario-generation');
       const scenario = await generateScenarioWithPedagogicalModel({

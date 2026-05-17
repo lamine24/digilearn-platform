@@ -60,6 +60,8 @@ export interface VideoGenerationJob {
   duration: number;
   language: string;
   pedagogicalModel: string;
+  contentStructure?: Record<string, any>;
+  interactiveElements?: Record<string, any>;
 }
 
 // Add video generation job to queue

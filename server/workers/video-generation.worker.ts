@@ -8,8 +8,13 @@ import type { Job } from 'bullmq';
 import { getDb } from '../db';
 import { studioCapsules } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
-import { generateCapsuleVideoContent } from '../video-generation';
+import { validateCapsuleData, estimateCapsuleDuration } from '../remotion-renderer';
+import { renderCapsuleVideoWithRemotion } from '../remotion-server-renderer';
+import { storagePut } from '../storage';
 import type { VideoGenerationJob } from '../queue';
+import type { CapsuleData } from '../video-generation';
+import path from 'path';
+import fs from 'fs';
 
 const redisConfig = {
   host: process.env.REDIS_HOST || 'localhost',
@@ -39,26 +44,79 @@ export const videoGenerationWorker = new Worker(
 
       job.updateProgress(20);
 
-      // Generate video content
-      console.log(`[Worker] Generating video for capsule ${job.data.capsuleId}`);
-      const videoResult = await generateCapsuleVideoContent({
+      // Prepare capsule data
+      const capsuleData: CapsuleData = {
         title: job.data.title,
         description: job.data.description || '',
         narrationText: job.data.narrationText,
-        duration: job.data.duration,
-        language: job.data.language,
-        pedagogicalModel: job.data.pedagogicalModel,
+        contentStructure: job.data.contentStructure as any,
+        interactiveElements: job.data.interactiveElements as any,
+      };
+
+      // Validate capsule data
+      const validation = validateCapsuleData(capsuleData);
+      if (!validation.valid) {
+        throw new Error(`Invalid capsule data: ${validation.errors.join(', ')}`);
+      }
+
+      job.updateProgress(30);
+
+      // Estimate duration
+      const estimatedDuration = estimateCapsuleDuration(capsuleData);
+      console.log(`[Worker] Estimated duration: ${estimatedDuration}s`);
+
+      job.updateProgress(40);
+
+      // Render video using Remotion
+      console.log(`[Worker] Rendering video for capsule ${job.data.capsuleId}`);
+      const tempVideoPath = path.join(process.cwd(), 'tmp', `capsule-${job.data.capsuleId}-${Date.now()}.mp4`);
+      
+      const renderResult = await renderCapsuleVideoWithRemotion({
+        data: capsuleData,
+        outputPath: tempVideoPath,
+        durationInSeconds: estimatedDuration,
+        onProgress: (progress) => {
+          const jobProgress = 40 + (progress * 0.4); // 40-80% for rendering
+          job.updateProgress(Math.round(jobProgress));
+        },
       });
 
+      if (!renderResult.success || !renderResult.videoPath) {
+        throw new Error(renderResult.error || 'Video rendering failed');
+      }
+
       job.updateProgress(80);
+
+      // Upload video to storage
+      console.log(`[Worker] Uploading video to storage...`);
+      const videoBuffer = fs.readFileSync(renderResult.videoPath);
+      const videoFileName = `capsule-${job.data.capsuleId}-${Date.now()}.mp4`;
+      const videoKey = `videos/capsules/${videoFileName}`;
+      
+      const { url: videoUrl } = await storagePut(
+        videoKey,
+        videoBuffer,
+        'video/mp4'
+      );
+
+      // Clean up temp file
+      try {
+        fs.unlinkSync(renderResult.videoPath);
+      } catch (error) {
+        console.warn(`[Worker] Failed to delete temp file: ${renderResult.videoPath}`);
+      }
+
+      job.updateProgress(90);
 
       // Update capsule with video information
       await db.update(studioCapsules)
         .set({
-          videoUrl: videoResult.videoUrl,
-          videoKey: videoResult.videoKey,
+          videoUrl,
+          videoKey,
           videoStatus: 'completed',
-          duration: videoResult.duration,
+          duration: estimatedDuration,
+          generatedAt: new Date(),
+          generatedBy: 'reemotion',
         })
         .where(eq(studioCapsules.id, job.data.capsuleId));
 
@@ -67,19 +125,20 @@ export const videoGenerationWorker = new Worker(
       console.log(`[Worker] Job ${job.id} completed successfully`);
       return {
         success: true,
-        videoUrl: videoResult.videoUrl,
-        duration: videoResult.duration,
+        videoUrl,
+        duration: estimatedDuration,
       };
     } catch (error) {
       console.error(`[Worker] Job ${job.id} failed:`, error);
 
-      // Update capsule status to 'error'
+      // Update capsule status to 'failed'
       try {
         const db = await getDb();
         if (db) {
           await db.update(studioCapsules)
             .set({
               videoStatus: 'failed',
+              generatedAt: new Date(),
             })
             .where(eq(studioCapsules.id, job.data.capsuleId));
         }
@@ -92,11 +151,11 @@ export const videoGenerationWorker = new Worker(
   },
   {
     connection: redisConfig,
-    concurrency: 2, // Process 2 videos simultaneously
-    lockDuration: 30000, // 30 seconds
-    lockRenewTime: 15000, // Renew lock every 15 seconds
+    concurrency: 1, // Process one video at a time to avoid resource exhaustion
+    lockDuration: 60000, // 60 seconds
+    lockRenewTime: 30000, // Renew lock every 30 seconds
     maxStalledCount: 2, // Max times a job can stall
-    stalledInterval: 5000, // Check for stalled jobs every 5 seconds
+    stalledInterval: 10000, // Check for stalled jobs every 10 seconds
   }
 );
 
