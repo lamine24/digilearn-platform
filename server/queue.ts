@@ -16,9 +16,19 @@ const redisConfig = {
   },
 };
 
-// Create video generation queue
+// Create video generation queue with optimized settings
 export const videoQueue = new Queue('video-generation', {
   redis: redisConfig,
+  settings: {
+    // Performance optimizations
+    maxStalledCount: 2,
+    stalledInterval: 5000,
+    maxRetriesPerSecond: 10,
+    retryProcessDelay: 5000,
+    visibility: 30000,
+    lockDuration: 30000,
+    lockRenewTime: 15000,
+  },
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -26,9 +36,12 @@ export const videoQueue = new Queue('video-generation', {
       delay: 2000,
     },
     removeOnComplete: {
-      age: 3600, // Keep completed jobs for 1 hour
+      age: 3600,
+      isPattern: false,
     },
-    removeOnFail: false, // Keep failed jobs for debugging
+    removeOnFail: false,
+    timeout: 3600000,
+    priority: 5,
   },
 });
 
@@ -64,17 +77,72 @@ export interface VideoGenerationJob {
   interactiveElements?: Record<string, any>;
 }
 
-// Add video generation job to queue
-export async function enqueueVideoGeneration(data: VideoGenerationJob) {
+// Add video generation job to queue with priority support
+export async function enqueueVideoGeneration(
+  data: VideoGenerationJob,
+  priority: number = 5,
+  delay?: number
+) {
   try {
-    const job = await videoQueue.add(data, {
+    const jobOptions: any = {
       jobId: `video-${data.capsuleId}-${Date.now()}`,
-    });
-    console.log(`[Video Queue] Job ${job.id} enqueued for capsule ${data.capsuleId}`);
+      priority,
+    };
+
+    if (delay) {
+      jobOptions.delay = delay;
+    }
+
+    const job = await videoQueue.add(data, jobOptions);
+    console.log(
+      `[Video Queue] Job ${job.id} enqueued for capsule ${data.capsuleId} (priority: ${priority})`
+    );
     return job;
   } catch (error) {
     console.error('[Video Queue] Failed to enqueue job:', error);
     throw error;
+  }
+}
+
+// Get queue statistics
+export async function getQueueStats() {
+  try {
+    const counts = await videoQueue.getJobCounts();
+    const workers = videoQueue.workers.length;
+    
+    return {
+      active: counts.active,
+      completed: counts.completed,
+      failed: counts.failed,
+      delayed: counts.delayed,
+      waiting: counts.waiting,
+      paused: counts.paused,
+      workers,
+      isPaused: videoQueue.isPaused(),
+    };
+  } catch (error) {
+    console.error('[Video Queue] Failed to get queue stats:', error);
+    return null;
+  }
+}
+
+// Pause queue
+export async function pauseQueue() {
+  try {
+    await videoQueue.pause();
+    console.log('[Video Queue] Queue paused');
+  } catch (error) {
+    console.error('[Video Queue] Failed to pause queue:', error);
+  }
+}
+
+// Resume queue
+export async function resumeQueue() {
+  try {
+    await videoQueue.resume();
+    console.log('[Video Queue] Queue resumed');
+  } catch (error) {
+    console.error('[Video Queue] Failed to resume queue:', error);
   }
 }
 
@@ -102,20 +170,54 @@ export async function getJobStatus(jobId: string) {
   }
 }
 
-// Clean up old jobs
+// Clean up old jobs with aggressive cleanup
 export async function cleanupOldJobs() {
   try {
-    const completedCount = await videoQueue.clean(3600000, 'completed'); // 1 hour
-    const failedCount = await videoQueue.clean(86400000, 'failed'); // 24 hours
-    console.log(`[Video Queue] Cleaned up ${completedCount} completed and ${failedCount} failed jobs`);
+    const completedCount = await videoQueue.clean(3600000, 'completed');
+    const failedCount = await videoQueue.clean(86400000, 'failed');
+    const delayedCount = await videoQueue.clean(604800000, 'delayed');
+    
+    console.log(
+      `[Video Queue] Cleaned up ${completedCount} completed, ${failedCount} failed, and ${delayedCount} delayed jobs`
+    );
   } catch (error) {
     console.error('[Video Queue] Failed to cleanup jobs:', error);
   }
 }
 
-// Graceful shutdown
+// Get queue health
+export async function getQueueHealth() {
+  try {
+    const stats = await getQueueStats();
+    const isHealthy = stats && stats.active < 100 && stats.failed < 50;
+    
+    return {
+      healthy: isHealthy,
+      stats,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error('[Video Queue] Failed to get queue health:', error);
+    return {
+      healthy: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+// Graceful shutdown with cleanup
 export async function shutdownQueue() {
   try {
+    await pauseQueue();
+    
+    const stats = await getQueueStats();
+    if (stats && stats.active > 0) {
+      console.log(`[Video Queue] Waiting for ${stats.active} active jobs to complete...`);
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+    
+    await cleanupOldJobs();
+    
     await videoQueue.close();
     console.log('[Video Queue] Queue closed gracefully');
   } catch (error) {
