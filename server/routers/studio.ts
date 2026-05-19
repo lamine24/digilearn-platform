@@ -955,6 +955,7 @@ export const studioRouter = router({
   updateScenarioContent,
   exportScenario,
   generateCapsuleVideo,
+  getCapsule,
   getAllCapsules,
   getCapsulePreview,
   getCapsuleMetadata,
