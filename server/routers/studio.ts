@@ -449,6 +449,75 @@ export const previewScenario = protectedProcedure
   });
 
 /**
+ * Get a single capsule
+ */
+export const getCapsule = protectedProcedure
+  .input(z.object({ id: z.string() }))
+  .query(async ({ ctx, input }) => {
+    try {
+      const capsule = await studioCapsuleDb.getCapsuleById(input.id);
+      if (!capsule) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Capsule not found' });
+      }
+      return capsule;
+    } catch (error) {
+      console.error('Failed to get capsule:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la récupération de la capsule: ${(error as Error).message}`,
+      });
+    }
+  });
+
+/**
+ * Generate capsule video
+ */
+export const generateCapsuleVideo = protectedProcedure
+  .input(z.object({
+    capsuleId: z.string(),
+    voiceId: z.string(),
+    processingPreset: z.enum(['podcast', 'audiobook', 'voiceover', 'educational']).optional(),
+    equalizerPreset: z.enum(['bright', 'warm', 'podcast', 'voiceover']).optional(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    try {
+      // Enqueue video generation job
+      const jobId = await enqueueVideoGeneration({
+        capsuleId: input.capsuleId,
+        voiceId: input.voiceId,
+        processingPreset: input.processingPreset || 'voiceover',
+        equalizerPreset: input.equalizerPreset || 'voiceover',
+      });
+
+      return { success: true, jobId };
+    } catch (error) {
+      console.error('Failed to generate capsule video:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la génération vidéo: ${(error as Error).message}`,
+      });
+    }
+  });
+
+/**
+ * Get video generation job status
+ */
+export const getVideoGenerationStatus = protectedProcedure
+  .input(z.object({ jobId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    try {
+      const status = await getJobStatus(input.jobId);
+      return status;
+    } catch (error) {
+      console.error('Failed to get job status:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Erreur lors de la récupération du statut: ${(error as Error).message}`,
+      });
+    }
+  });
+
+/**
  * Delete a scenario
  */
 export const deleteScenario = protectedProcedure
