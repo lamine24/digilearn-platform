@@ -745,7 +745,7 @@ export const updateScenarioContent = protectedProcedure
 /**
  * Generate video from capsule scenario
  */
-const generateCapsuleVideo = protectedProcedure
+export const generateCapsuleVideoFromScenario = protectedProcedure
   .input(z.object({
     capsuleId: z.number(),
     scenarioId: z.number(),
