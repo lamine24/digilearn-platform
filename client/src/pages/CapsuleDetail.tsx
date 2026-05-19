@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CapsulePreviewModal } from '@/components/CapsulePreviewModal';
 import { trpc } from '@/lib/trpc';
 import {
   Play,
@@ -21,6 +22,7 @@ import {
   AlertCircle,
   Clock,
   Volume2,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +42,7 @@ export function CapsuleDetail() {
   const [selectedVoice, setSelectedVoice] = useState('');
   const [selectedPreset, setSelectedPreset] = useState('voiceover');
   const [equalizerPreset, setEqualizerPreset] = useState('voiceover');
+  const [showPreview, setShowPreview] = useState(false);
 
   // API queries
   const capsuleQuery = trpc.studio.getCapsule.useQuery(
@@ -248,25 +251,37 @@ export function CapsuleDetail() {
                 </div>
               )}
 
-              {/* Generate Button */}
-              <Button
-                onClick={handleGenerateVideo}
-                disabled={isGenerating || !selectedVoice}
-                className="w-full"
-                size="lg"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Generate Video
-                  </>
-                )}
-              </Button>
+              {/* Buttons */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setShowPreview(true)}
+                  disabled={isGenerating}
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Prévisualiser
+                </Button>
+                <Button
+                  onClick={handleGenerateVideo}
+                  disabled={isGenerating || !selectedVoice}
+                  className="flex-1"
+                  size="lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Générer Vidéo
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -323,6 +338,28 @@ export function CapsuleDetail() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Preview Modal */}
+        {capsuleQuery.data && (
+          <CapsulePreviewModal
+            isOpen={showPreview}
+            onClose={() => setShowPreview(false)}
+            capsule={{
+              id: capsuleQuery.data.id,
+              name: capsuleQuery.data.name,
+              description: capsuleQuery.data.description,
+              model: capsuleQuery.data.model,
+              publicCible: capsuleQuery.data.publicCible,
+              estimatedDuration: capsuleQuery.data.estimatedDuration,
+              status: capsuleQuery.data.status,
+              createdAt: capsuleQuery.data.createdAt?.toString(),
+              updatedAt: capsuleQuery.data.updatedAt?.toString(),
+              contentStructure: capsuleQuery.data.contentStructure,
+            }}
+            onGenerate={handleGenerateVideo}
+            isGenerating={isGenerating}
+          />
+        )}
       </div>
     </div>
   );
